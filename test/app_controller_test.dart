@@ -1,7 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:lecionario_anglicano/data/models/lectionary_models.dart';
-import 'package:lecionario_anglicano/data/services/lectionary_api.dart';
 import 'package:lecionario_anglicano/presentation/app_controller.dart';
 
 import 'helpers/test_doubles.dart';
@@ -61,7 +60,6 @@ void main() {
     expect(controller.monthDays(DateTime.now()), isNotEmpty);
     expect(source.getDayCalls, 1);
     expect(source.getCalendarMonthCalls, 1);
-    expect(controller.isDemoMode, isFalse);
   });
 
   test(
@@ -134,7 +132,7 @@ void main() {
     },
   );
 
-  test('uses local preview data when network loading fails', () async {
+  test('does not fabricate content when network loading fails', () async {
     final source = FakeLectionaryDataSource();
     source.failDay = true;
     source.failCalendarMonth = true;
@@ -149,38 +147,33 @@ void main() {
 
     await controller.initialize();
 
-    expect(controller.isDemoMode, isTrue);
     expect(controller.lastError, isNotNull);
-    expect(controller.selectedDay, isNotNull);
-    expect(controller.monthDays(DateTime.now()), isNotEmpty);
+    expect(controller.selectedDay, isNull);
+    expect(controller.monthDays(DateTime.now()), isEmpty);
   });
 
-  test(
-    'falls back to bundled books when loading the book list fails',
-    () async {
-      final source = FakeLectionaryDataSource();
-      source.failPrayerBooks = true;
-      final preferences = await createLocalPreferences({
-        'selected_prayer_book_code': 'book_that_does_not_exist',
-      });
-      final controller = AppController(
-        api: source,
-        localPreferences: preferences,
-      );
-      addTearDown(controller.dispose);
+  test('keeps the LOC list empty when loading the book list fails', () async {
+    final source = FakeLectionaryDataSource();
+    source.failPrayerBooks = true;
+    final preferences = await createLocalPreferences({
+      'selected_prayer_book_code': 'book_that_does_not_exist',
+    });
+    final controller = AppController(
+      api: source,
+      localPreferences: preferences,
+    );
+    addTearDown(controller.dispose);
 
-      await controller.initialize();
+    await controller.initialize();
 
-      expect(controller.isDemoMode, isTrue);
-      expect(controller.lastError, contains('books unavailable'));
-      expect(controller.prayerBooks, DemoData.books);
-      expect(controller.selectedPrayerBookCode, isNull);
-      expect(controller.needsPrayerBook, isTrue);
-      expect(source.getDayCalls, 0);
-    },
-  );
+    expect(controller.lastError, contains('books unavailable'));
+    expect(controller.prayerBooks, isEmpty);
+    expect(controller.selectedPrayerBookCode, isNull);
+    expect(controller.needsPrayerBook, isTrue);
+    expect(source.getDayCalls, 0);
+  });
 
-  test('falls back to bundled books when the API returns no books', () async {
+  test('keeps the LOC list empty when the API returns no books', () async {
     final source = FakeLectionaryDataSource(books: const []);
     final preferences = await createLocalPreferences();
     final controller = AppController(
@@ -191,8 +184,7 @@ void main() {
 
     await controller.initialize();
 
-    expect(controller.isDemoMode, isTrue);
-    expect(controller.prayerBooks, DemoData.books);
+    expect(controller.prayerBooks, isEmpty);
     expect(controller.needsPrayerBook, isTrue);
   });
 

@@ -188,9 +188,9 @@ void main() {
 
       expect(await api.getPrayerBooks(), isEmpty);
       expect(await api.getCalendarMonth(DateTime(2026, 8), 'loc'), isEmpty);
-      expect(
-        (await api.getDay(DateTime(2026, 8, 5), 'loc')).season,
-        'Tempo Comum',
+      await expectLater(
+        api.getDay(DateTime(2026, 8, 5), 'loc'),
+        throwsFormatException,
       );
       expect(
         const ApiException(503, 'offline').toString(),

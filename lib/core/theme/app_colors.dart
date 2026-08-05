@@ -27,4 +27,18 @@ class AppColors {
   static const liturgicalPurple = Color(0xFF756184);
   static const liturgicalRose = Color(0xFFB67886);
   static const liturgicalBlue = Color(0xFF53738A);
+  static const liturgicalBlack = Color(0xFF3D403C);
+
+  static Color liturgical(String value) {
+    return switch (value.toLowerCase()) {
+      'branco' || 'white' => liturgicalWhite,
+      'vermelho' || 'red' => liturgicalRed,
+      'roxo' || 'violeta' || 'purple' => liturgicalPurple,
+      'rosa' || 'rose' => liturgicalRose,
+      'azul' || 'blue' => liturgicalBlue,
+      'verde' || 'green' => liturgicalGreen,
+      'preto' || 'black' => liturgicalBlack,
+      _ => mutedLight,
+    };
+  }
 }

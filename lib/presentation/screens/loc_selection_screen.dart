@@ -94,9 +94,7 @@ class _LocSelectionScreenState extends State<LocSelectionScreen> {
                         const SizedBox(height: 36),
                         _SelectionFooter(
                           copy: copy,
-                          selected: selected,
                           onContinue: selected == null ? null : _continue,
-                          demoMode: widget.controller.isDemoMode,
                         ),
                       ],
                     ),
@@ -236,12 +234,7 @@ class _BooksColumn extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (books.isEmpty) {
-      return Text(
-        'Nenhum livro disponível para este idioma.',
-        style: AppTypography.ui(color: AppColors.muted),
-      );
-    }
+    if (books.isEmpty) return const SizedBox.shrink();
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -336,7 +329,7 @@ class _BookOption extends StatelessWidget {
                         ),
                       ),
                     Text(
-                      book.name,
+                      book.name.isNotEmpty ? book.name : book.code,
                       style: AppTypography.display(
                         size: 24,
                         weight: FontWeight.w600,
@@ -344,17 +337,22 @@ class _BookOption extends StatelessWidget {
                         height: 1,
                       ),
                     ),
-                    const SizedBox(height: 6),
-                    Text(
-                      '${book.jurisdiction} · ${book.year}',
-                      style: AppTypography.ui(
-                        size: 12,
-                        color: selected
-                            ? AppColors.white.withValues(alpha: .7)
-                            : AppColors.muted,
-                        weight: FontWeight.w600,
+                    if (book.jurisdiction.isNotEmpty || book.year != null) ...[
+                      const SizedBox(height: 6),
+                      Text(
+                        [
+                          if (book.jurisdiction.isNotEmpty) book.jurisdiction,
+                          if (book.year != null) '${book.year}',
+                        ].join(' · '),
+                        style: AppTypography.ui(
+                          size: 12,
+                          color: selected
+                              ? AppColors.white.withValues(alpha: .7)
+                              : AppColors.muted,
+                          weight: FontWeight.w600,
+                        ),
                       ),
-                    ),
+                    ],
                   ],
                 ),
               ),
@@ -382,43 +380,15 @@ class _BookOption extends StatelessWidget {
 }
 
 class _SelectionFooter extends StatelessWidget {
-  const _SelectionFooter({
-    required this.copy,
-    required this.selected,
-    required this.onContinue,
-    required this.demoMode,
-  });
+  const _SelectionFooter({required this.copy, required this.onContinue});
 
   final AppCopy copy;
-  final PrayerBook? selected;
   final VoidCallback? onContinue;
-  final bool demoMode;
 
   @override
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (context, constraints) {
-        final note = demoMode
-            ? Row(
-                children: [
-                  const Icon(
-                    Icons.cloud_off_outlined,
-                    size: 16,
-                    color: AppColors.muted,
-                  ),
-                  const SizedBox(width: 8),
-                  Flexible(
-                    child: Text(
-                      '${copy.demoMode} · ${copy.demoDescription}',
-                      style: AppTypography.ui(size: 12, color: AppColors.muted),
-                    ),
-                  ),
-                ],
-              )
-            : Text(
-                'Você poderá alterar essa escolha depois.',
-                style: AppTypography.ui(size: 12, color: AppColors.muted),
-              );
         final button = FilledButton.icon(
           onPressed: onContinue,
           icon: const Icon(Icons.arrow_forward_rounded, size: 18),
@@ -435,23 +405,12 @@ class _SelectionFooter extends StatelessWidget {
         );
 
         if (constraints.maxWidth < 620) {
-          return Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              note,
-              const SizedBox(height: 14),
-              Align(alignment: Alignment.centerRight, child: button),
-            ],
-          );
+          return Align(alignment: Alignment.centerRight, child: button);
         }
 
         return Row(
           crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            Expanded(child: note),
-            const SizedBox(width: 18),
-            button,
-          ],
+          children: [const Spacer(), button],
         );
       },
     );

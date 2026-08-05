@@ -61,13 +61,14 @@ void main() {
     final fallback = PrayerBook.fromJson(const {});
 
     expect(portuguese.code, 'loc');
-    expect(portuguese.name, 'Livro de Oração Comum');
+    expect(portuguese.name, isEmpty);
     expect(portuguese.year, 2026);
     expect(portuguese.recommended, isTrue);
     expect(portuguese.thumbnailUrl, 'https://example.com/loc.png');
     expect(portuguese.appLanguage, AppLanguage.pt);
     expect(spanish.appLanguage, AppLanguage.es);
-    expect(fallback.fullName, 'Livro de Oração Comum');
+    expect(fallback.fullName, isEmpty);
+    expect(fallback.year, isNull);
 
     final calendarDay = CalendarDay.fromJson({
       'date': '05/08/2026',
@@ -154,8 +155,8 @@ void main() {
 
     expect(mapCollect.collects.single.text, 'Map collect');
     expect(textCollect.collects.single.text, 'Text collect');
-    expect(textCollect.season, 'Tempo Comum');
-    expect(textCollect.color, 'verde');
+    expect(textCollect.season, isNull);
+    expect(textCollect.color, isNull);
   });
 
   test('parses ISO, Brazilian and fallback dates', () {
@@ -163,9 +164,6 @@ void main() {
     expect(parseApiDate('2026-08-05T12:00:00Z'), DateTime(2026, 8, 5));
     expect(parseApiDate('05/08/2026'), DateTime(2026, 8, 5));
 
-    final fallback = parseApiDate('not-a-date');
-    expect(fallback.year, DateTime.now().year);
-    expect(fallback.month, DateTime.now().month);
-    expect(fallback.day, DateTime.now().day);
+    expect(() => parseApiDate('not-a-date'), throwsFormatException);
   });
 }

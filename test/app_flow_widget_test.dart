@@ -316,7 +316,7 @@ void main() {
     expect(source.requestedDates, contains(DateUtils.dateOnly(DateTime.now())));
   });
 
-  testWidgets('shows the local preview banner when both API calls fail', (
+  testWidgets('does not render invented content when both API calls fail', (
     tester,
   ) async {
     final source = FakeLectionaryDataSource(dayBuilder: testDay)
@@ -336,15 +336,11 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(
-      find.text(
-        'Prévia local · A API está indisponível. Mostrando conteúdo de prévia.',
-      ),
-      findsOneWidget,
-    );
+    expect(find.text('Tempo de teste'), findsNothing);
+    expect(find.byIcon(Icons.cloud_off_outlined), findsNothing);
   });
 
-  testWidgets('shows a reading fallback and translation when text is absent', (
+  testWidgets('shows only the API translation when reading text is absent', (
     tester,
   ) async {
     final source = FakeLectionaryDataSource(
@@ -382,7 +378,7 @@ void main() {
       find.text(
         'A referência está disponível; o texto integral pode ser aberto quando o conteúdo estiver publicado.',
       ),
-      findsOneWidget,
+      findsNothing,
     );
     expect(find.text('NAA'), findsOneWidget);
     await tester.tap(find.text('Fechar'));

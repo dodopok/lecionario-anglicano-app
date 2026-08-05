@@ -19,4 +19,4 @@ flutter run \
   --dart-define=APP_INTERNAL_IDENTIFIER=seu-identificador
 ```
 
-Quando a API não está disponível, o app entra em modo de prévia local para que o fluxo de seleção e a navegação possam ser testados.
+O app não substitui dados da API por conteúdo local: quando uma resposta falha ou não traz um campo, esse conteúdo permanece vazio.
