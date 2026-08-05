@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:lecionario_anglicano/data/models/lectionary_models.dart';
+import 'package:lecionario_anglicano/data/services/lectionary_api.dart';
 import 'package:lecionario_anglicano/presentation/app_controller.dart';
 
 import 'helpers/test_doubles.dart';
@@ -20,6 +21,22 @@ void main() {
     expect(controller.isInitializing, isFalse);
     expect(controller.needsPrayerBook, isTrue);
     expect(controller.prayerBooks, isNotEmpty);
+    expect(source.getDayCalls, 0);
+    expect(source.getCalendarMonthCalls, 0);
+  });
+
+  test('does not request calendar data without a selected LOC', () async {
+    final source = FakeLectionaryDataSource();
+    final preferences = await createLocalPreferences();
+    final controller = AppController(
+      api: source,
+      localPreferences: preferences,
+    );
+    addTearDown(controller.dispose);
+
+    expect(controller.monthDays(DateTime.now()), isEmpty);
+    await controller.loadForDate(DateTime.now());
+
     expect(source.getDayCalls, 0);
     expect(source.getCalendarMonthCalls, 0);
   });
@@ -136,6 +153,73 @@ void main() {
     expect(controller.lastError, isNotNull);
     expect(controller.selectedDay, isNotNull);
     expect(controller.monthDays(DateTime.now()), isNotEmpty);
+  });
+
+  test(
+    'falls back to bundled books when loading the book list fails',
+    () async {
+      final source = FakeLectionaryDataSource();
+      source.failPrayerBooks = true;
+      final preferences = await createLocalPreferences({
+        'selected_prayer_book_code': 'book_that_does_not_exist',
+      });
+      final controller = AppController(
+        api: source,
+        localPreferences: preferences,
+      );
+      addTearDown(controller.dispose);
+
+      await controller.initialize();
+
+      expect(controller.isDemoMode, isTrue);
+      expect(controller.lastError, contains('books unavailable'));
+      expect(controller.prayerBooks, DemoData.books);
+      expect(controller.selectedPrayerBookCode, isNull);
+      expect(controller.needsPrayerBook, isTrue);
+      expect(source.getDayCalls, 0);
+    },
+  );
+
+  test('falls back to bundled books when the API returns no books', () async {
+    final source = FakeLectionaryDataSource(books: const []);
+    final preferences = await createLocalPreferences();
+    final controller = AppController(
+      api: source,
+      localPreferences: preferences,
+    );
+    addTearDown(controller.dispose);
+
+    await controller.initialize();
+
+    expect(controller.isDemoMode, isTrue);
+    expect(controller.prayerBooks, DemoData.books);
+    expect(controller.needsPrayerBook, isTrue);
+  });
+
+  test('clears month cache when changing the selected LOC', () async {
+    final first = testBook();
+    final second = testBook(code: 'loc_second', name: 'Segundo LOC');
+    final source = FakeLectionaryDataSource(
+      books: [first, second],
+      dayBuilder: testDay,
+    );
+    final preferences = await createLocalPreferences({
+      'selected_prayer_book_code': first.code,
+    });
+    final controller = AppController(
+      api: source,
+      localPreferences: preferences,
+    );
+    addTearDown(controller.dispose);
+
+    await controller.initialize();
+    expect(source.getCalendarMonthCalls, 1);
+
+    await controller.choosePrayerBook(second);
+
+    expect(controller.selectedPrayerBookCode, second.code);
+    expect(preferences.selectedPrayerBookCode, second.code);
+    expect(source.getCalendarMonthCalls, 2);
   });
 
   test(
