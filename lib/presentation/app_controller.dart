@@ -162,6 +162,48 @@ class AppController extends ChangeNotifier {
     await loadForDate(DateTime(date.year, date.month, date.day));
   }
 
+  Future<LectionaryDay?> fetchDayForDate(DateTime date) async {
+    final code = selectedPrayerBookCode;
+    if (code == null) return null;
+
+    try {
+      return await api.getDay(
+        DateTime(date.year, date.month, date.day),
+        code,
+        readingType: selectedReadingType,
+        bibleVersion: selectedBibleVersionCode,
+      );
+    } catch (error) {
+      lastError = '$error';
+      return null;
+    }
+  }
+
+  Future<void> loadMonth(DateTime month) async {
+    final code = selectedPrayerBookCode;
+    if (code == null) return;
+
+    final normalizedMonth = DateTime(month.year, month.month);
+    final key = _monthKey(
+      normalizedMonth,
+      code,
+      selectedReadingType,
+      selectedBibleVersionCode,
+    );
+    if (_monthCache.containsKey(key)) return;
+
+    isLoadingMonth = true;
+    notifyListeners();
+    await _loadMonth(
+      normalizedMonth,
+      code,
+      selectedReadingType,
+      selectedBibleVersionCode,
+    );
+    isLoadingMonth = false;
+    notifyListeners();
+  }
+
   List<CalendarDay> monthDays(DateTime month) {
     final key = _monthKey(
       month,

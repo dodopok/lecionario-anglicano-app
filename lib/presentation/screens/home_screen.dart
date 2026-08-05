@@ -7,6 +7,7 @@ import '../app_controller.dart';
 import '../app_copy.dart';
 import '../app_shell.dart';
 import '../widgets/design_primitives.dart';
+import '../widgets/day_detail_sheet.dart';
 import '../widgets/home_sections.dart';
 import '../widgets/sacred_mark.dart';
 import 'settings_screen.dart';
@@ -22,12 +23,14 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   late DateTime activeDate;
+  late DateTime calendarDate;
   CalendarView view = CalendarView.week;
 
   @override
   void initState() {
     super.initState();
     activeDate = widget.controller.selectedDay?.date ?? DateTime.now();
+    calendarDate = activeDate;
   }
 
   @override
@@ -37,7 +40,7 @@ class _HomeScreenState extends State<HomeScreen> {
       builder: (context, _) {
         final copy = copyFor(widget.controller);
         final book = widget.controller.selectedPrayerBook;
-        final month = DateTime(activeDate.year, activeDate.month);
+        final month = DateTime(calendarDate.year, calendarDate.month);
         final monthDays = widget.controller.monthDays(month);
 
         return Scaffold(
@@ -81,33 +84,35 @@ class _HomeScreenState extends State<HomeScreen> {
                                   return _WideContent(
                                     copy: copy,
                                     controller: widget.controller,
-                                    isLoading: widget.controller.isLoadingDay,
-                                    activeDate: activeDate,
+                                    isLoadingDay:
+                                        widget.controller.isLoadingDay,
+                                    isLoadingMonth:
+                                        widget.controller.isLoadingMonth,
+                                    calendarDate: calendarDate,
                                     month: month,
                                     monthDays: monthDays,
                                     view: view,
                                     onViewChanged: (value) =>
                                         setState(() => view = value),
-                                    onSelectDate: _selectDate,
-                                    onPreviousMonth: _previousMonth,
-                                    onNextMonth: _nextMonth,
+                                    onSelectDate: _selectWideDate,
+                                    onPreviousMonth: _previousWideMonth,
+                                    onNextMonth: _nextWideMonth,
                                     onOpenReading: _openReading,
                                   );
                                 }
                                 return _NarrowContent(
                                   copy: copy,
-                                  controller: widget.controller,
-                                  isLoading: widget.controller.isLoadingDay,
-                                  activeDate: activeDate,
+                                  isLoadingMonth:
+                                      widget.controller.isLoadingMonth,
+                                  calendarDate: calendarDate,
                                   month: month,
                                   monthDays: monthDays,
                                   view: view,
                                   onViewChanged: (value) =>
                                       setState(() => view = value),
-                                  onSelectDate: _selectDate,
-                                  onPreviousMonth: _previousMonth,
-                                  onNextMonth: _nextMonth,
-                                  onOpenReading: _openReading,
+                                  onSelectDate: _openNarrowDay,
+                                  onPreviousMonth: _previousCalendarMonth,
+                                  onNextMonth: _nextCalendarMonth,
                                 );
                               },
                             ),
@@ -127,13 +132,35 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Future<void> _selectDate(DateTime date) async {
-    setState(() => activeDate = DateTime(date.year, date.month, date.day));
-    await widget.controller.selectDate(activeDate);
+  Future<void> _selectWideDate(DateTime date) async {
+    final selected = DateTime(date.year, date.month, date.day);
+    setState(() {
+      activeDate = selected;
+      calendarDate = selected;
+    });
+    await widget.controller.selectDate(selected);
+  }
+
+  Future<void> _openNarrowDay(DateTime date) async {
+    final selected = DateTime(date.year, date.month, date.day);
+    setState(() => calendarDate = selected);
+    await showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: AppColors.paper,
+      isScrollControlled: true,
+      useSafeArea: true,
+      showDragHandle: true,
+      builder: (context) => DayDetailSheet(
+        controller: widget.controller,
+        date: selected,
+        copy: copyFor(widget.controller),
+        onOpenReading: _openReading,
+      ),
+    );
   }
 
   Future<void> _goToday() async {
-    await _selectDate(DateTime.now());
+    await _selectWideDate(DateTime.now());
   }
 
   Future<void> _openSettings() async {
@@ -144,16 +171,28 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Future<void> _previousMonth() async {
-    final previous = DateTime(activeDate.year, activeDate.month - 1, 1);
-    await _selectDate(DateTime(previous.year, previous.month, 1));
+  Future<void> _previousWideMonth() async {
+    final previous = DateTime(calendarDate.year, calendarDate.month - 1, 1);
+    await _selectWideDate(previous);
     setState(() => view = CalendarView.month);
   }
 
-  Future<void> _nextMonth() async {
-    final next = DateTime(activeDate.year, activeDate.month + 1, 1);
-    await _selectDate(DateTime(next.year, next.month, 1));
+  Future<void> _nextWideMonth() async {
+    final next = DateTime(calendarDate.year, calendarDate.month + 1, 1);
+    await _selectWideDate(next);
     setState(() => view = CalendarView.month);
+  }
+
+  Future<void> _previousCalendarMonth() async {
+    final previous = DateTime(calendarDate.year, calendarDate.month - 1, 1);
+    setState(() => calendarDate = previous);
+    await widget.controller.loadMonth(previous);
+  }
+
+  Future<void> _nextCalendarMonth() async {
+    final next = DateTime(calendarDate.year, calendarDate.month + 1, 1);
+    setState(() => calendarDate = next);
+    await widget.controller.loadMonth(next);
   }
 
   Future<void> _openPrayerBookSheet() async {
@@ -174,7 +213,13 @@ class _HomeScreenState extends State<HomeScreen> {
       return;
     }
     await widget.controller.choosePrayerBook(selected);
-    if (mounted) setState(() => activeDate = DateTime.now());
+    if (mounted) {
+      final today = DateTime.now();
+      setState(() {
+        activeDate = today;
+        calendarDate = today;
+      });
+    }
   }
 
   Future<void> _openReading(Reading reading) async {
@@ -437,8 +482,9 @@ class _WideContent extends StatelessWidget {
   const _WideContent({
     required this.copy,
     required this.controller,
-    required this.isLoading,
-    required this.activeDate,
+    required this.isLoadingDay,
+    required this.isLoadingMonth,
+    required this.calendarDate,
     required this.month,
     required this.monthDays,
     required this.view,
@@ -451,8 +497,9 @@ class _WideContent extends StatelessWidget {
 
   final AppCopy copy;
   final AppController controller;
-  final bool isLoading;
-  final DateTime activeDate;
+  final bool isLoadingDay;
+  final bool isLoadingMonth;
+  final DateTime calendarDate;
   final DateTime month;
   final List<CalendarDay> monthDays;
   final CalendarView view;
@@ -476,29 +523,29 @@ class _WideContent extends StatelessWidget {
               const SizedBox(height: 12),
               if (view == CalendarView.week) ...[
                 WeekStrip(
-                  activeDate: activeDate,
+                  activeDate: calendarDate,
                   copy: copy,
                   monthDays: monthDays,
                   onSelect: onSelectDate,
-                  isLoading: isLoading,
+                  isLoading: isLoadingMonth,
                 ),
                 const SizedBox(height: 12),
                 WeekSchedule(
-                  activeDate: activeDate,
+                  activeDate: calendarDate,
                   copy: copy,
                   monthDays: monthDays,
                   onSelect: onSelectDate,
-                  isLoading: isLoading,
+                  isLoading: isLoadingMonth,
                 ),
               ] else
                 MonthCalendar(
-                  activeDate: activeDate,
+                  activeDate: calendarDate,
                   copy: copy,
                   monthDays: monthDays,
                   onSelect: onSelectDate,
                   onPrevious: onPreviousMonth,
                   onNext: onNextMonth,
-                  isLoading: isLoading,
+                  isLoading: isLoadingMonth,
                 ),
             ],
           ),
@@ -512,13 +559,13 @@ class _WideContent extends StatelessWidget {
                 day: controller.selectedDay,
                 copy: copy,
                 onOpen: onOpenReading,
-                isLoading: isLoading,
+                isLoading: isLoadingDay,
               ),
               const SizedBox(height: 12),
               CollectCard(
                 day: controller.selectedDay,
                 copy: copy,
-                isLoading: isLoading,
+                isLoading: isLoadingDay,
               ),
             ],
           ),
@@ -531,9 +578,8 @@ class _WideContent extends StatelessWidget {
 class _NarrowContent extends StatelessWidget {
   const _NarrowContent({
     required this.copy,
-    required this.controller,
-    required this.isLoading,
-    required this.activeDate,
+    required this.isLoadingMonth,
+    required this.calendarDate,
     required this.month,
     required this.monthDays,
     required this.view,
@@ -541,13 +587,11 @@ class _NarrowContent extends StatelessWidget {
     required this.onSelectDate,
     required this.onPreviousMonth,
     required this.onNextMonth,
-    required this.onOpenReading,
   });
 
   final AppCopy copy;
-  final AppController controller;
-  final bool isLoading;
-  final DateTime activeDate;
+  final bool isLoadingMonth;
+  final DateTime calendarDate;
   final DateTime month;
   final List<CalendarDay> monthDays;
   final CalendarView view;
@@ -555,7 +599,6 @@ class _NarrowContent extends StatelessWidget {
   final ValueChanged<DateTime> onSelectDate;
   final VoidCallback onPreviousMonth;
   final VoidCallback onNextMonth;
-  final ValueChanged<Reading> onOpenReading;
 
   @override
   Widget build(BuildContext context) {
@@ -566,43 +609,22 @@ class _NarrowContent extends StatelessWidget {
         const SizedBox(height: 12),
         if (view == CalendarView.week) ...[
           WeekStrip(
-            activeDate: activeDate,
+            activeDate: calendarDate,
             copy: copy,
             monthDays: monthDays,
             onSelect: onSelectDate,
-            isLoading: isLoading,
-          ),
-          const SizedBox(height: 12),
-          WeekSchedule(
-            activeDate: activeDate,
-            copy: copy,
-            monthDays: monthDays,
-            onSelect: onSelectDate,
-            isLoading: isLoading,
+            isLoading: isLoadingMonth,
           ),
         ] else
           MonthCalendar(
-            activeDate: activeDate,
+            activeDate: calendarDate,
             copy: copy,
             monthDays: monthDays,
             onSelect: onSelectDate,
             onPrevious: onPreviousMonth,
             onNext: onNextMonth,
-            isLoading: isLoading,
+            isLoading: isLoadingMonth,
           ),
-        const SizedBox(height: 14),
-        ReadingsCard(
-          day: controller.selectedDay,
-          copy: copy,
-          onOpen: onOpenReading,
-          isLoading: isLoading,
-        ),
-        const SizedBox(height: 12),
-        CollectCard(
-          day: controller.selectedDay,
-          copy: copy,
-          isLoading: isLoading,
-        ),
       ],
     );
   }

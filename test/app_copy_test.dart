@@ -56,6 +56,7 @@ void main() {
     expect(portuguese.week, 'Semana');
     expect(portuguese.month, 'Mês');
     expect(portuguese.readings, 'Leituras de hoje');
+    expect(portuguese.readingsForDay, 'Leituras do dia');
     expect(portuguese.collect, 'Coleta do dia');
     expect(portuguese.lectionary, 'LECIONÁRIO DO DIA');
     expect(portuguese.chooseLoc, 'Escolher LOC');
@@ -92,6 +93,7 @@ void main() {
     expect(english.week, 'Week');
     expect(english.month, 'Month');
     expect(english.readings, "Today's readings");
+    expect(english.readingsForDay, "Day's readings");
     expect(english.collect, 'Collect of the day');
     expect(english.lectionary, 'DAILY LECTIONARY');
     expect(english.chooseLoc, 'Choose prayer book');
@@ -127,6 +129,7 @@ void main() {
     expect(spanish.week, 'Semana');
     expect(spanish.month, 'Mes');
     expect(spanish.readings, 'Lecturas de hoy');
+    expect(spanish.readingsForDay, 'Lecturas del día');
     expect(spanish.collect, 'Colecta del día');
     expect(spanish.lectionary, 'LECCIONARIO DEL DÍA');
     expect(spanish.chooseLoc, 'Elegir LOC');

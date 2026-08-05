@@ -63,6 +63,37 @@ void main() {
   });
 
   test(
+    'fetches a mobile day preview without replacing the primary day',
+    () async {
+      final source = FakeLectionaryDataSource(dayBuilder: testDay);
+      final controller = AppController(
+        api: source,
+        localPreferences: await createLocalPreferences({
+          'selected_prayer_book_code': 'loc_2015',
+        }),
+      );
+      addTearDown(controller.dispose);
+
+      await controller.initialize();
+      final primaryDate = controller.selectedDay!.date;
+      final previewDate = DateTime(primaryDate.year, primaryDate.month, 7);
+
+      final preview = await controller.fetchDayForDate(previewDate);
+      await controller.loadMonth(
+        DateTime(primaryDate.year, primaryDate.month + 1),
+      );
+
+      expect(preview?.date, previewDate);
+      expect(controller.selectedDay?.date, primaryDate);
+      expect(source.getDayCalls, 2);
+      expect(
+        source.requestedMonths,
+        contains(DateTime(primaryDate.year, primaryDate.month + 1)),
+      );
+    },
+  );
+
+  test(
     'choosing a LOC persists it, clears the cache and reloads content',
     () async {
       final book = testBook();

@@ -60,6 +60,11 @@ class AppCopy {
     AppLanguage.en => "Today's readings",
     AppLanguage.es => 'Lecturas de hoy',
   };
+  String get readingsForDay => switch (language) {
+    AppLanguage.pt => 'Leituras do dia',
+    AppLanguage.en => "Day's readings",
+    AppLanguage.es => 'Lecturas del día',
+  };
   String get collect => switch (language) {
     AppLanguage.pt => 'Coleta do dia',
     AppLanguage.en => 'Collect of the day',

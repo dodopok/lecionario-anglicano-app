@@ -162,6 +162,9 @@ void main() {
   testWidgets('renders readings, changes to month view and opens a reading', (
     tester,
   ) async {
+    await tester.binding.setSurfaceSize(const Size(1200, 1000));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
     final source = FakeLectionaryDataSource(
       books: [testBook()],
       dayBuilder: testDay,
@@ -299,6 +302,75 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
+  testWidgets(
+    'opens a selected mobile day in a detail sheet without replacing today',
+    (tester) async {
+      await tester.binding.setSurfaceSize(const Size(390, 844));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+
+      final today = DateUtils.dateOnly(DateTime.now());
+      final selectedDate = today.weekday == DateTime.sunday
+          ? today.add(const Duration(days: 1))
+          : today.subtract(const Duration(days: 1));
+      final source = FakeLectionaryDataSource(
+        books: [testBook()],
+        dayBuilder: (date) {
+          final isPrimary = DateUtils.isSameDay(date, today);
+          return LectionaryDay(
+            date: date,
+            dayOfWeek: 'Dia de teste',
+            season: isPrimary ? 'Dia principal' : 'Dia do painel',
+            color: 'verde',
+            readings: [
+              Reading(
+                kind: 'gospel',
+                reference: isPrimary ? 'João 1:1–5' : 'Salmo 1',
+                text: isPrimary ? 'Texto principal.' : 'Texto do painel.',
+              ),
+            ],
+          );
+        },
+      );
+      final controller = AppController(
+        api: source,
+        localPreferences: await createLocalPreferences({
+          'selected_prayer_book_code': 'loc_test',
+        }),
+      );
+      addTearDown(controller.dispose);
+      await controller.initialize();
+
+      await tester.pumpWidget(
+        testMaterialApp(home: HomeScreen(controller: controller)),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('Dia principal'), findsOneWidget);
+      final dayKey = ValueKey(
+        'week-day-${selectedDate.year}-${selectedDate.month}-${selectedDate.day}',
+      );
+      await tester.tap(find.byKey(dayKey));
+      await tester.pumpAndSettle();
+
+      expect(
+        find.byKey(const ValueKey('mobile-day-detail-sheet')),
+        findsOneWidget,
+      );
+      expect(find.text('Dia do painel'), findsOneWidget);
+      expect(find.text('Salmo 1'), findsOneWidget);
+      expect(find.text('LEITURAS DO DIA'), findsOneWidget);
+      expect(DateUtils.isSameDay(controller.selectedDay?.date, today), isTrue);
+
+      await tester.tap(find.byKey(const ValueKey('mobile-day-detail-close')));
+      await tester.pumpAndSettle();
+      expect(
+        find.byKey(const ValueKey('mobile-day-detail-sheet')),
+        findsNothing,
+      );
+      expect(find.text('Dia principal'), findsOneWidget);
+    },
+  );
+
   testWidgets('uses API LOC covers and persists reading and Bible choices', (
     tester,
   ) async {
@@ -420,7 +492,7 @@ void main() {
     await tester.tap(find.text('Enter the lectionary'));
     await tester.pumpAndSettle();
     expect(controller.selectedPrayerBookCode, 'bcp_test');
-    expect(find.text("TODAY'S READINGS"), findsOneWidget);
+    expect(find.text('Tempo de teste'), findsOneWidget);
   });
 
   testWidgets('opens the prayer book sheet from the home header', (
@@ -567,6 +639,9 @@ void main() {
   testWidgets('shows only the API translation when reading text is absent', (
     tester,
   ) async {
+    await tester.binding.setSurfaceSize(const Size(1200, 1000));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
     final source = FakeLectionaryDataSource(
       books: [testBook()],
       dayBuilder: (date) => LectionaryDay(
@@ -611,6 +686,9 @@ void main() {
   testWidgets(
     'opens nested API reading verses instead of only the translation',
     (tester) async {
+      await tester.binding.setSurfaceSize(const Size(1200, 1000));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+
       final source = FakeLectionaryDataSource(
         books: [testBook()],
         dayBuilder: (date) => LectionaryDay(
