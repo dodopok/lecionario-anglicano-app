@@ -67,6 +67,12 @@ plutil -lint "$repo_root/ios/Runner.xcodeproj/project.pbxproj" >/dev/null
 rg -q -U 'CFBundleDisplayName</key>[[:space:]]*<string>Lecionário Anglicano' "$repo_root/ios/Runner/Info.plist"
 rg -q 'ITSAppUsesNonExemptEncryption</key>' "$repo_root/ios/Runner/Info.plist"
 rg -q 'PRODUCT_BUNDLE_IDENTIFIER = br\.com\.caminhoanglicano\.lecionarioanglicano;' "$repo_root/ios/Runner.xcodeproj/project.pbxproj"
+rg -q 'IPHONEOS_DEPLOYMENT_TARGET = 15\.0;' "$repo_root/ios/Runner.xcodeproj/project.pbxproj"
+if rg -q 'IPHONEOS_DEPLOYMENT_TARGET = 1[0-4]\.' "$repo_root/ios/Runner.xcodeproj/project.pbxproj"; then
+  echo "The iOS deployment target must be 15.0 or newer." >&2
+  exit 1
+fi
+rg -q -U '<key>MinimumOSVersion</key>[[:space:]]*<string>15\.0</string>' "$repo_root/ios/Flutter/AppFrameworkInfo.plist"
 rg -q 'PrivacyInfo\.xcprivacy in Resources' "$repo_root/ios/Runner.xcodeproj/project.pbxproj"
 rg -q 'group:Pods/Pods\.xcodeproj' "$repo_root/ios/Runner.xcworkspace/contents.xcworkspacedata"
 
