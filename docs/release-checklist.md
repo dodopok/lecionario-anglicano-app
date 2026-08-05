@@ -6,6 +6,7 @@
 - [ ] `flutter analyze`
 - [ ] `flutter test --coverage`
 - [ ] `./tool/verify_ios_release.sh`
+- [ ] `./tool/verify_app_store_assets.sh`
 - [ ] Verificar `git status` e confirmar que apenas arquivos intencionais serão enviados.
 - [ ] Confirmar que o endpoint e o `X-App-Internal-Id` de produção são os corretos.
 - [ ] Confirmar o número de versão e incrementar o build number.
@@ -17,6 +18,7 @@
 - [ ] Conferir o ícone de produção e a tela inicial em um dispositivo real.
 - [ ] Conferir o `PrivacyInfo.xcprivacy` no target Runner.
 - [ ] Conferir que não foram adicionadas permissões de sistema sem necessidade.
+- [ ] Testar uma build de desenvolvimento em um iPhone físico; consulte [test-device-without-testflight.md](test-device-without-testflight.md).
 
 ## Produto e conteúdo
 

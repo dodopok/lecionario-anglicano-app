@@ -1,6 +1,6 @@
 # App Store Connect
 
-Este documento separa o que já está no projeto do que precisa ser preenchido no App Store Connect. Nenhum texto de loja foi inventado no repositório; os campos de marketing devem ser escritos e revisados pelo responsável pelo produto.
+Este documento separa o que já está no projeto do que precisa ser preenchido no App Store Connect. O pacote de copy localizado está em [app-store-metadata.md](app-store-metadata.md), e as screenshots prontas para upload estão em [store-assets/app-store/README.md](../store-assets/app-store/README.md).
 
 ## Identidade atual do projeto
 
@@ -25,8 +25,9 @@ No App Store Connect:
 - [ ] Confirmar SKU interno definido pela equipe.
 - [ ] Definir categoria, classificação etária e informações de copyright.
 - [ ] Preencher URL de suporte.
+- [ ] Preencher URL de marketing somente se houver uma página pública do produto.
 - [ ] Publicar uma política de privacidade em uma URL real e preencher o campo correspondente.
-- [ ] Escrever e revisar nome, subtítulo, descrição, palavras-chave e texto promocional. Não usar os valores deste checklist como copy final.
+- [ ] Revisar os nomes, subtítulos, descrições, palavras-chave e textos promocionais em [app-store-metadata.md](app-store-metadata.md).
 - [ ] Adicionar screenshots reais do app nos tamanhos solicitados pelo portal.
 
 ## Privacidade e conformidade
@@ -59,13 +60,19 @@ Isso informa que o app não usa criptografia não isenta própria. Se o backend 
    API_BASE_URL="https://seu-endpoint-real/api/v1" \
    APP_INTERNAL_IDENTIFIER="seu-identificador" \
    FLUTTER_BUILD_NAME="1.0.0" \
-   FLUTTER_BUILD_NUMBER="2" \
-   ./tool/build_ios_release.sh
-   ```
+    FLUTTER_BUILD_NUMBER="2" \
+    ./tool/build_ios_release.sh
+    ```
 
 4. No Xcode Organizer, valide o archive e envie-o ao App Store Connect. O Flutter também deixa o `.ipa` em `build/ios/ipa/`.
 
 O número de build precisa ser maior que qualquer build anterior enviado para a mesma versão. O nome da versão (`FLUTTER_BUILD_NAME`) e o número do build (`FLUTTER_BUILD_NUMBER`) podem ser alterados sem editar o contrato da API.
+
+Para conferir as screenshots antes do upload, execute:
+
+```bash
+./tool/verify_app_store_assets.sh
+```
 
 ## Informações para App Review
 
