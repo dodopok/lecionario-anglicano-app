@@ -35,7 +35,7 @@ O projeto já inclui ícone, launch screen, privacy manifest e configuração de
 O comando de archive é:
 
 ```bash
-FLUTTER_BUILD_NUMBER=2 ./tool/build_ios_release.sh
+FLUTTER_BUILD_NUMBER=3 ./tool/build_ios_release.sh
 ```
 
 O upload para o App Store Connect continua sendo feito na sessão Apple do responsável pela conta; nenhum certificado, segredo ou metadado de loja é versionado neste repositório.
