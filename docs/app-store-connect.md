@@ -13,6 +13,8 @@ Este documento separa o que já está no projeto do que precisa ser preenchido n
 - Header de integração: `X-App-Internal-Id`
 - Idiomas iniciais da interface: `pt-BR`, `en-US` e `es`
 
+O idioma da interface é alterado em **Configurações**. A troca filtra os LOCs pela língua selecionada; depois que o usuário escolhe um LOC, as versões de Bíblia são carregadas para o idioma retornado por esse LOC.
+
 Confirme o Bundle ID e o Team ID no seu Apple Developer antes do primeiro upload. Se o Bundle ID já estiver registrado, não o altere no projeto.
 
 ## Criar o registro do app

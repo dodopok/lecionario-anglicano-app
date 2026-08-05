@@ -10,10 +10,7 @@ import 'helpers/test_doubles.dart';
 void main() {
   testWidgets('opens privacy and support links from settings', (tester) async {
     final controller = AppController(
-      api: FakeLectionaryDataSource(
-        books: [testBook()],
-        dayBuilder: testDay,
-      ),
+      api: FakeLectionaryDataSource(books: [testBook()], dayBuilder: testDay),
       localPreferences: await createLocalPreferences({
         'selected_prayer_book_code': 'loc_test',
       }),
@@ -35,12 +32,15 @@ void main() {
     );
     await tester.pumpAndSettle();
 
+    expect(find.text('Idioma'), findsOneWidget);
     expect(find.text('Informações'), findsOneWidget);
     expect(find.text('Política de privacidade'), findsOneWidget);
     expect(find.text('Suporte'), findsOneWidget);
 
+    await tester.ensureVisible(find.text('Política de privacidade'));
     await tester.tap(find.text('Política de privacidade'));
     await tester.pump();
+    await tester.ensureVisible(find.text('Suporte'));
     await tester.tap(find.text('Suporte'));
     await tester.pump();
 

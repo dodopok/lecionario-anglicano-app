@@ -42,10 +42,7 @@ class AppController extends ChangeNotifier {
   bool get needsPrayerBook => selectedPrayerBookCode == null;
 
   List<PrayerBook> get booksForCurrentLanguage {
-    final matching = prayerBooks
-        .where((book) => book.appLanguage == locale)
-        .toList();
-    return matching.isEmpty ? prayerBooks : matching;
+    return prayerBooks.where((book) => book.appLanguage == locale).toList();
   }
 
   Future<void> initialize() async {
@@ -60,9 +57,10 @@ class AppController extends ChangeNotifier {
       prayerBooks = const [];
     }
 
-    if (selectedPrayerBookCode != null &&
-        !prayerBooks.any((book) => book.code == selectedPrayerBookCode)) {
+    final restoredBook = selectedPrayerBook;
+    if (restoredBook == null || restoredBook.appLanguage != locale) {
       selectedPrayerBookCode = null;
+      await localPreferences.clearPrayerBook();
     }
 
     isInitializing = false;
@@ -76,9 +74,30 @@ class AppController extends ChangeNotifier {
   }
 
   Future<void> setLanguage(AppLanguage language) async {
+    if (locale == language) return;
+
     locale = language;
     await localPreferences.saveLanguage(language);
+    _monthCache.clear();
+    selectedDay = null;
+    readingTypeOptions = const [];
+    bibleVersions = const [];
+    selectedReadingType = null;
+    selectedBibleVersionCode = null;
+
+    final book = selectedPrayerBook;
+    if (book == null || book.appLanguage != language) {
+      selectedPrayerBookCode = null;
+      await localPreferences.clearPrayerBook();
+      lastError = null;
+      isLoadingPreferences = false;
+      notifyListeners();
+      return;
+    }
+
     notifyListeners();
+    await _loadBookPreferences(book);
+    await loadForDate(DateTime.now());
   }
 
   Future<void> choosePrayerBook(PrayerBook book) async {

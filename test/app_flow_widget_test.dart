@@ -292,14 +292,17 @@ void main() {
     expect(preferences.selectedBibleVersionCode, 'naa');
   });
 
-  testWidgets('uses a compact language menu on a narrow home layout', (
+  testWidgets('changes language from settings on a narrow layout', (
     tester,
   ) async {
     await tester.binding.setSurfaceSize(const Size(390, 844));
     addTearDown(() => tester.binding.setSurfaceSize(null));
 
     final source = FakeLectionaryDataSource(
-      books: [testBook()],
+      books: [
+        testBook(),
+        testBook(code: 'bcp_test', name: 'BCP Test', language: AppLanguage.en),
+      ],
       dayBuilder: testDay,
     );
     final preferences = await createLocalPreferences({
@@ -312,18 +315,25 @@ void main() {
     addTearDown(controller.dispose);
     await controller.initialize();
 
-    await tester.pumpWidget(
-      testMaterialApp(home: HomeScreen(controller: controller)),
-    );
+    await tester.pumpWidget(testControllerApp(controller));
     await tester.pumpAndSettle();
 
-    expect(find.byIcon(Icons.language_outlined), findsOneWidget);
-    await tester.tap(find.byIcon(Icons.language_outlined));
+    expect(find.byIcon(Icons.language_outlined), findsNothing);
+    await tester.tap(find.byIcon(Icons.tune_rounded));
     await tester.pumpAndSettle();
+    expect(find.byType(SettingsScreen), findsOneWidget);
     expect(find.text('EN'), findsOneWidget);
 
     await tester.tap(find.text('EN'));
     await tester.pumpAndSettle();
+    expect(find.byType(LocSelectionScreen), findsOneWidget);
+    expect(find.text('BCP Test'), findsOneWidget);
+
+    await tester.tap(find.text('BCP Test'));
+    await tester.ensureVisible(find.text('Enter the lectionary'));
+    await tester.tap(find.text('Enter the lectionary'));
+    await tester.pumpAndSettle();
+    expect(controller.selectedPrayerBookCode, 'bcp_test');
     expect(find.text("TODAY'S READINGS"), findsOneWidget);
   });
 
@@ -364,9 +374,18 @@ void main() {
     addTearDown(() => tester.binding.setSurfaceSize(null));
 
     final first = testBook();
-    final second = testBook(code: 'bcp_test', name: 'BCP Test');
+    final second = testBook(
+      code: 'bcp_test',
+      name: 'BCP Test',
+      language: AppLanguage.en,
+    );
+    final third = testBook(
+      code: 'bcp_second',
+      name: 'BCP Second',
+      language: AppLanguage.en,
+    );
     final source = FakeLectionaryDataSource(
-      books: [first, second],
+      books: [first, second, third],
       dayBuilder: testDay,
     );
     final preferences = await createLocalPreferences({
@@ -379,25 +398,30 @@ void main() {
     addTearDown(controller.dispose);
     await controller.initialize();
 
-    await tester.pumpWidget(
-      testMaterialApp(home: HomeScreen(controller: controller)),
-    );
+    await tester.pumpWidget(testControllerApp(controller));
     await tester.pumpAndSettle();
 
     expect(find.text('LEITURAS DE HOJE'), findsOneWidget);
-    expect(find.text('PT'), findsOneWidget);
+    await tester.tap(find.byIcon(Icons.tune_rounded));
+    await tester.pumpAndSettle();
+    expect(find.byType(SettingsScreen), findsOneWidget);
     await tester.tap(find.text('EN'));
     await tester.pumpAndSettle();
     expect(controller.locale, AppLanguage.en);
+    expect(find.byType(LocSelectionScreen), findsOneWidget);
+    await tester.tap(find.text('BCP Test'));
+    await tester.ensureVisible(find.text('Enter the lectionary'));
+    await tester.tap(find.text('Enter the lectionary'));
+    await tester.pumpAndSettle();
     expect(find.text("TODAY'S READINGS"), findsOneWidget);
 
-    await tester.tap(find.text('LOC Teste'));
+    await tester.tap(find.text('BCP Test'));
     await tester.pumpAndSettle();
     expect(find.text('Change prayer book'), findsOneWidget);
-    await tester.tap(find.text('BCP Test').last);
+    await tester.tap(find.text('BCP Second').last);
     await tester.pumpAndSettle();
-    expect(controller.selectedPrayerBookCode, second.code);
-    expect(preferences.selectedPrayerBookCode, second.code);
+    expect(controller.selectedPrayerBookCode, third.code);
+    expect(preferences.selectedPrayerBookCode, third.code);
 
     await tester.tap(find.text('Month'));
     await tester.pumpAndSettle();
