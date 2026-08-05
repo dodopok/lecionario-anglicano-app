@@ -42,4 +42,16 @@ if ! rg -q "lecionarioapp\.caminhoanglicano\.com\.br" "$repo_root/site"; then
   exit 1
 fi
 
+if ! rg -q "supportEmail: ['\"]dev@dodopok\.dev['\"]" "$repo_root/site/config.js"; then
+  echo "Public support email is missing from site/config.js." >&2
+  exit 1
+fi
+
+for privacy_key in privacy4Title privacy4Text privacy5Title privacy5Text privacy6Title privacy6Text; do
+  if ! rg -q "$privacy_key" "$repo_root/site/assets/site.js"; then
+    echo "Privacy copy is missing: $privacy_key" >&2
+    exit 1
+  fi
+done
+
 echo "Marketing, support and privacy site files are valid."

@@ -71,6 +71,10 @@ void main() {
     expect(portuguese.chooseBible, 'Escolher Bíblia');
     expect(portuguese.settings, 'Configurações');
     expect(portuguese.settingsSubtitle, 'Preferências do lecionário');
+    expect(portuguese.information, 'Informações');
+    expect(portuguese.informationSubtitle, 'Ajuda e privacidade');
+    expect(portuguese.privacyPolicy, 'Política de privacidade');
+    expect(portuguese.support, 'Suporte');
     expect(portuguese.preferences, 'Preferências');
 
     expect(english.brand, 'Lectionary');
@@ -98,6 +102,10 @@ void main() {
     expect(english.chooseBible, 'Choose Bible');
     expect(english.settings, 'Settings');
     expect(english.settingsSubtitle, 'Lectionary preferences');
+    expect(english.information, 'Information');
+    expect(english.informationSubtitle, 'Help and privacy');
+    expect(english.privacyPolicy, 'Privacy policy');
+    expect(english.support, 'Support');
     expect(english.preferences, 'Preferences');
 
     expect(spanish.brand, 'Leccionario');
@@ -124,6 +132,10 @@ void main() {
     expect(spanish.chooseBible, 'Elegir Biblia');
     expect(spanish.settings, 'Configuración');
     expect(spanish.settingsSubtitle, 'Preferencias del leccionario');
+    expect(spanish.information, 'Información');
+    expect(spanish.informationSubtitle, 'Ayuda y privacidad');
+    expect(spanish.privacyPolicy, 'Política de privacidad');
+    expect(spanish.support, 'Soporte');
     expect(spanish.preferences, 'Preferencias');
   });
 

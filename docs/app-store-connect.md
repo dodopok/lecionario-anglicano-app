@@ -32,9 +32,16 @@ No App Store Connect:
 
 ## Privacidade e conformidade
 
-O projeto contém `ios/Runner/PrivacyInfo.xcprivacy` e declara que não faz tracking e não coleta dados diretamente no app. A integração também usa `shared_preferences` para salvar localmente idioma, LOC, reading type e versão da Bíblia.
+O projeto contém `ios/Runner/PrivacyInfo.xcprivacy` e declara que não faz tracking e não coleta dados diretamente no app. A integração também usa `shared_preferences` para salvar localmente idioma, LOC, reading type e versão da Bíblia. A tela de Configurações oferece links para a política e o suporte.
 
-Antes de responder o questionário de App Privacy, confronte a declaração com a política da API: o app consulta o backend e envia o `X-App-Internal-Id`, o LOC selecionado e, quando disponíveis, `reading_type` e `bible_version` como parâmetros da requisição. Retenção, logs e tratamento no servidor precisam ser confirmados com quem administra a API.
+Antes de responder o questionário de App Privacy, confronte a declaração com a política da API: o app consulta o backend e envia o `X-App-Internal-Id`, o LOC selecionado e, quando disponíveis, `reading_type` e `bible_version` como parâmetros da requisição. A API não mantém logs identificáveis das requisições; New Relic e Sentry recebem registros operacionais não identificáveis para monitoramento e diagnóstico. A configuração e retenção desses registros ainda devem ser revisadas.
+
+URLs planejadas para o primeiro lançamento:
+
+- Política de privacidade: `https://lecionarioapp.caminhoanglicano.com.br/privacidade/`
+- Suporte: `https://lecionarioapp.caminhoanglicano.com.br/suporte/`
+- Marketing: `https://lecionarioapp.caminhoanglicano.com.br/`
+- Contato para revisão e privacidade: Douglas Araujo — `dev@dodopok.dev`
 
 O `Info.plist` já contém:
 

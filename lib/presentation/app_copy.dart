@@ -140,6 +140,26 @@ class AppCopy {
     AppLanguage.en => 'Preferences',
     AppLanguage.es => 'Preferencias',
   };
+  String get information => switch (language) {
+    AppLanguage.pt => 'Informações',
+    AppLanguage.en => 'Information',
+    AppLanguage.es => 'Información',
+  };
+  String get informationSubtitle => switch (language) {
+    AppLanguage.pt => 'Ajuda e privacidade',
+    AppLanguage.en => 'Help and privacy',
+    AppLanguage.es => 'Ayuda y privacidad',
+  };
+  String get privacyPolicy => switch (language) {
+    AppLanguage.pt => 'Política de privacidade',
+    AppLanguage.en => 'Privacy policy',
+    AppLanguage.es => 'Política de privacidad',
+  };
+  String get support => switch (language) {
+    AppLanguage.pt => 'Suporte',
+    AppLanguage.en => 'Support',
+    AppLanguage.es => 'Soporte',
+  };
   String dateLong(DateTime date) {
     final locale = language.locale.toLanguageTag();
     final format = switch (language) {
