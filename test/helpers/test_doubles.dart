@@ -126,6 +126,7 @@ PrayerBook testBook({
   String name = 'LOC Teste',
   AppLanguage language = AppLanguage.pt,
   String? thumbnailUrl,
+  bool recommended = false,
   List<ReadingTypeOption> readingTypes = const [],
   String? defaultReadingType,
 }) {
@@ -142,6 +143,7 @@ PrayerBook testBook({
     },
     jurisdiction: 'TEST',
     year: 2026,
+    recommended: recommended,
     thumbnailUrl: thumbnailUrl,
     readingTypes: readingTypes,
     defaultReadingType: defaultReadingType,

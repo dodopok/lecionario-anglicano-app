@@ -102,11 +102,19 @@ void main() {
       'liturgical_color': 'branco',
       'celebration': {'name': 'Transfiguração'},
       'week': 'Semana da Transfiguração',
+      'sunday_name': '9º Domingo depois de Pentecostes',
     });
     expect(calendarDay.date, DateTime(2026, 8, 5));
     expect(calendarDay.color, 'branco');
     expect(calendarDay.celebrationName, 'Transfiguração');
     expect(calendarDay.weekName, 'Semana da Transfiguração');
+    expect(calendarDay.sundayName, '9º Domingo depois de Pentecostes');
+
+    final withoutSundayName = CalendarDay.fromJson({
+      'date': '2026-08-06',
+      'color': 'verde',
+    });
+    expect(withoutSundayName.sundayName, isNull);
 
     final celebration = Celebration.fromJson({
       'nome': 'Festa',

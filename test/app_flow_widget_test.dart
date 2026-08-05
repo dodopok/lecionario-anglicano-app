@@ -877,4 +877,78 @@ void main() {
     await tester.pumpAndSettle();
     expect(copied.last, 'Evangelho — João 1:1–5\n\nNo princípio.');
   });
+
+  testWidgets('translates the recommended prayer book badge', (tester) async {
+    final controller = AppController(
+      api: FakeLectionaryDataSource(
+        books: [
+          testBook(recommended: true),
+          testBook(
+            code: 'bcp_test',
+            name: 'BCP Test',
+            language: AppLanguage.en,
+            recommended: true,
+          ),
+        ],
+      ),
+      localPreferences: await createLocalPreferences(),
+    );
+    addTearDown(controller.dispose);
+    await controller.initialize();
+
+    await tester.pumpWidget(testControllerApp(controller));
+    await tester.pumpAndSettle();
+    expect(find.text('RECOMENDADO'), findsOneWidget);
+
+    await tester.tap(find.text('EN'));
+    await tester.pumpAndSettle();
+    expect(find.text('RECOMMENDED'), findsOneWidget);
+    expect(find.text('RECOMENDADO'), findsNothing);
+  });
+
+  testWidgets('browsing months on a phone keeps the hero on today', (
+    tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(390, 844));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    final source = FakeLectionaryDataSource(
+      books: [testBook()],
+      dayBuilder: testDay,
+    );
+    final controller = AppController(
+      api: source,
+      localPreferences: await createLocalPreferences({
+        'selected_prayer_book_code': 'loc_test',
+      }),
+    );
+    addTearDown(controller.dispose);
+    await controller.initialize();
+
+    await tester.pumpWidget(
+      testMaterialApp(home: HomeScreen(controller: controller)),
+    );
+    await tester.pumpAndSettle();
+    final requestedDays = source.requestedDates.length;
+
+    final now = DateTime.now();
+    final nextMonth = DateTime(now.year, now.month + 1);
+    await tester.tap(find.byKey(const ValueKey('calendar-next-month')));
+    await tester.pumpAndSettle();
+
+    expect(
+      find.text(AppCopy(AppLanguage.pt).monthYear(nextMonth)),
+      findsOneWidget,
+    );
+    expect(source.requestedMonths, contains(nextMonth));
+    expect(source.requestedDates.length, requestedDays);
+    expect(find.text(AppCopy(AppLanguage.pt).dateLong(now)), findsOneWidget);
+
+    await tester.tap(find.byKey(const ValueKey('calendar-previous-month')));
+    await tester.pumpAndSettle();
+    expect(
+      find.text(AppCopy(AppLanguage.pt).monthYear(now)),
+      findsOneWidget,
+    );
+  });
 }
