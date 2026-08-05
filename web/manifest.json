@@ -1,0 +1,35 @@
+{
+    "name": "Lecionário Anglicano",
+    "short_name": "Lecionário",
+    "start_url": ".",
+    "display": "standalone",
+    "background_color": "#F4F0E7",
+    "theme_color": "#19372E",
+    "description": "Calendário litúrgico anglicano com leituras, celebrações e coletas diárias.",
+    "orientation": "portrait-primary",
+    "prefer_related_applications": false,
+    "icons": [
+        {
+            "src": "icons/Icon-192.png",
+            "sizes": "192x192",
+            "type": "image/png"
+        },
+        {
+            "src": "icons/Icon-512.png",
+            "sizes": "512x512",
+            "type": "image/png"
+        },
+        {
+            "src": "icons/Icon-maskable-192.png",
+            "sizes": "192x192",
+            "type": "image/png",
+            "purpose": "maskable"
+        },
+        {
+            "src": "icons/Icon-maskable-512.png",
+            "sizes": "512x512",
+            "type": "image/png",
+            "purpose": "maskable"
+        }
+    ]
+}
