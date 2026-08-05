@@ -81,6 +81,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                   return _WideContent(
                                     copy: copy,
                                     controller: widget.controller,
+                                    isLoading: widget.controller.isLoadingDay,
                                     activeDate: activeDate,
                                     month: month,
                                     monthDays: monthDays,
@@ -96,6 +97,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                 return _NarrowContent(
                                   copy: copy,
                                   controller: widget.controller,
+                                  isLoading: widget.controller.isLoadingDay,
                                   activeDate: activeDate,
                                   month: month,
                                   monthDays: monthDays,
@@ -177,6 +179,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Future<void> _openReading(Reading reading) async {
     final copy = copyFor(widget.controller);
+    final verses = reading.content?.verses ?? const <ReadingVerse>[];
     await showDialog<void>(
       context: context,
       builder: (context) => AlertDialog(
@@ -200,7 +203,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ),
               const SizedBox(height: 18),
-              if (reading.text case final text? when text.isNotEmpty)
+              if (reading.text case final text? when text.trim().isNotEmpty)
                 Text(
                   text,
                   style: AppTypography.display(
@@ -210,10 +213,16 @@ class _HomeScreenState extends State<HomeScreen> {
                     height: 1.2,
                   ),
                 ),
-              if (reading.translation != null) ...[
+              if (verses.isNotEmpty) ...[
+                if (reading.text?.trim().isNotEmpty == true)
+                  const SizedBox(height: 16),
+                ...verses.map((verse) => _ReadingVerseBlock(verse: verse)),
+              ],
+              if (reading.translation case final translation?
+                  when translation.trim().isNotEmpty) ...[
                 const SizedBox(height: 16),
                 Text(
-                  reading.translation!,
+                  translation,
                   style: AppTypography.ui(size: 12, color: AppColors.muted),
                 ),
               ],
@@ -226,6 +235,43 @@ class _HomeScreenState extends State<HomeScreen> {
             child: Text(copy.close),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _ReadingVerseBlock extends StatelessWidget {
+  const _ReadingVerseBlock({required this.verse});
+
+  final ReadingVerse verse;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 13),
+      child: Text.rich(
+        TextSpan(
+          children: [
+            if (verse.number != null)
+              TextSpan(
+                text: '${verse.number} ',
+                style: AppTypography.ui(
+                  size: 12,
+                  weight: FontWeight.w700,
+                  color: AppColors.copperDark,
+                ),
+              ),
+            TextSpan(
+              text: verse.text,
+              style: AppTypography.display(
+                size: 20,
+                weight: FontWeight.w500,
+                color: AppColors.inkSoft,
+                height: 1.25,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -391,6 +437,7 @@ class _WideContent extends StatelessWidget {
   const _WideContent({
     required this.copy,
     required this.controller,
+    required this.isLoading,
     required this.activeDate,
     required this.month,
     required this.monthDays,
@@ -404,6 +451,7 @@ class _WideContent extends StatelessWidget {
 
   final AppCopy copy;
   final AppController controller;
+  final bool isLoading;
   final DateTime activeDate;
   final DateTime month;
   final List<CalendarDay> monthDays;
@@ -432,6 +480,7 @@ class _WideContent extends StatelessWidget {
                   copy: copy,
                   monthDays: monthDays,
                   onSelect: onSelectDate,
+                  isLoading: isLoading,
                 ),
                 const SizedBox(height: 12),
                 WeekSchedule(
@@ -439,6 +488,7 @@ class _WideContent extends StatelessWidget {
                   copy: copy,
                   monthDays: monthDays,
                   onSelect: onSelectDate,
+                  isLoading: isLoading,
                 ),
               ] else
                 MonthCalendar(
@@ -448,6 +498,7 @@ class _WideContent extends StatelessWidget {
                   onSelect: onSelectDate,
                   onPrevious: onPreviousMonth,
                   onNext: onNextMonth,
+                  isLoading: isLoading,
                 ),
             ],
           ),
@@ -461,9 +512,14 @@ class _WideContent extends StatelessWidget {
                 day: controller.selectedDay,
                 copy: copy,
                 onOpen: onOpenReading,
+                isLoading: isLoading,
               ),
               const SizedBox(height: 12),
-              CollectCard(day: controller.selectedDay, copy: copy),
+              CollectCard(
+                day: controller.selectedDay,
+                copy: copy,
+                isLoading: isLoading,
+              ),
             ],
           ),
         ),
@@ -476,6 +532,7 @@ class _NarrowContent extends StatelessWidget {
   const _NarrowContent({
     required this.copy,
     required this.controller,
+    required this.isLoading,
     required this.activeDate,
     required this.month,
     required this.monthDays,
@@ -489,6 +546,7 @@ class _NarrowContent extends StatelessWidget {
 
   final AppCopy copy;
   final AppController controller;
+  final bool isLoading;
   final DateTime activeDate;
   final DateTime month;
   final List<CalendarDay> monthDays;
@@ -512,6 +570,7 @@ class _NarrowContent extends StatelessWidget {
             copy: copy,
             monthDays: monthDays,
             onSelect: onSelectDate,
+            isLoading: isLoading,
           ),
           const SizedBox(height: 12),
           WeekSchedule(
@@ -519,6 +578,7 @@ class _NarrowContent extends StatelessWidget {
             copy: copy,
             monthDays: monthDays,
             onSelect: onSelectDate,
+            isLoading: isLoading,
           ),
         ] else
           MonthCalendar(
@@ -528,15 +588,21 @@ class _NarrowContent extends StatelessWidget {
             onSelect: onSelectDate,
             onPrevious: onPreviousMonth,
             onNext: onNextMonth,
+            isLoading: isLoading,
           ),
         const SizedBox(height: 14),
         ReadingsCard(
           day: controller.selectedDay,
           copy: copy,
           onOpen: onOpenReading,
+          isLoading: isLoading,
         ),
         const SizedBox(height: 12),
-        CollectCard(day: controller.selectedDay, copy: copy),
+        CollectCard(
+          day: controller.selectedDay,
+          copy: copy,
+          isLoading: isLoading,
+        ),
       ],
     );
   }

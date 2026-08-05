@@ -9,6 +9,8 @@ import 'package:lecionario_anglicano/presentation/app_shell.dart';
 import 'package:lecionario_anglicano/presentation/screens/home_screen.dart';
 import 'package:lecionario_anglicano/presentation/screens/loc_selection_screen.dart';
 import 'package:lecionario_anglicano/presentation/screens/settings_screen.dart';
+import 'package:lecionario_anglicano/presentation/widgets/design_primitives.dart';
+import 'package:lecionario_anglicano/presentation/widgets/home_sections.dart';
 
 import 'helpers/pump_app.dart';
 import 'helpers/test_doubles.dart';
@@ -68,6 +70,26 @@ void main() {
     expect(controller.selectedPrayerBookCode, 'loc_test');
     expect(find.byType(HomeScreen), findsOneWidget);
     expect(find.text('Tempo de teste'), findsOneWidget);
+  });
+
+  testWidgets('keeps the LOC entry action in a fixed footer', (tester) async {
+    await tester.binding.setSurfaceSize(const Size(390, 844));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    final controller = AppController(
+      api: FakeLectionaryDataSource(),
+      localPreferences: await createLocalPreferences(),
+    );
+    addTearDown(controller.dispose);
+    await controller.initialize();
+
+    await tester.pumpWidget(testControllerApp(controller));
+    await tester.pumpAndSettle();
+
+    final footer = find.byKey(const ValueKey('loc-selection-footer'));
+    expect(footer, findsOneWidget);
+    expect(tester.getRect(footer).bottom, closeTo(844, 1));
+    expect(find.text('Entrar no lecionário'), findsOneWidget);
   });
 
   testWidgets('switches onboarding copy and LOC list to English', (
@@ -177,6 +199,70 @@ void main() {
     await tester.tap(reading);
     await tester.pumpAndSettle();
     expect(find.text('No princípio.'), findsOneWidget);
+  });
+
+  testWidgets('shows home skeletons while the date is loading', (tester) async {
+    final controller = AppController(
+      api: FakeLectionaryDataSource(),
+      localPreferences: await createLocalPreferences({
+        'selected_prayer_book_code': 'loc_2015',
+      }),
+    );
+    addTearDown(controller.dispose);
+    await controller.initialize();
+
+    controller.isLoadingDay = true;
+    controller.notifyListeners();
+    await tester.pumpWidget(
+      testMaterialApp(home: HomeScreen(controller: controller)),
+    );
+    await tester.pump();
+
+    expect(find.byType(SkeletonBox), findsWidgets);
+    expect(find.text('Tempo de teste'), findsNothing);
+  });
+
+  testWidgets('keeps the hero height stable while date data loads', (
+    tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(390, 844));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    final copy = AppCopy(AppLanguage.pt);
+    final date = DateTime(2026, 8, 5);
+
+    await tester.pumpWidget(
+      testMaterialApp(
+        home: Scaffold(
+          body: DailyHero(
+            day: null,
+            activeDate: date,
+            copy: copy,
+            isLoading: true,
+            onToday: () {},
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    final loadingHeight = tester.getSize(find.byType(DailyHero)).height;
+
+    await tester.pumpWidget(
+      testMaterialApp(
+        home: Scaffold(
+          body: DailyHero(
+            day: testDay(date),
+            activeDate: date,
+            copy: copy,
+            isLoading: false,
+            onToday: () {},
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    final loadedHeight = tester.getSize(find.byType(DailyHero)).height;
+
+    expect(loadedHeight, closeTo(loadingHeight, .1));
   });
 
   testWidgets('renders the month calendar on a narrow home layout', (
@@ -521,4 +607,55 @@ void main() {
     expect(find.text('NAA'), findsOneWidget);
     await tester.tap(find.text('Fechar'));
   });
+
+  testWidgets(
+    'opens nested API reading verses instead of only the translation',
+    (tester) async {
+      final source = FakeLectionaryDataSource(
+        books: [testBook()],
+        dayBuilder: (date) => LectionaryDay(
+          date: date,
+          dayOfWeek: 'Quarta-feira',
+          season: 'Tempo de teste',
+          color: 'verde',
+          readings: const [
+            Reading(
+              kind: 'gospel',
+              reference: 'João 1:1–5',
+              translation: 'NVI',
+              content: ReadingContent(
+                reference: 'João 1:1–5',
+                translation: 'NVI',
+                verses: [
+                  ReadingVerse(number: 1, text: 'No princípio era o Verbo.'),
+                  ReadingVerse(number: 2, text: 'Ele estava com Deus.'),
+                ],
+              ),
+            ),
+          ],
+        ),
+      );
+      final controller = AppController(
+        api: source,
+        localPreferences: await createLocalPreferences({
+          'selected_prayer_book_code': 'loc_test',
+        }),
+      );
+      addTearDown(controller.dispose);
+      await controller.initialize();
+
+      await tester.pumpWidget(
+        testMaterialApp(home: HomeScreen(controller: controller)),
+      );
+      await tester.pumpAndSettle();
+      final reading = find.text('João 1:1–5');
+      await tester.ensureVisible(reading);
+      await tester.tap(reading);
+      await tester.pumpAndSettle();
+
+      expect(find.textContaining('No princípio era o Verbo.'), findsOneWidget);
+      expect(find.textContaining('Ele estava com Deus.'), findsOneWidget);
+      expect(find.text('NVI'), findsOneWidget);
+    },
+  );
 }

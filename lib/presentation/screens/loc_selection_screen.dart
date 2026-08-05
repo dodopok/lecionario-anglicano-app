@@ -39,7 +39,7 @@ class _LocSelectionScreenState extends State<LocSelectionScreen> {
             child: SafeArea(
               child: Center(
                 child: SingleChildScrollView(
-                  padding: const EdgeInsets.fromLTRB(22, 20, 22, 30),
+                  padding: const EdgeInsets.fromLTRB(22, 20, 22, 132),
                   child: ConstrainedBox(
                     constraints: const BoxConstraints(maxWidth: 920),
                     child: Column(
@@ -91,17 +91,17 @@ class _LocSelectionScreenState extends State<LocSelectionScreen> {
                             );
                           },
                         ),
-                        const SizedBox(height: 36),
-                        _SelectionFooter(
-                          copy: copy,
-                          onContinue: selected == null ? null : _continue,
-                        ),
                       ],
                     ),
                   ),
                 ),
               ),
             ),
+          ),
+          bottomNavigationBar: _SelectionFooter(
+            key: const ValueKey('loc-selection-footer'),
+            copy: copy,
+            onContinue: selected == null ? null : _continue,
           ),
         );
       },
@@ -405,39 +405,57 @@ class _BookOption extends StatelessWidget {
 }
 
 class _SelectionFooter extends StatelessWidget {
-  const _SelectionFooter({required this.copy, required this.onContinue});
+  const _SelectionFooter({
+    required this.copy,
+    required this.onContinue,
+    super.key,
+  });
 
   final AppCopy copy;
   final VoidCallback? onContinue;
 
   @override
   Widget build(BuildContext context) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final button = FilledButton.icon(
-          onPressed: onContinue,
-          icon: const Icon(Icons.arrow_forward_rounded, size: 18),
-          label: Text(copy.continueLabel),
-          style: FilledButton.styleFrom(
-            backgroundColor: AppColors.pine,
-            foregroundColor: AppColors.white,
-            padding: const EdgeInsets.symmetric(horizontal: 19, vertical: 16),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(14),
+    final button = FilledButton.icon(
+      onPressed: onContinue,
+      icon: const Icon(Icons.arrow_forward_rounded, size: 18),
+      label: Text(copy.continueLabel),
+      style: FilledButton.styleFrom(
+        backgroundColor: AppColors.pine,
+        foregroundColor: AppColors.white,
+        padding: const EdgeInsets.symmetric(horizontal: 19, vertical: 16),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+        textStyle: AppTypography.ui(size: 14, weight: FontWeight.w700),
+      ),
+    );
+
+    return SafeArea(
+      top: false,
+      child: SizedBox(
+        height: 84,
+        child: Container(
+          padding: const EdgeInsets.fromLTRB(22, 12, 22, 12),
+          decoration: BoxDecoration(
+            color: AppColors.paper,
+            border: Border(
+              top: BorderSide(color: AppColors.line.withValues(alpha: .9)),
             ),
-            textStyle: AppTypography.ui(size: 14, weight: FontWeight.w700),
+            boxShadow: [
+              BoxShadow(
+                color: AppColors.ink.withValues(alpha: .08),
+                blurRadius: 18,
+                offset: const Offset(0, -7),
+              ),
+            ],
           ),
-        );
-
-        if (constraints.maxWidth < 620) {
-          return Align(alignment: Alignment.centerRight, child: button);
-        }
-
-        return Row(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [const Spacer(), button],
-        );
-      },
+          child: Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 920),
+              child: Align(alignment: Alignment.centerRight, child: button),
+            ),
+          ),
+        ),
+      ),
     );
   }
 }

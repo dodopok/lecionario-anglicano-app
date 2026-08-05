@@ -54,6 +54,35 @@ class SurfaceCard extends StatelessWidget {
   }
 }
 
+class SkeletonBox extends StatelessWidget {
+  const SkeletonBox({
+    required this.height,
+    this.width,
+    this.radius = 9,
+    this.color,
+    super.key,
+  });
+
+  final double height;
+  final double? width;
+  final double radius;
+  final Color? color;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: width,
+      height: height,
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          color: color ?? AppColors.paperDeep.withValues(alpha: .72),
+          borderRadius: BorderRadius.circular(radius),
+        ),
+      ),
+    );
+  }
+}
+
 class LanguageSwitcher extends StatelessWidget {
   const LanguageSwitcher({
     required this.selected,

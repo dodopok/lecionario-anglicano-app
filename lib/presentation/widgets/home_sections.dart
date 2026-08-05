@@ -26,6 +26,13 @@ class DailyHero extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final accent = liturgicalColor(day?.color);
+    final hasLiturgicalColor = day?.color?.trim().isNotEmpty == true;
+    final heroStart = hasLiturgicalColor
+        ? Color.lerp(accent, Colors.black, .18)!
+        : AppColors.pineDeep;
+    final heroEnd = hasLiturgicalColor
+        ? Color.lerp(accent, Colors.black, .38)!
+        : AppColors.pine;
     final isToday = _sameDay(activeDate, DateTime.now());
     final description =
         day?.description?.firstOrNull ?? day?.celebration?.description;
@@ -36,18 +43,20 @@ class DailyHero extends StatelessWidget {
         ? day!.weekName
         : null;
 
-    return Container(
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 360),
+      curve: Curves.easeOutCubic,
       clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(28),
-        gradient: const LinearGradient(
+        gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [AppColors.pineDeep, AppColors.pine],
+          colors: [heroStart, heroEnd],
         ),
         boxShadow: [
           BoxShadow(
-            color: AppColors.pineDeep.withValues(alpha: .18),
+            color: heroEnd.withValues(alpha: .22),
             blurRadius: 32,
             offset: const Offset(0, 18),
           ),
@@ -165,89 +174,131 @@ class DailyHero extends StatelessWidget {
                             ),
                           ),
                           const SizedBox(height: 18),
-                          AnimatedSwitcher(
-                            duration: const Duration(milliseconds: 260),
-                            child: isLoading
-                                ? Container(
-                                    key: const ValueKey('loading'),
-                                    width: compact ? 210 : 300,
-                                    height: 40,
-                                    decoration: BoxDecoration(
+                          SizedBox(
+                            height: compact ? 72 : 94,
+                            child: Align(
+                              alignment: Alignment.topLeft,
+                              child: isLoading
+                                  ? SkeletonBox(
+                                      width: compact ? 210 : 300,
+                                      height: compact ? 34 : 42,
+                                      radius: 9,
                                       color: AppColors.white.withValues(
-                                        alpha: .09,
+                                        alpha: .13,
                                       ),
-                                      borderRadius: BorderRadius.circular(9),
+                                    )
+                                  : season?.isNotEmpty == true
+                                  ? Text(
+                                      season!,
+                                      maxLines: 2,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: AppTypography.display(
+                                        size: compact ? 36 : 47,
+                                        weight: FontWeight.w600,
+                                        color: AppColors.white,
+                                        height: .92,
+                                        letterSpacing: -.5,
+                                      ),
+                                    )
+                                  : const SizedBox.shrink(),
+                            ),
+                          ),
+                          SizedBox(
+                            height: 48,
+                            child: celebration == null || isLoading
+                                ? null
+                                : Padding(
+                                    padding: const EdgeInsets.only(top: 13),
+                                    child: Text(
+                                      celebration,
+                                      maxLines: 2,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: AppTypography.ui(
+                                        size: 14,
+                                        weight: FontWeight.w600,
+                                        color: AppColors.copperWash,
+                                        letterSpacing: .2,
+                                      ),
                                     ),
-                                  )
-                                : season?.isNotEmpty == true
-                                ? Text(
-                                    season!,
-                                    key: const ValueKey('season'),
-                                    maxLines: 2,
-                                    overflow: TextOverflow.ellipsis,
-                                    style: AppTypography.display(
-                                      size: compact ? 36 : 47,
-                                      weight: FontWeight.w600,
-                                      color: AppColors.white,
-                                      height: .92,
-                                      letterSpacing: -.5,
-                                    ),
-                                  )
-                                : const SizedBox(
-                                    key: ValueKey('empty-season'),
-                                    height: 40,
                                   ),
                           ),
-                          if (celebration != null) ...[
-                            const SizedBox(height: 13),
-                            Text(
-                              celebration,
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
-                              style: AppTypography.ui(
-                                size: 14,
-                                weight: FontWeight.w600,
-                                color: AppColors.copperWash,
-                                letterSpacing: .2,
-                              ),
-                            ),
-                          ],
-                          if (description != null &&
-                              description.isNotEmpty) ...[
-                            const SizedBox(height: 13),
-                            ConstrainedBox(
-                              constraints: const BoxConstraints(maxWidth: 480),
-                              child: Text(
-                                description,
-                                maxLines: compact ? 2 : 3,
-                                overflow: TextOverflow.ellipsis,
-                                style: AppTypography.display(
-                                  size: compact ? 16 : 18,
-                                  weight: FontWeight.w400,
-                                  color: AppColors.white.withValues(alpha: .74),
-                                  height: 1.15,
-                                ),
-                              ),
-                            ),
-                          ],
+                          SizedBox(
+                            height: compact ? 52 : 78,
+                            child: isLoading
+                                ? Padding(
+                                    padding: const EdgeInsets.only(top: 13),
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        SkeletonBox(
+                                          width: compact ? 190 : 350,
+                                          height: 13,
+                                          radius: 7,
+                                          color: AppColors.white.withValues(
+                                            alpha: .10,
+                                          ),
+                                        ),
+                                        const SizedBox(height: 8),
+                                        SkeletonBox(
+                                          width: compact ? 125 : 260,
+                                          height: 13,
+                                          radius: 7,
+                                          color: AppColors.white.withValues(
+                                            alpha: .10,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  )
+                                : description == null || description.isEmpty
+                                ? const SizedBox.shrink()
+                                : Padding(
+                                    padding: const EdgeInsets.only(top: 13),
+                                    child: ConstrainedBox(
+                                      constraints: const BoxConstraints(
+                                        maxWidth: 480,
+                                      ),
+                                      child: Text(
+                                        description,
+                                        maxLines: compact ? 2 : 3,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: AppTypography.display(
+                                          size: compact ? 16 : 18,
+                                          weight: FontWeight.w400,
+                                          color: AppColors.white.withValues(
+                                            alpha: .74,
+                                          ),
+                                          height: 1.15,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                          ),
                           const SizedBox(height: 22),
-                          Wrap(
-                            spacing: 8,
-                            runSpacing: 8,
-                            children: [
-                              if (day?.color case final color?
-                                  when color.isNotEmpty)
-                                _HeroMeta(
-                                  label: copy.colorLabel(color),
-                                  color: accent,
-                                ),
-                              if (day?.liturgicalYear != null)
-                                _HeroMeta(
-                                  label:
-                                      '${copy.yearLabel} ${day!.liturgicalYear}',
-                                  color: AppColors.white.withValues(alpha: .25),
-                                ),
-                            ],
+                          SizedBox(
+                            height: compact ? 38 : 34,
+                            child: Align(
+                              alignment: Alignment.topLeft,
+                              child: isLoading
+                                  ? SkeletonBox(
+                                      width: 82,
+                                      height: 28,
+                                      radius: 20,
+                                      color: AppColors.white.withValues(
+                                        alpha: .10,
+                                      ),
+                                    )
+                                  : day?.liturgicalYear != null
+                                  ? _HeroMeta(
+                                      label:
+                                          '${copy.yearLabel} ${day!.liturgicalYear}',
+                                      color: AppColors.white.withValues(
+                                        alpha: .25,
+                                      ),
+                                    )
+                                  : const SizedBox.shrink(),
+                            ),
                           ),
                         ],
                       ),
@@ -431,6 +482,7 @@ class WeekStrip extends StatelessWidget {
     required this.copy,
     required this.monthDays,
     required this.onSelect,
+    this.isLoading = false,
     super.key,
   });
 
@@ -438,6 +490,7 @@ class WeekStrip extends StatelessWidget {
   final AppCopy copy;
   final List<CalendarDay> monthDays;
   final ValueChanged<DateTime> onSelect;
+  final bool isLoading;
 
   @override
   Widget build(BuildContext context) {
@@ -497,14 +550,20 @@ class WeekStrip extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 9),
-                    Container(
-                      width: today ? 14 : 7,
-                      height: 4,
-                      decoration: BoxDecoration(
-                        color: color,
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                    ),
+                    isLoading
+                        ? SkeletonBox(
+                            width: today ? 14 : 7,
+                            height: 4,
+                            radius: 4,
+                          )
+                        : Container(
+                            width: today ? 14 : 7,
+                            height: 4,
+                            decoration: BoxDecoration(
+                              color: color,
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                          ),
                   ],
                 ),
               ),
@@ -522,6 +581,7 @@ class WeekSchedule extends StatelessWidget {
     required this.copy,
     required this.monthDays,
     required this.onSelect,
+    this.isLoading = false,
     super.key,
   });
 
@@ -529,6 +589,7 @@ class WeekSchedule extends StatelessWidget {
   final AppCopy copy;
   final List<CalendarDay> monthDays;
   final ValueChanged<DateTime> onSelect;
+  final bool isLoading;
 
   @override
   Widget build(BuildContext context) {
@@ -600,48 +661,65 @@ class WeekSchedule extends StatelessWidget {
                     ),
                     const SizedBox(width: 14),
                     Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          if (data?.celebrationName case final name?
-                              when name.isNotEmpty)
-                            Text(
-                              name,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: AppTypography.ui(
-                                size: 14,
-                                weight: isActive
-                                    ? FontWeight.w700
-                                    : FontWeight.w600,
-                              ),
+                      child: isLoading
+                          ? Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                SkeletonBox(
+                                  width: isActive ? 170 : 130,
+                                  height: 13,
+                                  radius: 7,
+                                ),
+                                const SizedBox(height: 7),
+                                SkeletonBox(
+                                  width: isActive ? 90 : 70,
+                                  height: 10,
+                                  radius: 6,
+                                ),
+                              ],
                             )
-                          else if (data?.weekName case final name?
-                              when name.isNotEmpty)
-                            Text(
-                              name,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: AppTypography.ui(
-                                size: 14,
-                                weight: isActive
-                                    ? FontWeight.w700
-                                    : FontWeight.w600,
-                              ),
+                          : Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                if (data?.celebrationName case final name?
+                                    when name.isNotEmpty)
+                                  Text(
+                                    name,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: AppTypography.ui(
+                                      size: 14,
+                                      weight: isActive
+                                          ? FontWeight.w700
+                                          : FontWeight.w600,
+                                    ),
+                                  )
+                                else if (data?.weekName case final name?
+                                    when name.isNotEmpty)
+                                  Text(
+                                    name,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: AppTypography.ui(
+                                      size: 14,
+                                      weight: isActive
+                                          ? FontWeight.w700
+                                          : FontWeight.w600,
+                                    ),
+                                  ),
+                                if (data?.color case final color?
+                                    when color.isNotEmpty) ...[
+                                  const SizedBox(height: 3),
+                                  Text(
+                                    copy.colorLabel(color),
+                                    style: AppTypography.ui(
+                                      size: 12,
+                                      color: AppColors.muted,
+                                    ),
+                                  ),
+                                ],
+                              ],
                             ),
-                          if (data?.color case final color?
-                              when color.isNotEmpty) ...[
-                            const SizedBox(height: 3),
-                            Text(
-                              copy.colorLabel(color),
-                              style: AppTypography.ui(
-                                size: 12,
-                                color: AppColors.muted,
-                              ),
-                            ),
-                          ],
-                        ],
-                      ),
                     ),
                     Icon(
                       Icons.chevron_right_rounded,
@@ -667,6 +745,7 @@ class MonthCalendar extends StatelessWidget {
     required this.onSelect,
     required this.onPrevious,
     required this.onNext,
+    this.isLoading = false,
     super.key,
   });
 
@@ -676,6 +755,7 @@ class MonthCalendar extends StatelessWidget {
   final ValueChanged<DateTime> onSelect;
   final VoidCallback onPrevious;
   final VoidCallback onNext;
+  final bool isLoading;
 
   @override
   Widget build(BuildContext context) {
@@ -807,19 +887,35 @@ class MonthCalendar extends StatelessWidget {
                               ),
                               if (!compactCell) ...[
                                 const Spacer(),
-                                Container(
-                                  width: 6,
-                                  height: 6,
-                                  decoration: BoxDecoration(
-                                    shape: BoxShape.circle,
-                                    color: color,
-                                  ),
-                                ),
+                                isLoading
+                                    ? SkeletonBox(
+                                        width: 6,
+                                        height: 6,
+                                        radius: 3,
+                                      )
+                                    : Container(
+                                        width: 6,
+                                        height: 6,
+                                        decoration: BoxDecoration(
+                                          shape: BoxShape.circle,
+                                          color: color,
+                                        ),
+                                      ),
                               ],
                             ],
                           ),
                           const Spacer(),
-                          if (data?.celebrationName != null)
+                          if (isLoading) ...[
+                            SkeletonBox(
+                              width: compactCell ? 15 : 34,
+                              height: 5,
+                              radius: 4,
+                            ),
+                            if (!compactCell) ...[
+                              const SizedBox(height: 5),
+                              SkeletonBox(width: 24, height: 5, radius: 4),
+                            ],
+                          ] else if (data?.celebrationName != null)
                             Text(
                               data!.celebrationName!,
                               maxLines: 2,
@@ -881,12 +977,14 @@ class ReadingsCard extends StatelessWidget {
     required this.day,
     required this.copy,
     required this.onOpen,
+    this.isLoading = false,
     super.key,
   });
 
   final LectionaryDay? day;
   final AppCopy copy;
   final ValueChanged<Reading> onOpen;
+  final bool isLoading;
 
   @override
   Widget build(BuildContext context) {
@@ -910,7 +1008,9 @@ class ReadingsCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 15),
-          if (readings.isEmpty)
+          if (isLoading)
+            ...List.generate(4, (index) => const _ReadingSkeletonRow())
+          else if (readings.isEmpty)
             Text(
               '—',
               style: AppTypography.display(
@@ -927,6 +1027,40 @@ class ReadingsCard extends StatelessWidget {
                 onTap: () => onOpen(entry.value),
               ),
             ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ReadingSkeletonRow extends StatelessWidget {
+  const _ReadingSkeletonRow();
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 12),
+      child: Row(
+        children: [
+          const SkeletonBox(width: 20, height: 20, radius: 6),
+          const SizedBox(width: 13),
+          const Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                SkeletonBox(width: 92, height: 9, radius: 5),
+                SizedBox(height: 7),
+                SkeletonBox(width: 145, height: 16, radius: 6),
+              ],
+            ),
+          ),
+          const SizedBox(width: 12),
+          SkeletonBox(
+            width: 17,
+            height: 17,
+            radius: 9,
+            color: AppColors.paperDeep.withValues(alpha: .58),
+          ),
         ],
       ),
     );
@@ -1005,13 +1139,48 @@ class _ReadingRow extends StatelessWidget {
 }
 
 class CollectCard extends StatelessWidget {
-  const CollectCard({required this.day, required this.copy, super.key});
+  const CollectCard({
+    required this.day,
+    required this.copy,
+    this.isLoading = false,
+    super.key,
+  });
 
   final LectionaryDay? day;
   final AppCopy copy;
+  final bool isLoading;
 
   @override
   Widget build(BuildContext context) {
+    if (isLoading) {
+      return SurfaceCard(
+        key: const ValueKey('collect-skeleton'),
+        padding: const EdgeInsets.fromLTRB(20, 20, 20, 21),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                const Icon(
+                  Icons.auto_awesome_outlined,
+                  size: 17,
+                  color: AppColors.copper,
+                ),
+                const SizedBox(width: 9),
+                Eyebrow(copy.collect),
+              ],
+            ),
+            const SizedBox(height: 14),
+            const SkeletonBox(width: 210, height: 14, radius: 7),
+            const SizedBox(height: 9),
+            const SkeletonBox(width: 180, height: 14, radius: 7),
+            const SizedBox(height: 9),
+            const SkeletonBox(width: 125, height: 14, radius: 7),
+          ],
+        ),
+      );
+    }
+
     final collect = day?.collects.firstOrNull;
     if (collect == null || collect.text.trim().isEmpty) {
       return const SizedBox.shrink();
