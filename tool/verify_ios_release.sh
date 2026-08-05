@@ -64,16 +64,39 @@ plutil -lint "$repo_root/ios/Runner/Info.plist" >/dev/null
 plutil -lint "$repo_root/ios/Runner/PrivacyInfo.xcprivacy" >/dev/null
 plutil -lint "$repo_root/ios/Runner.xcodeproj/project.pbxproj" >/dev/null
 
-rg -q -U 'CFBundleDisplayName</key>[[:space:]]*<string>Lecionário Anglicano' "$repo_root/ios/Runner/Info.plist"
-rg -q 'ITSAppUsesNonExemptEncryption</key>' "$repo_root/ios/Runner/Info.plist"
-rg -q 'PRODUCT_BUNDLE_IDENTIFIER = br\.com\.caminhoanglicano\.lecionarioanglicano;' "$repo_root/ios/Runner.xcodeproj/project.pbxproj"
-rg -q 'IPHONEOS_DEPLOYMENT_TARGET = 15\.0;' "$repo_root/ios/Runner.xcodeproj/project.pbxproj"
-if rg -q 'IPHONEOS_DEPLOYMENT_TARGET = 1[0-4]\.' "$repo_root/ios/Runner.xcodeproj/project.pbxproj"; then
+require_match() {
+  local pattern="$1"
+  local path="$2"
+
+  if ! grep -Eq "$pattern" "$repo_root/$path"; then
+    echo "Release check failed: $path does not match $pattern" >&2
+    exit 1
+  fi
+}
+
+require_plist_value() {
+  local key="$1"
+  local expected="$2"
+  local path="$3"
+  local actual
+
+  actual="$(plutil -extract "$key" raw "$repo_root/$path" 2>/dev/null || true)"
+  if [[ "$actual" != "$expected" ]]; then
+    echo "Release check failed: $path $key is '$actual' (expected '$expected')" >&2
+    exit 1
+  fi
+}
+
+require_plist_value "CFBundleDisplayName" "Lecionário Anglicano" "ios/Runner/Info.plist"
+require_plist_value "MinimumOSVersion" "15.0" "ios/Flutter/AppFrameworkInfo.plist"
+require_match 'ITSAppUsesNonExemptEncryption</key>' "ios/Runner/Info.plist"
+require_match 'PRODUCT_BUNDLE_IDENTIFIER = br\.com\.caminhoanglicano\.lecionarioanglicano;' "ios/Runner.xcodeproj/project.pbxproj"
+require_match 'IPHONEOS_DEPLOYMENT_TARGET = 15\.0;' "ios/Runner.xcodeproj/project.pbxproj"
+if grep -Eq 'IPHONEOS_DEPLOYMENT_TARGET = 1[0-4]\.' "$repo_root/ios/Runner.xcodeproj/project.pbxproj"; then
   echo "The iOS deployment target must be 15.0 or newer." >&2
   exit 1
 fi
-rg -q -U '<key>MinimumOSVersion</key>[[:space:]]*<string>15\.0</string>' "$repo_root/ios/Flutter/AppFrameworkInfo.plist"
-rg -q 'PrivacyInfo\.xcprivacy in Resources' "$repo_root/ios/Runner.xcodeproj/project.pbxproj"
-rg -q 'group:Pods/Pods\.xcodeproj' "$repo_root/ios/Runner.xcworkspace/contents.xcworkspacedata"
+require_match 'PrivacyInfo\.xcprivacy in Resources' "ios/Runner.xcodeproj/project.pbxproj"
+require_match 'group:Pods/Pods\.xcodeproj' "ios/Runner.xcworkspace/contents.xcworkspacedata"
 
 echo "iOS release configuration, privacy manifest, icons and launch assets are valid."
