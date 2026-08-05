@@ -69,6 +69,7 @@ void main() {
     expect(english.brandSubline, 'ANGLICAN');
     expect(english.chooseEyebrow, 'FIRST STEP');
     expect(english.chooseTitle, 'Choose your\nPrayer Book');
+    expect(english.chooseSubtitle, contains('change your prayer book'));
     expect(english.continueLabel, 'Enter the lectionary');
     expect(english.today, 'Today');
     expect(english.week, 'Week');

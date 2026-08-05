@@ -125,35 +125,47 @@ class _SelectionHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      children: [
-        const SacredMark(size: 38),
-        const SizedBox(width: 12),
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final compact = constraints.maxWidth < 520;
+        return Row(
           children: [
-            Text(
-              copy.brand,
-              style: AppTypography.display(size: 27, height: .85),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              copy.brandSubline,
-              style: AppTypography.ui(
-                size: 9,
-                weight: FontWeight.w700,
-                color: AppColors.muted,
-                letterSpacing: 2.2,
+            const SacredMark(size: 38),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    copy.brand,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: AppTypography.display(size: 27, height: .85),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    copy.brandSubline,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: AppTypography.ui(
+                      size: 9,
+                      weight: FontWeight.w700,
+                      color: AppColors.muted,
+                      letterSpacing: 2.2,
+                    ),
+                  ),
+                ],
               ),
             ),
+            const SizedBox(width: 10),
+            LanguageSwitcher(
+              selected: controller.locale,
+              onChanged: controller.setLanguage,
+              compact: compact,
+            ),
           ],
-        ),
-        const Spacer(),
-        LanguageSwitcher(
-          selected: controller.locale,
-          onChanged: controller.setLanguage,
-        ),
-      ],
+        );
+      },
     );
   }
 }
@@ -384,37 +396,30 @@ class _SelectionFooter extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.center,
-      children: [
-        if (demoMode)
-          Expanded(
-            child: Row(
-              children: [
-                const Icon(
-                  Icons.cloud_off_outlined,
-                  size: 16,
-                  color: AppColors.muted,
-                ),
-                const SizedBox(width: 8),
-                Flexible(
-                  child: Text(
-                    '${copy.demoMode} · ${copy.demoDescription}',
-                    style: AppTypography.ui(size: 12, color: AppColors.muted),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final note = demoMode
+            ? Row(
+                children: [
+                  const Icon(
+                    Icons.cloud_off_outlined,
+                    size: 16,
+                    color: AppColors.muted,
                   ),
-                ),
-              ],
-            ),
-          )
-        else
-          Expanded(
-            child: Text(
-              'Você poderá alterar essa escolha depois.',
-              style: AppTypography.ui(size: 12, color: AppColors.muted),
-            ),
-          ),
-        const SizedBox(width: 18),
-        FilledButton.icon(
+                  const SizedBox(width: 8),
+                  Flexible(
+                    child: Text(
+                      '${copy.demoMode} · ${copy.demoDescription}',
+                      style: AppTypography.ui(size: 12, color: AppColors.muted),
+                    ),
+                  ),
+                ],
+              )
+            : Text(
+                'Você poderá alterar essa escolha depois.',
+                style: AppTypography.ui(size: 12, color: AppColors.muted),
+              );
+        final button = FilledButton.icon(
           onPressed: onContinue,
           icon: const Icon(Icons.arrow_forward_rounded, size: 18),
           label: Text(copy.continueLabel),
@@ -427,8 +432,28 @@ class _SelectionFooter extends StatelessWidget {
             ),
             textStyle: AppTypography.ui(size: 14, weight: FontWeight.w700),
           ),
-        ),
-      ],
+        );
+
+        if (constraints.maxWidth < 620) {
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              note,
+              const SizedBox(height: 14),
+              Align(alignment: Alignment.centerRight, child: button),
+            ],
+          );
+        }
+
+        return Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Expanded(child: note),
+            const SizedBox(width: 18),
+            button,
+          ],
+        );
+      },
     );
   }
 }
