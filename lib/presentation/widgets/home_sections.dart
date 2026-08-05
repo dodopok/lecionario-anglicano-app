@@ -525,6 +525,7 @@ class _DayCell extends StatelessWidget {
                               : Align(
                                   alignment: Alignment.centerLeft,
                                   child: Container(
+                                    key: ValueKey('celebration-${_key(date)}'),
                                     width: 5,
                                     height: 5,
                                     decoration: BoxDecoration(
