@@ -53,6 +53,15 @@ void main() {
       'year': 2026.0,
       'is_recommended': true,
       'thumbnail_url': 'https://example.com/loc.png',
+      'features': {
+        'lectionary': {
+          'reading_types': [
+            {'value': 'semicontinuous', 'label': 'Semi-Contínuas'},
+            {'value': 'complementary', 'label': 'Complementares'},
+          ],
+          'default_reading_type': 'complementary',
+        },
+      },
     });
     final spanish = PrayerBook.fromJson({
       'code': 'loc_es',
@@ -65,10 +74,28 @@ void main() {
     expect(portuguese.year, 2026);
     expect(portuguese.recommended, isTrue);
     expect(portuguese.thumbnailUrl, 'https://example.com/loc.png');
+    expect(portuguese.readingTypes.map((option) => option.value), [
+      'semicontinuous',
+      'complementary',
+    ]);
+    expect(portuguese.readingTypes.first.label, 'Semi-Contínuas');
+    expect(portuguese.defaultReadingType, 'complementary');
     expect(portuguese.appLanguage, AppLanguage.pt);
     expect(spanish.appLanguage, AppLanguage.es);
     expect(fallback.fullName, isEmpty);
     expect(fallback.year, isNull);
+
+    final bible = BibleVersion.fromJson({
+      'id': 'nvi',
+      'code': 'NVI',
+      'name': 'NVI',
+      'full_name': 'Nova Versão Internacional',
+      'language': 'pt-BR',
+      'is_recommended': true,
+    });
+    expect(bible.code, 'nvi');
+    expect(bible.displayName, 'NVI');
+    expect(bible.recommended, isTrue);
 
     final calendarDay = CalendarDay.fromJson({
       'date': '05/08/2026',

@@ -12,17 +12,29 @@ class AppController extends ChangeNotifier {
 
   AppLanguage locale = AppLanguage.pt;
   List<PrayerBook> prayerBooks = const [];
+  List<ReadingTypeOption> readingTypeOptions = const [];
+  List<BibleVersion> bibleVersions = const [];
   String? selectedPrayerBookCode;
+  String? selectedReadingType;
+  String? selectedBibleVersionCode;
   LectionaryDay? selectedDay;
   final Map<String, List<CalendarDay>> _monthCache = {};
   bool isInitializing = true;
   bool isLoadingDay = false;
   bool isLoadingMonth = false;
+  bool isLoadingPreferences = false;
   String? lastError;
 
   PrayerBook? get selectedPrayerBook {
     for (final book in prayerBooks) {
       if (book.code == selectedPrayerBookCode) return book;
+    }
+    return null;
+  }
+
+  BibleVersion? get selectedBibleVersion {
+    for (final version in bibleVersions) {
+      if (version.code == selectedBibleVersionCode) return version;
     }
     return null;
   }
@@ -56,7 +68,9 @@ class AppController extends ChangeNotifier {
     isInitializing = false;
     notifyListeners();
 
-    if (!needsPrayerBook) {
+    final book = selectedPrayerBook;
+    if (book != null) {
+      await _loadBookPreferences(book);
       await loadForDate(DateTime.now());
     }
   }
@@ -69,11 +83,39 @@ class AppController extends ChangeNotifier {
 
   Future<void> choosePrayerBook(PrayerBook book) async {
     selectedPrayerBookCode = book.code;
-    await localPreferences.savePrayerBook(book.code);
+    selectedDay = null;
     _monthCache.clear();
     lastError = null;
+    readingTypeOptions = book.readingTypes;
+    bibleVersions = const [];
+    selectedReadingType = null;
+    selectedBibleVersionCode = null;
+    await localPreferences.savePrayerBook(book.code);
     notifyListeners();
+    await _loadBookPreferences(book);
     await loadForDate(DateTime.now());
+  }
+
+  Future<void> setReadingType(String value, DateTime date) async {
+    if (!readingTypeOptions.any((option) => option.value == value)) return;
+    if (selectedReadingType == value) return;
+
+    selectedReadingType = value;
+    await localPreferences.saveReadingType(value);
+    _monthCache.clear();
+    notifyListeners();
+    await loadForDate(date);
+  }
+
+  Future<void> chooseBibleVersion(BibleVersion version, DateTime date) async {
+    if (!bibleVersions.any((item) => item.code == version.code)) return;
+    if (selectedBibleVersionCode == version.code) return;
+
+    selectedBibleVersionCode = version.code;
+    await localPreferences.saveBibleVersion(version.code);
+    _monthCache.clear();
+    notifyListeners();
+    await loadForDate(date);
   }
 
   Future<void> loadForDate(DateTime date) async {
@@ -85,7 +127,12 @@ class AppController extends ChangeNotifier {
     notifyListeners();
 
     final month = DateTime(date.year, date.month);
-    await Future.wait([_loadDay(date, code), _loadMonth(month, code)]);
+    final readingType = selectedReadingType;
+    final bibleVersion = selectedBibleVersionCode;
+    await Future.wait([
+      _loadDay(date, code, readingType, bibleVersion),
+      _loadMonth(month, code, readingType, bibleVersion),
+    ]);
 
     isLoadingDay = false;
     isLoadingMonth = false;
@@ -97,13 +144,93 @@ class AppController extends ChangeNotifier {
   }
 
   List<CalendarDay> monthDays(DateTime month) {
-    final key = _monthKey(month, selectedPrayerBookCode);
+    final key = _monthKey(
+      month,
+      selectedPrayerBookCode,
+      selectedReadingType,
+      selectedBibleVersionCode,
+    );
     return _monthCache[key] ?? const [];
   }
 
-  Future<void> _loadDay(DateTime date, String code) async {
+  Future<void> _loadBookPreferences(PrayerBook book) async {
+    isLoadingPreferences = true;
+    readingTypeOptions = book.readingTypes;
+    selectedReadingType = _resolveReadingType(book, readingTypeOptions);
+    selectedBibleVersionCode = null;
+    notifyListeners();
+
+    await Future.wait<void>([
+      () async {
+        try {
+          final options = await api.getReadingTypeOptions(book.code);
+          if (options.isNotEmpty) readingTypeOptions = options;
+        } catch (error) {
+          lastError = '$error';
+        }
+      }(),
+      () async {
+        try {
+          bibleVersions = await api.getBibleVersions(language: book.language);
+        } catch (error) {
+          lastError = '$error';
+          bibleVersions = const [];
+        }
+      }(),
+    ]);
+
+    selectedReadingType = _resolveReadingType(book, readingTypeOptions);
+    selectedBibleVersionCode = _resolveBibleVersion();
+    isLoadingPreferences = false;
+    notifyListeners();
+  }
+
+  String? _resolveReadingType(
+    PrayerBook book,
+    List<ReadingTypeOption> options,
+  ) {
+    final values = options.map((option) => option.value).toSet();
+    final stored = localPreferences.selectedReadingType;
+    if (stored != null && values.contains(stored)) return stored;
+
+    if (book.defaultReadingType != null &&
+        values.contains(book.defaultReadingType)) {
+      return book.defaultReadingType;
+    }
+
+    for (final option in options) {
+      if (option.isDefault) return option.value;
+    }
+
+    return options.length == 1 ? options.single.value : null;
+  }
+
+  String? _resolveBibleVersion() {
+    final stored = localPreferences.selectedBibleVersionCode?.toLowerCase();
+    if (stored != null &&
+        bibleVersions.any((version) => version.code == stored)) {
+      return stored;
+    }
+
+    for (final version in bibleVersions) {
+      if (version.recommended) return version.code;
+    }
+    return bibleVersions.firstOrNull?.code;
+  }
+
+  Future<void> _loadDay(
+    DateTime date,
+    String code,
+    String? readingType,
+    String? bibleVersion,
+  ) async {
     try {
-      selectedDay = await api.getDay(date, code);
+      selectedDay = await api.getDay(
+        date,
+        code,
+        readingType: readingType,
+        bibleVersion: bibleVersion,
+      );
       lastError = null;
     } catch (error) {
       lastError = '$error';
@@ -111,24 +238,43 @@ class AppController extends ChangeNotifier {
     }
   }
 
-  Future<void> _loadMonth(DateTime month, String code) async {
-    final key = _monthKey(month, code);
+  Future<void> _loadMonth(
+    DateTime month,
+    String code,
+    String? readingType,
+    String? bibleVersion,
+  ) async {
+    final key = _monthKey(month, code, readingType, bibleVersion);
     if (_monthCache.containsKey(key)) return;
 
     try {
-      _monthCache[key] = await api.getCalendarMonth(month, code);
+      _monthCache[key] = await api.getCalendarMonth(
+        month,
+        code,
+        readingType: readingType,
+        bibleVersion: bibleVersion,
+      );
     } catch (error) {
       lastError = '$error';
       _monthCache[key] = const [];
     }
   }
 
-  String _monthKey(DateTime month, String? code) =>
-      '${code ?? 'none'}-${month.year}-${month.month}';
+  String _monthKey(
+    DateTime month,
+    String? code,
+    String? readingType,
+    String? bibleVersion,
+  ) =>
+      '${code ?? 'none'}-${month.year}-${month.month}-${readingType ?? 'none'}-${bibleVersion ?? 'none'}';
 
   @override
   void dispose() {
     api.dispose();
     super.dispose();
   }
+}
+
+extension _FirstOrNull<T> on Iterable<T> {
+  T? get firstOrNull => isEmpty ? null : first;
 }

@@ -22,6 +22,13 @@ void main() {
               'language': 'pt-BR',
               'jurisdiction': 'TEST',
               'year': 2026,
+              'thumbnail_url': 'https://example.test/loc.png',
+              'features': {
+                'lectionary': {
+                  'reading_types': ['semicontinuous', 'complementary'],
+                  'default_reading_type': 'semicontinuous',
+                },
+              },
             },
           ],
         }),
@@ -38,6 +45,11 @@ void main() {
     final books = await api.getPrayerBooks();
 
     expect(books.single.code, 'loc_test');
+    expect(books.single.coverUrl, 'https://example.test/loc.png');
+    expect(books.single.readingTypes.map((option) => option.value), [
+      'semicontinuous',
+      'complementary',
+    ]);
     expect(capturedRequest?.method, 'GET');
     expect(
       capturedRequest?.url.toString(),
@@ -46,6 +58,106 @@ void main() {
     expect(capturedRequest?.headers['X-App-Internal-Id'], 'test-internal-id');
     expect(capturedRequest?.headers['Content-Type'], 'application/json');
   });
+
+  test(
+    'reads reading type options and labels from the prayer book API',
+    () async {
+      http.BaseRequest? capturedRequest;
+      final client = MockClient((request) async {
+        capturedRequest = request;
+        return http.Response.bytes(
+          utf8.encode(
+            jsonEncode({
+              'categories': [
+                {
+                  'key': 'lectionary',
+                  'preferences': [
+                    {
+                      'key': 'reading_type',
+                      'default_value': 'semicontinuous',
+                      'options': [
+                        {
+                          'value': 'semicontinuous',
+                          'label': 'Leituras Semi-Contínuas',
+                        },
+                        {
+                          'value': 'complementary',
+                          'label': 'Leituras Complementares',
+                        },
+                      ],
+                    },
+                  ],
+                },
+              ],
+            }),
+          ),
+          200,
+        );
+      });
+      final api = LectionaryApi(
+        client: client,
+        baseUrl: 'https://api.test/api/v1',
+        internalIdentifier: 'test-id',
+      );
+      addTearDown(api.dispose);
+
+      final options = await api.getReadingTypeOptions('loc_2015');
+
+      expect(
+        capturedRequest?.url.path,
+        '/api/v1/prayer_books/loc_2015/preferences',
+      );
+      expect(options.map((option) => option.value), [
+        'semicontinuous',
+        'complementary',
+      ]);
+      expect(options.first.label, 'Leituras Semi-Contínuas');
+      expect(options.first.isDefault, isTrue);
+    },
+  );
+
+  test(
+    'fetches Bible versions with the app header and language filter',
+    () async {
+      http.BaseRequest? capturedRequest;
+      final client = MockClient((request) async {
+        capturedRequest = request;
+        return http.Response.bytes(
+          utf8.encode(
+            jsonEncode({
+              'data': [
+                {
+                  'id': 'nvi',
+                  'code': 'NVI',
+                  'name': 'NVI',
+                  'full_name': 'Nova Versão Internacional',
+                  'language': 'pt-BR',
+                  'year': 2011,
+                  'is_recommended': true,
+                },
+              ],
+            }),
+          ),
+          200,
+        );
+      });
+      final api = LectionaryApi(
+        client: client,
+        baseUrl: 'https://api.test/api/v1',
+        internalIdentifier: 'test-id',
+      );
+      addTearDown(api.dispose);
+
+      final versions = await api.getBibleVersions(language: 'pt-BR');
+
+      expect(capturedRequest?.url.path, '/api/v1/bible_versions');
+      expect(capturedRequest?.url.queryParameters['language'], 'pt-BR');
+      expect(capturedRequest?.headers['X-App-Internal-Id'], 'test-id');
+      expect(versions.single.code, 'nvi');
+      expect(versions.single.fullName, 'Nova Versão Internacional');
+      expect(versions.single.recommended, isTrue);
+    },
+  );
 
   test('encodes the selected prayer book in calendar preferences', () async {
     http.BaseRequest? capturedRequest;
@@ -109,13 +221,20 @@ void main() {
     );
     addTearDown(api.dispose);
 
-    final day = await api.getDay(DateTime(2026, 8, 5), 'loc_2015');
+    final day = await api.getDay(
+      DateTime(2026, 8, 5),
+      'loc_2015',
+      readingType: 'complementary',
+      bibleVersion: 'nvi',
+    );
     final preferences =
         jsonDecode(capturedRequest!.url.queryParameters['preferences']!)
             as Map<String, dynamic>;
 
     expect(capturedRequest!.url.path, '/api/v1/calendar/2026/8/5');
     expect(preferences['prayer_book_code'], 'loc_2015');
+    expect(preferences['reading_type'], 'complementary');
+    expect(preferences['bible_version'], 'nvi');
     expect(day.readings.single.reference, 'João 1:1–5');
   });
 

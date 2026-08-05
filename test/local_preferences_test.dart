@@ -8,6 +8,8 @@ void main() {
     final preferences = await createLocalPreferences();
 
     expect(preferences.selectedPrayerBookCode, isNull);
+    expect(preferences.selectedReadingType, isNull);
+    expect(preferences.selectedBibleVersionCode, isNull);
     expect(preferences.language, AppLanguage.pt);
   });
 
@@ -15,13 +17,19 @@ void main() {
     final preferences = await createLocalPreferences();
 
     await preferences.savePrayerBook('bcp_1979');
+    await preferences.saveReadingType('complementary');
+    await preferences.saveBibleVersion('nvi');
     await preferences.saveLanguage(AppLanguage.en);
 
     final restored = await createLocalPreferences({
       'selected_prayer_book_code': 'bcp_1979',
+      'selected_reading_type': 'complementary',
+      'selected_bible_version_code': 'nvi',
       'app_language': 'en',
     });
     expect(restored.selectedPrayerBookCode, 'bcp_1979');
+    expect(restored.selectedReadingType, 'complementary');
+    expect(restored.selectedBibleVersionCode, 'nvi');
     expect(restored.language, AppLanguage.en);
   });
 

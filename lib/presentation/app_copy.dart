@@ -106,6 +106,21 @@ class AppCopy {
     AppLanguage.en => 'Open reading',
     AppLanguage.es => 'Abrir lectura',
   };
+  String get readingTrack => switch (language) {
+    AppLanguage.pt => 'Sequência das leituras',
+    AppLanguage.en => 'Reading track',
+    AppLanguage.es => 'Secuencia de lecturas',
+  };
+  String get bibleVersion => switch (language) {
+    AppLanguage.pt => 'Versão da Bíblia',
+    AppLanguage.en => 'Bible version',
+    AppLanguage.es => 'Versión de la Biblia',
+  };
+  String get chooseBible => switch (language) {
+    AppLanguage.pt => 'Escolher Bíblia',
+    AppLanguage.en => 'Choose Bible',
+    AppLanguage.es => 'Elegir Biblia',
+  };
   String dateLong(DateTime date) {
     final locale = language.locale.toLanguageTag();
     final format = switch (language) {
