@@ -34,13 +34,11 @@ class SurfaceCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final radius = BorderRadius.circular(24);
     return Container(
       margin: margin,
-      padding: padding,
       decoration: BoxDecoration(
-        color: AppColors.cream.withValues(alpha: .92),
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: AppColors.line.withValues(alpha: .72)),
+        borderRadius: radius,
         boxShadow: [
           BoxShadow(
             color: AppColors.ink.withValues(alpha: .035),
@@ -49,7 +47,17 @@ class SurfaceCard extends StatelessWidget {
           ),
         ],
       ),
-      child: child,
+      // A Material, not a plain box: everything tappable inside a card needs
+      // an ink surface to ripple on.
+      child: Material(
+        color: AppColors.cream.withValues(alpha: .92),
+        clipBehavior: Clip.antiAlias,
+        shape: RoundedRectangleBorder(
+          borderRadius: radius,
+          side: BorderSide(color: AppColors.line.withValues(alpha: .72)),
+        ),
+        child: Padding(padding: padding ?? EdgeInsets.zero, child: child),
+      ),
     );
   }
 }

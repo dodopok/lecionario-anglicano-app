@@ -4,16 +4,21 @@ import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_typography.dart';
 import '../../data/models/lectionary_models.dart';
 import '../app_copy.dart';
+import 'copy_button.dart';
 import 'design_primitives.dart';
-import 'sacred_mark.dart';
 
+/// The card at the top of the home screen: which day the lectionary is showing.
+///
+/// It stays the same height while the day loads so the layout never jumps.
 class DailyHero extends StatelessWidget {
   const DailyHero({
     required this.day,
     required this.activeDate,
     required this.copy,
     required this.isLoading,
-    required this.onToday,
+    this.onToday,
+    this.onTap,
+    this.actionLabel,
     super.key,
   });
 
@@ -21,453 +26,235 @@ class DailyHero extends StatelessWidget {
   final DateTime activeDate;
   final AppCopy copy;
   final bool isLoading;
-  final VoidCallback onToday;
+
+  /// Shown as a small action when [activeDate] is not today.
+  final VoidCallback? onToday;
+
+  /// Makes the whole card tappable — used on phones to open today's readings.
+  final VoidCallback? onTap;
+  final String? actionLabel;
 
   @override
   Widget build(BuildContext context) {
     final accent = liturgicalColor(day?.color);
     final hasLiturgicalColor = day?.color?.trim().isNotEmpty == true;
-    final heroStart = hasLiturgicalColor
-        ? Color.lerp(accent, Colors.black, .18)!
+    final surface = hasLiturgicalColor
+        ? Color.lerp(accent, AppColors.pineDeep, .62)!
         : AppColors.pineDeep;
-    final heroEnd = hasLiturgicalColor
-        ? Color.lerp(accent, Colors.black, .38)!
-        : AppColors.pine;
     final isToday = _sameDay(activeDate, DateTime.now());
-    final description =
-        day?.description?.firstOrNull ?? day?.celebration?.description;
-    final season = day?.season;
-    final celebration = day?.celebration?.name.trim().isNotEmpty == true
-        ? day!.celebration!.name
-        : day?.weekName?.trim().isNotEmpty == true
-        ? day!.weekName
-        : null;
+    final title = _dayTitle(day);
+    final meta = _dayMeta(day, copy);
+    final showAction = onTap != null && actionLabel != null;
 
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 360),
-      curve: Curves.easeOutCubic,
+    return Material(
+      color: surface,
       clipBehavior: Clip.antiAlias,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(28),
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [heroStart, heroEnd],
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: heroEnd.withValues(alpha: .22),
-            blurRadius: 32,
-            offset: const Offset(0, 18),
-          ),
-        ],
-      ),
-      child: Stack(
-        children: [
-          Positioned(
-            top: -90,
-            right: -50,
-            child: Container(
-              width: 300,
-              height: 300,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                border: Border.all(
-                  color: AppColors.white.withValues(alpha: .06),
-                  width: 1,
-                ),
+      borderRadius: BorderRadius.circular(22),
+      child: InkWell(
+        onTap: onTap,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(18, 16, 18, 14),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  SizedBox(
+                    height: 24,
+                    child: Row(
+                      children: [
+                        Flexible(
+                          child: Text(
+                            _eyebrow(isToday, isLoading ? null : day, copy),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: AppTypography.eyebrow(
+                              color: AppColors.copperWash,
+                              size: 10,
+                            ),
+                          ),
+                        ),
+                        if (!isToday && onToday != null) ...[
+                          const SizedBox(width: 10),
+                          _BackToToday(label: copy.backToToday, onTap: onToday!),
+                        ],
+                      ],
+                    ),
+                  ),
+                  Text(
+                    copy.dateLong(activeDate),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: AppTypography.ui(
+                      size: 13,
+                      weight: FontWeight.w500,
+                      color: AppColors.white.withValues(alpha: .72),
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  SizedBox(
+                    height: 56,
+                    child: isLoading
+                        ? const _HeroTitleSkeleton()
+                        : Align(
+                            alignment: Alignment.topLeft,
+                            child: Text(
+                              title ?? '',
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                              style: AppTypography.display(
+                                size: 27,
+                                weight: FontWeight.w600,
+                                color: AppColors.white,
+                                height: 1.04,
+                              ),
+                            ),
+                          ),
+                  ),
+                  SizedBox(
+                    height: 18,
+                    child: isLoading
+                        ? Align(
+                            alignment: Alignment.centerLeft,
+                            child: SkeletonBox(
+                              width: 96,
+                              height: 10,
+                              radius: 5,
+                              color: AppColors.white.withValues(alpha: .12),
+                            ),
+                          )
+                        : Text(
+                            meta,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: AppTypography.ui(
+                              size: 12,
+                              weight: FontWeight.w600,
+                              color: AppColors.copperWash.withValues(alpha: .9),
+                              letterSpacing: .2,
+                            ),
+                          ),
+                  ),
+                ],
               ),
             ),
-          ),
-          Positioned(
-            top: 35,
-            right: 65,
-            child: Container(
-              width: 150,
-              height: 150,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                border: Border.all(
-                  color: AppColors.white.withValues(alpha: .055),
-                  width: 1,
+            if (showAction)
+              Container(
+                padding: const EdgeInsets.fromLTRB(18, 11, 14, 12),
+                decoration: BoxDecoration(
+                  color: AppColors.white.withValues(alpha: .07),
+                  border: Border(
+                    top: BorderSide(
+                      color: AppColors.white.withValues(alpha: .12),
+                    ),
+                  ),
                 ),
-              ),
-            ),
-          ),
-          Positioned(
-            right: 26,
-            bottom: 26,
-            child: SacredMark(
-              size: 62,
-              color: accent.withValues(alpha: .72),
-              strokeWidth: 1,
-            ),
-          ),
-          Positioned(
-            left: 0,
-            right: 0,
-            bottom: 0,
-            child: Container(height: 5, color: accent),
-          ),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(27, 26, 27, 32),
-            child: LayoutBuilder(
-              builder: (context, constraints) {
-                final compact = constraints.maxWidth < 520;
-                return Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                child: Row(
                   children: [
                     Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Wrap(
-                            spacing: 10,
-                            runSpacing: 4,
-                            crossAxisAlignment: WrapCrossAlignment.center,
-                            children: [
-                              Text(
-                                isToday ? copy.today : copy.selected,
-                                style: AppTypography.eyebrow(
-                                  color: AppColors.copperWash,
-                                  size: 10,
-                                ),
-                              ),
-                              if (!isToday)
-                                InkWell(
-                                  onTap: onToday,
-                                  borderRadius: BorderRadius.circular(20),
-                                  child: Padding(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 9,
-                                      vertical: 4,
-                                    ),
-                                    child: Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        const Icon(
-                                          Icons.today_outlined,
-                                          size: 13,
-                                          color: AppColors.copperWash,
-                                        ),
-                                        const SizedBox(width: 4),
-                                        Text(
-                                          copy.backToToday,
-                                          style: AppTypography.ui(
-                                            size: 11,
-                                            weight: FontWeight.w700,
-                                            color: AppColors.copperWash,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ),
-                            ],
-                          ),
-                          const SizedBox(height: 11),
-                          Text(
-                            copy.dateLong(activeDate),
-                            style: AppTypography.ui(
-                              size: compact ? 14 : 16,
-                              color: AppColors.white.withValues(alpha: .74),
-                              weight: FontWeight.w500,
-                            ),
-                          ),
-                          const SizedBox(height: 18),
-                          SizedBox(
-                            height: compact ? 72 : 94,
-                            child: Align(
-                              alignment: Alignment.topLeft,
-                              child: isLoading
-                                  ? SkeletonBox(
-                                      width: compact ? 210 : 300,
-                                      height: compact ? 34 : 42,
-                                      radius: 9,
-                                      color: AppColors.white.withValues(
-                                        alpha: .13,
-                                      ),
-                                    )
-                                  : season?.isNotEmpty == true
-                                  ? Text(
-                                      season!,
-                                      maxLines: 2,
-                                      overflow: TextOverflow.ellipsis,
-                                      style: AppTypography.display(
-                                        size: compact ? 36 : 47,
-                                        weight: FontWeight.w600,
-                                        color: AppColors.white,
-                                        height: .92,
-                                        letterSpacing: -.5,
-                                      ),
-                                    )
-                                  : const SizedBox.shrink(),
-                            ),
-                          ),
-                          SizedBox(
-                            height: 48,
-                            child: celebration == null || isLoading
-                                ? null
-                                : Padding(
-                                    padding: const EdgeInsets.only(top: 13),
-                                    child: Text(
-                                      celebration,
-                                      maxLines: 2,
-                                      overflow: TextOverflow.ellipsis,
-                                      style: AppTypography.ui(
-                                        size: 14,
-                                        weight: FontWeight.w600,
-                                        color: AppColors.copperWash,
-                                        letterSpacing: .2,
-                                      ),
-                                    ),
-                                  ),
-                          ),
-                          SizedBox(
-                            height: compact ? 52 : 78,
-                            child: isLoading
-                                ? Padding(
-                                    padding: const EdgeInsets.only(top: 13),
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        SkeletonBox(
-                                          width: compact ? 190 : 350,
-                                          height: 13,
-                                          radius: 7,
-                                          color: AppColors.white.withValues(
-                                            alpha: .10,
-                                          ),
-                                        ),
-                                        const SizedBox(height: 8),
-                                        SkeletonBox(
-                                          width: compact ? 125 : 260,
-                                          height: 13,
-                                          radius: 7,
-                                          color: AppColors.white.withValues(
-                                            alpha: .10,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  )
-                                : description == null || description.isEmpty
-                                ? const SizedBox.shrink()
-                                : Padding(
-                                    padding: const EdgeInsets.only(top: 13),
-                                    child: ConstrainedBox(
-                                      constraints: const BoxConstraints(
-                                        maxWidth: 480,
-                                      ),
-                                      child: Text(
-                                        description,
-                                        maxLines: compact ? 2 : 3,
-                                        overflow: TextOverflow.ellipsis,
-                                        style: AppTypography.display(
-                                          size: compact ? 16 : 18,
-                                          weight: FontWeight.w400,
-                                          color: AppColors.white.withValues(
-                                            alpha: .74,
-                                          ),
-                                          height: 1.15,
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                          ),
-                          const SizedBox(height: 22),
-                          SizedBox(
-                            height: compact ? 38 : 34,
-                            child: Align(
-                              alignment: Alignment.topLeft,
-                              child: isLoading
-                                  ? SkeletonBox(
-                                      width: 82,
-                                      height: 28,
-                                      radius: 20,
-                                      color: AppColors.white.withValues(
-                                        alpha: .10,
-                                      ),
-                                    )
-                                  : day?.liturgicalYear != null
-                                  ? _HeroMeta(
-                                      label:
-                                          '${copy.yearLabel} ${day!.liturgicalYear}',
-                                      color: AppColors.white.withValues(
-                                        alpha: .25,
-                                      ),
-                                    )
-                                  : const SizedBox.shrink(),
-                            ),
-                          ),
-                        ],
+                      child: Text(
+                        actionLabel!,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: AppTypography.ui(
+                          size: 13,
+                          weight: FontWeight.w700,
+                          color: AppColors.copperWash,
+                        ),
                       ),
                     ),
-                    const SizedBox(width: 12),
-                    Padding(
-                      padding: EdgeInsets.only(top: compact ? 4 : 18),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.end,
-                        children: [
-                          Text(
-                            '${activeDate.day}',
-                            style: AppTypography.display(
-                              size: compact ? 70 : 114,
-                              weight: FontWeight.w300,
-                              color: AppColors.white.withValues(alpha: .94),
-                              height: .72,
-                              letterSpacing: -5,
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            copy
-                                .monthYear(activeDate)
-                                .split(' ')
-                                .first
-                                .toUpperCase(),
-                            style: AppTypography.ui(
-                              size: compact ? 10 : 12,
-                              weight: FontWeight.w700,
-                              color: AppColors.copperWash,
-                              letterSpacing: 2,
-                            ),
-                          ),
-                        ],
-                      ),
+                    const Icon(
+                      Icons.chevron_right_rounded,
+                      size: 20,
+                      color: AppColors.copperWash,
                     ),
                   ],
-                );
-              },
-            ),
-          ),
-        ],
+                ),
+              ),
+            Container(height: 3, color: accent),
+          ],
+        ),
       ),
     );
   }
 }
 
-class _HeroMeta extends StatelessWidget {
-  const _HeroMeta({required this.label, required this.color});
-
-  final String label;
-  final Color color;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
-      decoration: BoxDecoration(
-        color: AppColors.white.withValues(alpha: .08),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: AppColors.white.withValues(alpha: .11)),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            width: 7,
-            height: 7,
-            decoration: BoxDecoration(shape: BoxShape.circle, color: color),
-          ),
-          const SizedBox(width: 7),
-          Text(
-            label,
-            style: AppTypography.ui(
-              size: 11,
-              weight: FontWeight.w700,
-              color: AppColors.white.withValues(alpha: .82),
-              letterSpacing: .35,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+String _eyebrow(bool isToday, LectionaryDay? day, AppCopy copy) {
+  final label = isToday ? copy.today.toUpperCase() : copy.selected;
+  final season = day?.season?.trim();
+  if (season == null || season.isEmpty) return label;
+  return '$label · $season';
 }
 
-class ViewTabs extends StatelessWidget {
-  const ViewTabs({
-    required this.selected,
-    required this.copy,
-    required this.onChanged,
-    super.key,
-  });
+String? _dayTitle(LectionaryDay? day) {
+  for (final value in [
+    day?.celebration?.name,
+    day?.sundayName,
+    day?.weekName,
+    day?.season,
+  ]) {
+    if (value != null && value.trim().isNotEmpty) return value.trim();
+  }
+  return null;
+}
 
-  final CalendarView selected;
-  final AppCopy copy;
-  final ValueChanged<CalendarView> onChanged;
+String _dayMeta(LectionaryDay? day, AppCopy copy) {
+  final parts = <String>[
+    if (day?.liturgicalYear case final year? when year.trim().isNotEmpty)
+      '${copy.yearLabel} $year',
+    if (day?.color case final color? when color.trim().isNotEmpty)
+      copy.colorLabel(color),
+  ];
+  return parts.join(' · ');
+}
+
+class _HeroTitleSkeleton extends StatelessWidget {
+  const _HeroTitleSkeleton();
 
   @override
   Widget build(BuildContext context) {
-    return Row(
+    final color = AppColors.white.withValues(alpha: .13);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Expanded(
-          child: _ViewTab(
-            label: copy.week,
-            icon: Icons.view_week_outlined,
-            selected: selected == CalendarView.week,
-            onTap: () => onChanged(CalendarView.week),
-          ),
-        ),
-        const SizedBox(width: 8),
-        Expanded(
-          child: _ViewTab(
-            label: copy.month,
-            icon: Icons.calendar_month_outlined,
-            selected: selected == CalendarView.month,
-            onTap: () => onChanged(CalendarView.month),
-          ),
-        ),
+        SkeletonBox(width: 226, height: 18, radius: 7, color: color),
+        const SizedBox(height: 10),
+        SkeletonBox(width: 148, height: 18, radius: 7, color: color),
       ],
     );
   }
 }
 
-class _ViewTab extends StatelessWidget {
-  const _ViewTab({
-    required this.label,
-    required this.icon,
-    required this.selected,
-    required this.onTap,
-  });
+class _BackToToday extends StatelessWidget {
+  const _BackToToday({required this.label, required this.onTap});
 
   final String label;
-  final IconData icon;
-  final bool selected;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(14),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 180),
-        padding: const EdgeInsets.symmetric(vertical: 12),
-        decoration: BoxDecoration(
-          color: selected
-              ? AppColors.pine
-              : AppColors.cream.withValues(alpha: .68),
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: selected ? AppColors.pine : AppColors.line),
-        ),
+      borderRadius: BorderRadius.circular(20),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
         child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(
-              icon,
-              size: 17,
-              color: selected ? AppColors.white : AppColors.muted,
+            const Icon(
+              Icons.today_outlined,
+              size: 14,
+              color: AppColors.copperWash,
             ),
-            const SizedBox(width: 8),
+            const SizedBox(width: 5),
             Text(
               label,
               style: AppTypography.ui(
-                size: 13,
+                size: 12,
                 weight: FontWeight.w700,
-                color: selected ? AppColors.white : AppColors.muted,
+                color: AppColors.copperWash,
               ),
             ),
           ],
@@ -477,281 +264,24 @@ class _ViewTab extends StatelessWidget {
   }
 }
 
-class WeekStrip extends StatelessWidget {
-  const WeekStrip({
-    required this.activeDate,
-    required this.copy,
-    required this.monthDays,
-    required this.onSelect,
-    this.isLoading = false,
-    super.key,
-  });
-
-  final DateTime activeDate;
-  final AppCopy copy;
-  final List<CalendarDay> monthDays;
-  final ValueChanged<DateTime> onSelect;
-  final bool isLoading;
-
-  @override
-  Widget build(BuildContext context) {
-    final days = _weekDays(activeDate);
-    final byDate = {for (final day in monthDays) _key(day.date): day};
-
-    return Row(
-      children: days.map((date) {
-        final data = byDate[_key(date)];
-        final color = liturgicalColor(data?.color);
-        final selected = _sameDay(date, activeDate);
-        final today = _sameDay(date, DateTime.now());
-        return Expanded(
-          child: Padding(
-            padding: EdgeInsets.only(right: date == days.last ? 0 : 6),
-            child: InkWell(
-              onTap: () => onSelect(date),
-              borderRadius: BorderRadius.circular(16),
-              child: AnimatedContainer(
-                key: ValueKey('week-day-${_key(date)}'),
-                duration: const Duration(milliseconds: 190),
-                padding: const EdgeInsets.symmetric(
-                  vertical: 12,
-                  horizontal: 3,
-                ),
-                decoration: BoxDecoration(
-                  color: selected
-                      ? AppColors.copperWash
-                      : AppColors.cream.withValues(alpha: .6),
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(
-                    color: selected ? AppColors.copper : AppColors.line,
-                  ),
-                ),
-                child: Column(
-                  children: [
-                    Text(
-                      copy.weekdayShort(date),
-                      maxLines: 1,
-                      overflow: TextOverflow.clip,
-                      style: AppTypography.ui(
-                        size: 10,
-                        weight: FontWeight.w700,
-                        color: selected
-                            ? AppColors.copperDark
-                            : AppColors.muted,
-                        letterSpacing: .25,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      '${date.day}',
-                      style: AppTypography.display(
-                        size: 24,
-                        weight: selected ? FontWeight.w700 : FontWeight.w500,
-                        color: selected ? AppColors.ink : AppColors.inkSoft,
-                        height: .9,
-                      ),
-                    ),
-                    const SizedBox(height: 9),
-                    isLoading
-                        ? SkeletonBox(
-                            width: today ? 14 : 7,
-                            height: 4,
-                            radius: 4,
-                          )
-                        : Container(
-                            width: today ? 14 : 7,
-                            height: 4,
-                            decoration: BoxDecoration(
-                              color: color,
-                              borderRadius: BorderRadius.circular(4),
-                            ),
-                          ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-        );
-      }).toList(),
-    );
-  }
-}
-
-class WeekSchedule extends StatelessWidget {
-  const WeekSchedule({
-    required this.activeDate,
-    required this.copy,
-    required this.monthDays,
-    required this.onSelect,
-    this.isLoading = false,
-    super.key,
-  });
-
-  final DateTime activeDate;
-  final AppCopy copy;
-  final List<CalendarDay> monthDays;
-  final ValueChanged<DateTime> onSelect;
-  final bool isLoading;
-
-  @override
-  Widget build(BuildContext context) {
-    final days = _weekDays(activeDate);
-    final byDate = {for (final day in monthDays) _key(day.date): day};
-
-    return SurfaceCard(
-      padding: const EdgeInsets.fromLTRB(18, 19, 18, 10),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Eyebrow('${copy.week} · ${copy.monthYear(activeDate)}'),
-              const Spacer(),
-              Text(
-                '${days.first.day}–${days.last.day}',
-                style: AppTypography.ui(size: 12, color: AppColors.muted),
-              ),
-            ],
-          ),
-          const SizedBox(height: 14),
-          ...days.map((date) {
-            final data = byDate[_key(date)];
-            final isActive = _sameDay(date, activeDate);
-            final color = liturgicalColor(data?.color);
-            return InkWell(
-              onTap: () => onSelect(date),
-              borderRadius: BorderRadius.circular(14),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(
-                  vertical: 10,
-                  horizontal: 7,
-                ),
-                child: Row(
-                  children: [
-                    SizedBox(
-                      width: 42,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            copy.weekdayShort(date),
-                            style: AppTypography.eyebrow(
-                              color: isActive
-                                  ? AppColors.copperDark
-                                  : AppColors.muted,
-                              size: 9,
-                            ),
-                          ),
-                          const SizedBox(height: 2),
-                          Text(
-                            '${date.day}',
-                            style: AppTypography.display(
-                              size: 24,
-                              weight: isActive
-                                  ? FontWeight.w700
-                                  : FontWeight.w500,
-                              height: .9,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    Container(
-                      width: 1,
-                      height: 35,
-                      color: color.withValues(alpha: .5),
-                    ),
-                    const SizedBox(width: 14),
-                    Expanded(
-                      child: isLoading
-                          ? Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                SkeletonBox(
-                                  width: isActive ? 170 : 130,
-                                  height: 13,
-                                  radius: 7,
-                                ),
-                                const SizedBox(height: 7),
-                                SkeletonBox(
-                                  width: isActive ? 90 : 70,
-                                  height: 10,
-                                  radius: 6,
-                                ),
-                              ],
-                            )
-                          : Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                if (data?.celebrationName case final name?
-                                    when name.isNotEmpty)
-                                  Text(
-                                    name,
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                    style: AppTypography.ui(
-                                      size: 14,
-                                      weight: isActive
-                                          ? FontWeight.w700
-                                          : FontWeight.w600,
-                                    ),
-                                  )
-                                else if (data?.weekName case final name?
-                                    when name.isNotEmpty)
-                                  Text(
-                                    name,
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                    style: AppTypography.ui(
-                                      size: 14,
-                                      weight: isActive
-                                          ? FontWeight.w700
-                                          : FontWeight.w600,
-                                    ),
-                                  ),
-                                if (data?.color case final color?
-                                    when color.isNotEmpty) ...[
-                                  const SizedBox(height: 3),
-                                  Text(
-                                    copy.colorLabel(color),
-                                    style: AppTypography.ui(
-                                      size: 12,
-                                      color: AppColors.muted,
-                                    ),
-                                  ),
-                                ],
-                              ],
-                            ),
-                    ),
-                    Icon(
-                      Icons.chevron_right_rounded,
-                      size: 19,
-                      color: isActive ? AppColors.copper : AppColors.mutedLight,
-                    ),
-                  ],
-                ),
-              ),
-            );
-          }),
-        ],
-      ),
-    );
-  }
-}
-
+/// The month grid. The Sunday column is wider so Sundays can carry their name,
+/// which is how the lectionary is actually navigated.
 class MonthCalendar extends StatelessWidget {
   const MonthCalendar({
-    required this.activeDate,
+    required this.month,
+    required this.selectedDate,
     required this.copy,
     required this.monthDays,
     required this.onSelect,
     required this.onPrevious,
     required this.onNext,
     this.isLoading = false,
+    this.fillHeight = false,
     super.key,
   });
 
-  final DateTime activeDate;
+  final DateTime month;
+  final DateTime selectedDate;
   final AppCopy copy;
   final List<CalendarDay> monthDays;
   final ValueChanged<DateTime> onSelect;
@@ -759,217 +289,312 @@ class MonthCalendar extends StatelessWidget {
   final VoidCallback onNext;
   final bool isLoading;
 
+  /// When true the grid stretches to the height it is given instead of
+  /// using a fixed row height, so the whole month fits without scrolling.
+  final bool fillHeight;
+
+  static const _sundayFlex = 190;
+  static const _weekdayFlex = 100;
+  static const _cellGap = 4.0;
+
   @override
   Widget build(BuildContext context) {
-    final firstDayOffset =
-        DateTime(activeDate.year, activeDate.month, 1).weekday % 7;
-    final totalDays = DateUtils.getDaysInMonth(
-      activeDate.year,
-      activeDate.month,
-    );
-    final cells = firstDayOffset + totalDays;
-    final totalCells = cells % 7 == 0 ? cells : cells + (7 - cells % 7);
+    final firstOfMonth = DateTime(month.year, month.month);
+    final leadingBlanks = firstOfMonth.weekday % 7;
+    final totalDays = DateUtils.getDaysInMonth(month.year, month.month);
+    final weeks = ((leadingBlanks + totalDays) / 7).ceil();
     final byDate = {for (final day in monthDays) _key(day.date): day};
-    final weekdays = List.generate(7, (index) {
-      final date = DateTime(2024, 1, 7 + index);
-      return copy.weekdayShort(date);
-    });
+    final today = DateTime.now();
+
+    final rows = <Widget>[];
+    for (var week = 0; week < weeks; week++) {
+      final row = Row(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: List.generate(7, (column) {
+          final dayNumber = week * 7 + column - leadingBlanks + 1;
+          final date = dayNumber < 1 || dayNumber > totalDays
+              ? null
+              : DateTime(month.year, month.month, dayNumber);
+          return Expanded(
+            flex: column == 0 ? _sundayFlex : _weekdayFlex,
+            child: Padding(
+              padding: EdgeInsets.only(right: column == 6 ? 0 : _cellGap),
+              child: date == null
+                  ? const SizedBox.shrink()
+                  : _DayCell(
+                      key: ValueKey('month-day-${_key(date)}'),
+                      date: date,
+                      data: byDate[_key(date)],
+                      isSunday: column == 0,
+                      isSelected: _sameDay(date, selectedDate),
+                      isToday: _sameDay(date, today),
+                      isLoading: isLoading,
+                      onTap: () => onSelect(date),
+                    ),
+            ),
+          );
+        }),
+      );
+      if (week > 0) rows.add(const SizedBox(height: _cellGap));
+      rows.add(fillHeight ? Expanded(child: row) : SizedBox(height: 62, child: row));
+    }
+
+    final grid = Column(
+      mainAxisSize: fillHeight ? MainAxisSize.max : MainAxisSize.min,
+      children: rows,
+    );
 
     return SurfaceCard(
-      padding: const EdgeInsets.fromLTRB(16, 17, 16, 18),
+      padding: const EdgeInsets.fromLTRB(10, 10, 10, 11),
       child: Column(
+        mainAxisSize: fillHeight ? MainAxisSize.max : MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Row(
             children: [
               _CalendarArrow(
+                key: const ValueKey('calendar-previous-month'),
                 icon: Icons.chevron_left_rounded,
                 onTap: onPrevious,
+                semanticLabel: copy.monthYear(
+                  DateTime(month.year, month.month - 1),
+                ),
               ),
               Expanded(
                 child: Center(
                   child: Text(
-                    copy.monthYear(activeDate),
-                    style: AppTypography.display(size: 28, height: 1),
+                    copy.monthYear(month),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: AppTypography.display(size: 24, height: 1),
                   ),
                 ),
               ),
-              _CalendarArrow(icon: Icons.chevron_right_rounded, onTap: onNext),
-            ],
-          ),
-          const SizedBox(height: 20),
-          GridView.builder(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            itemCount: 7,
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 7,
-              childAspectRatio: 1.9,
-            ),
-            itemBuilder: (context, index) => Center(
-              child: Text(
-                weekdays[index],
-                style: AppTypography.ui(
-                  size: 10,
-                  weight: FontWeight.w700,
-                  color: index == 0 ? AppColors.copperDark : AppColors.muted,
-                  letterSpacing: .4,
+              _CalendarArrow(
+                key: const ValueKey('calendar-next-month'),
+                icon: Icons.chevron_right_rounded,
+                onTap: onNext,
+                semanticLabel: copy.monthYear(
+                  DateTime(month.year, month.month + 1),
                 ),
               ),
-            ),
+            ],
           ),
-          const SizedBox(height: 5),
-          LayoutBuilder(
-            builder: (context, constraints) {
-              final cellWidth = (constraints.maxWidth - 30) / 7;
-              final cellHeight = cellWidth < 60
-                  ? 56.0
-                  : cellWidth < 100
-                  ? 68.0
-                  : 78.0;
-              final compactCell = cellWidth < 60;
-              return GridView.builder(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                itemCount: totalCells,
-                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 7,
-                  crossAxisSpacing: 5,
-                  mainAxisSpacing: 5,
-                  mainAxisExtent: cellHeight,
-                ),
-                itemBuilder: (context, index) {
-                  final dayNumber = index - firstDayOffset + 1;
-                  if (dayNumber < 1 || dayNumber > totalDays) {
-                    return const SizedBox.shrink();
-                  }
-                  final date = DateTime(
-                    activeDate.year,
-                    activeDate.month,
-                    dayNumber,
-                  );
-                  final data = byDate[_key(date)];
-                  final selected = _sameDay(date, activeDate);
-                  final today = _sameDay(date, DateTime.now());
-                  final color = liturgicalColor(data?.color);
-                  return InkWell(
-                    onTap: () => onSelect(date),
-                    borderRadius: BorderRadius.circular(12),
-                    child: AnimatedContainer(
-                      key: ValueKey('month-day-${_key(date)}'),
-                      duration: const Duration(milliseconds: 180),
-                      padding: const EdgeInsets.fromLTRB(7, 7, 7, 5),
-                      decoration: BoxDecoration(
-                        color: selected
-                            ? AppColors.pine
-                            : (today
-                                  ? AppColors.copperWash
-                                  : AppColors.paper.withValues(alpha: .42)),
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(
-                          color: selected
-                              ? AppColors.pine
-                              : today
-                              ? AppColors.copper
-                              : AppColors.line.withValues(alpha: .65),
-                        ),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              Text(
-                                '${date.day}',
-                                style: AppTypography.ui(
-                                  size: compactCell ? 11 : 13,
-                                  weight: FontWeight.w700,
-                                  color: selected
-                                      ? AppColors.white
-                                      : AppColors.ink,
-                                ),
-                              ),
-                              if (!compactCell) ...[
-                                const Spacer(),
-                                isLoading
-                                    ? SkeletonBox(
-                                        width: 6,
-                                        height: 6,
-                                        radius: 3,
-                                      )
-                                    : Container(
-                                        width: 6,
-                                        height: 6,
-                                        decoration: BoxDecoration(
-                                          shape: BoxShape.circle,
-                                          color: color,
-                                        ),
-                                      ),
-                              ],
-                            ],
-                          ),
-                          const Spacer(),
-                          if (isLoading) ...[
-                            SkeletonBox(
-                              width: compactCell ? 15 : 34,
-                              height: 5,
-                              radius: 4,
-                            ),
-                            if (!compactCell) ...[
-                              const SizedBox(height: 5),
-                              SkeletonBox(width: 24, height: 5, radius: 4),
-                            ],
-                          ] else if (data?.celebrationName != null)
-                            Text(
-                              data!.celebrationName!,
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
-                              style: AppTypography.ui(
-                                size: 9,
-                                weight: FontWeight.w600,
-                                color: selected
-                                    ? AppColors.copperWash
-                                    : AppColors.muted,
-                                height: 1.05,
-                              ),
-                            )
-                          else
-                            Container(
-                              height: 2,
-                              width: 15,
-                              decoration: BoxDecoration(
-                                color: color.withValues(alpha: .55),
-                                borderRadius: BorderRadius.circular(4),
-                              ),
-                            ),
-                        ],
-                      ),
+          const SizedBox(height: 6),
+          Row(
+            children: List.generate(7, (column) {
+              // Any week works here: only the weekday name is read from it.
+              final reference = DateTime(2024, 1, 7 + column);
+              return Expanded(
+                flex: column == 0 ? _sundayFlex : _weekdayFlex,
+                child: Padding(
+                  padding: EdgeInsets.only(right: column == 6 ? 0 : _cellGap),
+                  child: Text(
+                    copy.weekdayShort(reference),
+                    textAlign: column == 0 ? TextAlign.left : TextAlign.center,
+                    maxLines: 1,
+                    style: AppTypography.ui(
+                      size: 9.5,
+                      weight: FontWeight.w700,
+                      color: column == 0
+                          ? AppColors.copperDark
+                          : AppColors.muted,
+                      letterSpacing: .6,
                     ),
-                  );
-                },
+                  ),
+                ),
               );
-            },
+            }),
           ),
+          const SizedBox(height: 7),
+          if (fillHeight) Expanded(child: grid) else grid,
         ],
       ),
     );
   }
 }
 
+class _DayCell extends StatelessWidget {
+  const _DayCell({
+    required this.date,
+    required this.data,
+    required this.isSunday,
+    required this.isSelected,
+    required this.isToday,
+    required this.isLoading,
+    required this.onTap,
+    super.key,
+  });
+
+  final DateTime date;
+  final CalendarDay? data;
+  final bool isSunday;
+  final bool isSelected;
+  final bool isToday;
+  final bool isLoading;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final color = liturgicalColor(data?.color);
+    final label = _cellLabel(data, isSunday);
+    final background = isSelected
+        ? AppColors.pine
+        : isToday
+        ? AppColors.copperWash
+        : AppColors.paper.withValues(alpha: .5);
+    final border = isSelected
+        ? AppColors.pine
+        : isToday
+        ? AppColors.copper
+        : AppColors.line.withValues(alpha: .6);
+    final numberColor = isSelected ? AppColors.white : AppColors.ink;
+
+    return Semantics(
+      button: true,
+      selected: isSelected,
+      label: ['${date.day}', ?label].join(', '),
+      child: Material(
+        color: background,
+        clipBehavior: Clip.antiAlias,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(11),
+          side: BorderSide(color: border),
+        ),
+        child: InkWell(
+          onTap: onTap,
+          child: ClipRect(
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                final number = Text(
+                  '${date.day}',
+                  style: AppTypography.ui(
+                    size: 12.5,
+                    weight: FontWeight.w700,
+                    color: numberColor,
+                  ),
+                );
+
+                // Very short rows — a landscape phone or a small window — only
+                // have room for the date itself.
+                if (constraints.maxHeight < 32) {
+                  return Center(
+                    child: FittedBox(fit: BoxFit.scaleDown, child: number),
+                  );
+                }
+
+                final roomy = constraints.maxHeight >= 46;
+                final showLabel =
+                    label != null &&
+                    !isLoading &&
+                    roomy &&
+                    constraints.maxWidth >= 54;
+                return Padding(
+                  padding: roomy
+                      ? const EdgeInsets.fromLTRB(6, 5, 6, 6)
+                      : const EdgeInsets.fromLTRB(5, 3, 5, 4),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      number,
+                      if (showLabel)
+                        Expanded(
+                          child: Padding(
+                            padding: const EdgeInsets.only(top: 2),
+                            child: Text(
+                              label,
+                              maxLines: 3,
+                              overflow: TextOverflow.ellipsis,
+                              style: AppTypography.ui(
+                                size: 9,
+                                weight: FontWeight.w600,
+                                height: 1.12,
+                                color: isSelected
+                                    ? AppColors.copperWash
+                                    : AppColors.muted,
+                              ),
+                            ),
+                          ),
+                        )
+                      else
+                        Expanded(
+                          // Narrow cells cannot carry a name, so a feast is
+                          // marked with a dot the tap reveals in full.
+                          child: data?.celebrationName == null
+                              ? const SizedBox.shrink()
+                              : Align(
+                                  alignment: Alignment.centerLeft,
+                                  child: Container(
+                                    width: 5,
+                                    height: 5,
+                                    decoration: BoxDecoration(
+                                      shape: BoxShape.circle,
+                                      color: isSelected
+                                          ? AppColors.copperWash
+                                          : AppColors.copper,
+                                    ),
+                                  ),
+                                ),
+                        ),
+                      SizedBox(height: roomy ? 4 : 2),
+                      isLoading
+                          ? SkeletonBox(height: roomy ? 3 : 2.5, radius: 3)
+                          : Container(
+                              height: roomy ? 3 : 2.5,
+                              decoration: BoxDecoration(
+                                color: isSelected
+                                    ? AppColors.copperWash.withValues(alpha: .8)
+                                    : color.withValues(alpha: .85),
+                                borderRadius: BorderRadius.circular(3),
+                              ),
+                            ),
+                    ],
+                  ),
+                );
+              },
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+String? _cellLabel(CalendarDay? data, bool isSunday) {
+  final candidates = <String?>[
+    data?.celebrationName,
+    if (isSunday) data?.sundayName,
+    if (isSunday) data?.weekName,
+  ];
+  for (final value in candidates) {
+    if (value != null && value.trim().isNotEmpty) return value.trim();
+  }
+  return null;
+}
+
 class _CalendarArrow extends StatelessWidget {
-  const _CalendarArrow({required this.icon, required this.onTap});
+  const _CalendarArrow({
+    required this.icon,
+    required this.onTap,
+    required this.semanticLabel,
+    super.key,
+  });
 
   final IconData icon;
   final VoidCallback onTap;
+  final String semanticLabel;
 
   @override
   Widget build(BuildContext context) {
     return IconButton(
       onPressed: onTap,
       icon: Icon(icon, size: 22),
-      color: AppColors.muted,
+      tooltip: semanticLabel,
+      color: AppColors.inkSoft,
+      constraints: const BoxConstraints.tightFor(width: 44, height: 44),
       style: IconButton.styleFrom(
-        backgroundColor: AppColors.paperDeep.withValues(alpha: .65),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(11)),
+        backgroundColor: AppColors.paperDeep.withValues(alpha: .55),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       ),
     );
   }
@@ -997,39 +622,44 @@ class ReadingsCard extends StatelessWidget {
         .where((reading) => reading.reference.trim().isNotEmpty)
         .toList();
     return SurfaceCard(
-      padding: const EdgeInsets.fromLTRB(20, 20, 20, 16),
+      padding: const EdgeInsets.fromLTRB(18, 16, 18, 8),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Expanded(child: Eyebrow(title ?? copy.readings)),
-              const Icon(
-                Icons.menu_book_outlined,
-                size: 19,
-                color: AppColors.copper,
-              ),
-            ],
+          SizedBox(
+            height: 34,
+            child: Row(
+              children: [
+                Expanded(child: Eyebrow(title ?? copy.readings)),
+                if (readings.isNotEmpty && !isLoading)
+                  CopyButton(
+                    key: const ValueKey('copy-readings'),
+                    copy: copy,
+                    text: readingsAsText(readings, copy),
+                  ),
+              ],
+            ),
           ),
-          const SizedBox(height: 15),
           if (isLoading)
-            ...List.generate(4, (index) => const _ReadingSkeletonRow())
+            ...List.generate(3, (index) => const _ReadingSkeletonRow())
           else if (readings.isEmpty)
-            Text(
-              '—',
-              style: AppTypography.display(
-                size: 28,
-                color: AppColors.mutedLight,
+            Padding(
+              padding: const EdgeInsets.only(bottom: 14),
+              child: Text(
+                '—',
+                style: AppTypography.display(
+                  size: 26,
+                  color: AppColors.mutedLight,
+                ),
               ),
             )
           else
-            ...readings.asMap().entries.map(
-              (entry) => _ReadingRow(
-                number: '${entry.key + 1}'.padLeft(2, '0'),
-                reading: entry.value,
-                label: copy.readingLabel(entry.value.kind),
-                onTap: () => onOpen(entry.value),
+            ...readings.map(
+              (reading) => _ReadingRow(
+                reading: reading,
+                label: copy.readingLabel(reading.kind),
+                isFirst: reading == readings.first,
+                onTap: () => onOpen(reading),
               ),
             ),
         ],
@@ -1038,34 +668,25 @@ class ReadingsCard extends StatelessWidget {
   }
 }
 
+String readingsAsText(List<Reading> readings, AppCopy copy) {
+  return readings
+      .map((reading) => '${copy.readingLabel(reading.kind)}: ${reading.reference}')
+      .join('\n');
+}
+
 class _ReadingSkeletonRow extends StatelessWidget {
   const _ReadingSkeletonRow();
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 12),
-      child: Row(
+    return const Padding(
+      padding: EdgeInsets.symmetric(vertical: 13),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const SkeletonBox(width: 20, height: 20, radius: 6),
-          const SizedBox(width: 13),
-          const Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                SkeletonBox(width: 92, height: 9, radius: 5),
-                SizedBox(height: 7),
-                SkeletonBox(width: 145, height: 16, radius: 6),
-              ],
-            ),
-          ),
-          const SizedBox(width: 12),
-          SkeletonBox(
-            width: 17,
-            height: 17,
-            radius: 9,
-            color: AppColors.paperDeep.withValues(alpha: .58),
-          ),
+          SkeletonBox(width: 86, height: 9, radius: 5),
+          SizedBox(height: 8),
+          SkeletonBox(width: 152, height: 15, radius: 6),
         ],
       ),
     );
@@ -1074,71 +695,68 @@ class _ReadingSkeletonRow extends StatelessWidget {
 
 class _ReadingRow extends StatelessWidget {
   const _ReadingRow({
-    required this.number,
     required this.reading,
     required this.label,
+    required this.isFirst,
     required this.onTap,
   });
 
-  final String number;
   final Reading reading;
   final String label;
+  final bool isFirst;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(12),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 12),
-        child: Row(
-          children: [
-            Text(
-              number,
-              style: AppTypography.display(
-                size: 17,
-                weight: FontWeight.w500,
-                color: AppColors.copper,
-              ),
-            ),
-            const SizedBox(width: 13),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    label,
-                    style: AppTypography.ui(
-                      size: 11,
-                      weight: FontWeight.w700,
-                      color: AppColors.muted,
-                      letterSpacing: .35,
-                    ),
+    return Column(
+      children: [
+        if (!isFirst)
+          Divider(height: 1, color: AppColors.line.withValues(alpha: .6)),
+        InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(10),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 12),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        label,
+                        style: AppTypography.ui(
+                          size: 11,
+                          weight: FontWeight.w700,
+                          color: AppColors.muted,
+                          letterSpacing: .4,
+                        ),
+                      ),
+                      const SizedBox(height: 3),
+                      Text(
+                        reading.reference,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: AppTypography.display(
+                          size: 20,
+                          weight: FontWeight.w600,
+                          height: 1.05,
+                        ),
+                      ),
+                    ],
                   ),
-                  const SizedBox(height: 3),
-                  Text(
-                    reading.reference,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: AppTypography.display(
-                      size: 19,
-                      weight: FontWeight.w600,
-                      height: 1,
-                    ),
-                  ),
-                ],
-              ),
+                ),
+                const SizedBox(width: 8),
+                const Icon(
+                  Icons.chevron_right_rounded,
+                  size: 20,
+                  color: AppColors.mutedLight,
+                ),
+              ],
             ),
-            const SizedBox(width: 6),
-            const Icon(
-              Icons.arrow_outward_rounded,
-              size: 17,
-              color: AppColors.mutedLight,
-            ),
-          ],
+          ),
         ),
-      ),
+      ],
     );
   }
 }
@@ -1160,22 +778,11 @@ class CollectCard extends StatelessWidget {
     if (isLoading) {
       return SurfaceCard(
         key: const ValueKey('collect-skeleton'),
-        padding: const EdgeInsets.fromLTRB(20, 20, 20, 21),
+        padding: const EdgeInsets.fromLTRB(18, 16, 18, 20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(
-              children: [
-                const Icon(
-                  Icons.auto_awesome_outlined,
-                  size: 17,
-                  color: AppColors.copper,
-                ),
-                const SizedBox(width: 9),
-                Eyebrow(copy.collect),
-              ],
-            ),
-            const SizedBox(height: 14),
+            SizedBox(height: 34, child: Eyebrow(copy.collect)),
             const SkeletonBox(width: 210, height: 14, radius: 7),
             const SizedBox(height: 9),
             const SkeletonBox(width: 180, height: 14, radius: 7),
@@ -1191,29 +798,30 @@ class CollectCard extends StatelessWidget {
       return const SizedBox.shrink();
     }
     return SurfaceCard(
-      padding: const EdgeInsets.fromLTRB(20, 20, 20, 21),
+      padding: const EdgeInsets.fromLTRB(18, 16, 18, 20),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              const Icon(
-                Icons.auto_awesome_outlined,
-                size: 17,
-                color: AppColors.copper,
-              ),
-              const SizedBox(width: 9),
-              Eyebrow(copy.collect),
-            ],
+          SizedBox(
+            height: 34,
+            child: Row(
+              children: [
+                Expanded(child: Eyebrow(copy.collect)),
+                CopyButton(
+                  key: const ValueKey('copy-collect'),
+                  copy: copy,
+                  text: collect.text,
+                ),
+              ],
+            ),
           ),
-          const SizedBox(height: 14),
           Text(
             collect.text,
             style: AppTypography.display(
               size: 20,
               weight: FontWeight.w500,
               color: AppColors.inkSoft,
-              height: 1.16,
+              height: 1.24,
               style: FontStyle.italic,
             ),
           ),
@@ -1223,17 +831,33 @@ class CollectCard extends StatelessWidget {
   }
 }
 
-extension _FirstOrNull<T> on Iterable<T> {
-  T? get firstOrNull => isEmpty ? null : first;
+/// The note the API publishes about the day, when there is one.
+class DayDescription extends StatelessWidget {
+  const DayDescription({required this.day, super.key});
+
+  final LectionaryDay? day;
+
+  @override
+  Widget build(BuildContext context) {
+    final text = day?.description?.firstOrNull ?? day?.celebration?.description;
+    if (text == null || text.trim().isEmpty) return const SizedBox.shrink();
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(4, 14, 4, 0),
+      child: Text(
+        text.trim(),
+        style: AppTypography.display(
+          size: 18,
+          weight: FontWeight.w400,
+          color: AppColors.inkSoft,
+          height: 1.3,
+        ),
+      ),
+    );
+  }
 }
 
-List<DateTime> _weekDays(DateTime date) {
-  final sunday = DateTime(
-    date.year,
-    date.month,
-    date.day,
-  ).subtract(Duration(days: date.weekday % 7));
-  return List.generate(7, (index) => sunday.add(Duration(days: index)));
+extension _FirstOrNull<T> on Iterable<T> {
+  T? get firstOrNull => isEmpty ? null : first;
 }
 
 String _key(DateTime date) => '${date.year}-${date.month}-${date.day}';

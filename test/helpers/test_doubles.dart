@@ -10,7 +10,9 @@ class FakeLectionaryDataSource implements LectionaryDataSource {
     List<PrayerBook>? books,
     List<BibleVersion>? bibleVersions,
     LectionaryDay Function(DateTime date)? dayBuilder,
+    List<CalendarDay> Function(DateTime month)? monthBuilder,
   }) : books = books ?? [testBook(code: 'loc_2015', name: 'LOC 2015')],
+       monthBuilder = monthBuilder ?? testMonth,
        bibleVersions =
            bibleVersions ??
            const [
@@ -28,6 +30,7 @@ class FakeLectionaryDataSource implements LectionaryDataSource {
   List<PrayerBook> books;
   List<BibleVersion> bibleVersions;
   LectionaryDay Function(DateTime date) dayBuilder;
+  List<CalendarDay> Function(DateTime month) monthBuilder;
   final List<DateTime> requestedDates = [];
   final List<DateTime> requestedMonths = [];
   final List<String?> requestedReadingTypes = [];
@@ -86,7 +89,7 @@ class FakeLectionaryDataSource implements LectionaryDataSource {
     requestedReadingTypes.add(readingType);
     requestedBibleVersions.add(bibleVersion);
     if (failCalendarMonth) throw StateError('month unavailable');
-    return testMonth(month);
+    return monthBuilder(month);
   }
 
   @override

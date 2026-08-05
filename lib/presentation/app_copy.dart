@@ -45,16 +45,6 @@ class AppCopy {
     AppLanguage.en => 'Today',
     AppLanguage.es => 'Hoy',
   };
-  String get week => switch (language) {
-    AppLanguage.pt => 'Semana',
-    AppLanguage.en => 'Week',
-    AppLanguage.es => 'Semana',
-  };
-  String get month => switch (language) {
-    AppLanguage.pt => 'Mês',
-    AppLanguage.en => 'Month',
-    AppLanguage.es => 'Mes',
-  };
   String get readings => switch (language) {
     AppLanguage.pt => 'Leituras de hoje',
     AppLanguage.en => "Today's readings",
@@ -70,25 +60,35 @@ class AppCopy {
     AppLanguage.en => 'Collect of the day',
     AppLanguage.es => 'Colecta del día',
   };
-  String get lectionary => switch (language) {
-    AppLanguage.pt => 'LECIONÁRIO DO DIA',
-    AppLanguage.en => 'DAILY LECTIONARY',
-    AppLanguage.es => 'LECCIONARIO DEL DÍA',
+  String get openTodayReadings => switch (language) {
+    AppLanguage.pt => 'Abrir o dia de hoje',
+    AppLanguage.en => 'Open today',
+    AppLanguage.es => 'Abrir el día de hoy',
+  };
+  String get copyAction => switch (language) {
+    AppLanguage.pt => 'Copiar',
+    AppLanguage.en => 'Copy',
+    AppLanguage.es => 'Copiar',
+  };
+  String get copiedToClipboard => switch (language) {
+    AppLanguage.pt => 'Texto copiado',
+    AppLanguage.en => 'Text copied',
+    AppLanguage.es => 'Texto copiado',
   };
   String get chooseLoc => switch (language) {
     AppLanguage.pt => 'Escolher LOC',
     AppLanguage.en => 'Choose prayer book',
     AppLanguage.es => 'Elegir LOC',
   };
+  String get recommended => switch (language) {
+    AppLanguage.pt => 'RECOMENDADO',
+    AppLanguage.en => 'RECOMMENDED',
+    AppLanguage.es => 'RECOMENDADO',
+  };
   String get changeLoc => switch (language) {
     AppLanguage.pt => 'Trocar livro de oração',
     AppLanguage.en => 'Change prayer book',
     AppLanguage.es => 'Cambiar libro de oración',
-  };
-  String get liturgicalColor => switch (language) {
-    AppLanguage.pt => 'COR LITÚRGICA',
-    AppLanguage.en => 'LITURGICAL COLOR',
-    AppLanguage.es => 'COLOR LITÚRGICO',
   };
   String get selected => switch (language) {
     AppLanguage.pt => 'SELECIONADO',
@@ -110,11 +110,6 @@ class AppCopy {
     AppLanguage.en => 'Year',
     AppLanguage.es => 'Año',
   };
-  String get readingOpening => switch (language) {
-    AppLanguage.pt => 'Abrir leitura',
-    AppLanguage.en => 'Open reading',
-    AppLanguage.es => 'Abrir lectura',
-  };
   String get readingTrack => switch (language) {
     AppLanguage.pt => 'Sequência das leituras',
     AppLanguage.en => 'Reading track',
@@ -124,11 +119,6 @@ class AppCopy {
     AppLanguage.pt => 'Versão da Bíblia',
     AppLanguage.en => 'Bible version',
     AppLanguage.es => 'Versión de la Biblia',
-  };
-  String get chooseBible => switch (language) {
-    AppLanguage.pt => 'Escolher Bíblia',
-    AppLanguage.en => 'Choose Bible',
-    AppLanguage.es => 'Elegir Biblia',
   };
   String get settings => switch (language) {
     AppLanguage.pt => 'Configurações',
