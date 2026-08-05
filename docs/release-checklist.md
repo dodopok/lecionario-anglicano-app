@@ -7,6 +7,7 @@
 - [ ] `flutter test --coverage`
 - [ ] `./tool/verify_ios_release.sh`
 - [ ] `./tool/verify_app_store_assets.sh`
+- [ ] `./tool/verify_site.sh`
 - [ ] Verificar `git status` e confirmar que apenas arquivos intencionais serão enviados.
 - [ ] Confirmar que o endpoint e o `X-App-Internal-Id` de produção são os corretos.
 - [ ] Confirmar o número de versão e incrementar o build number.
