@@ -86,9 +86,7 @@ void main() {
     addTearDown(controller.dispose);
     await controller.initialize();
 
-    await tester.pumpWidget(
-      testMaterialApp(home: LocSelectionScreen(controller: controller)),
-    );
+    await tester.pumpWidget(testControllerApp(controller));
     await tester.pumpAndSettle();
 
     expect(find.text('EN'), findsOneWidget);
@@ -99,6 +97,43 @@ void main() {
     expect(find.text('Choose your\nPrayer Book'), findsOneWidget);
     expect(find.text('BCP Test'), findsOneWidget);
     expect(find.text('LOC Teste'), findsNothing);
+  });
+
+  testWidgets('selects a different LOC from the narrow onboarding layout', (
+    tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(390, 844));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    final source = FakeLectionaryDataSource(
+      books: [
+        testBook(),
+        testBook(code: 'loc_second', name: 'Segundo LOC'),
+      ],
+      dayBuilder: testDay,
+    );
+    final controller = AppController(
+      api: source,
+      localPreferences: await createLocalPreferences(),
+    );
+    addTearDown(controller.dispose);
+    await controller.initialize();
+
+    await tester.pumpWidget(testControllerApp(controller));
+    await tester.pumpAndSettle();
+
+    final secondBook = find.text('Segundo LOC');
+    await tester.ensureVisible(secondBook);
+    await tester.tap(secondBook);
+    await tester.pumpAndSettle();
+
+    final continueButton = find.text('Entrar no lecionário');
+    await tester.ensureVisible(continueButton);
+    await tester.tap(continueButton);
+    await tester.pumpAndSettle();
+
+    expect(controller.selectedPrayerBookCode, 'loc_second');
+    expect(find.byType(HomeScreen), findsOneWidget);
   });
 
   testWidgets('renders readings, changes to month view and opens a reading', (
@@ -275,6 +310,10 @@ void main() {
       find.text(AppCopy(AppLanguage.en).monthYear(DateTime.now())),
       findsOneWidget,
     );
+
+    await tester.tap(find.text('Back to today'));
+    await tester.pumpAndSettle();
+    expect(source.requestedDates, contains(DateUtils.dateOnly(DateTime.now())));
   });
 
   testWidgets('shows the local preview banner when both API calls fail', (
@@ -303,5 +342,49 @@ void main() {
       ),
       findsOneWidget,
     );
+  });
+
+  testWidgets('shows a reading fallback and translation when text is absent', (
+    tester,
+  ) async {
+    final source = FakeLectionaryDataSource(
+      books: [testBook()],
+      dayBuilder: (date) => LectionaryDay(
+        date: date,
+        dayOfWeek: 'Quarta-feira',
+        season: 'Tempo de teste',
+        color: 'verde',
+        readings: const [
+          Reading(kind: 'gospel', reference: 'João 1:1–5', translation: 'NAA'),
+        ],
+      ),
+    );
+    final controller = AppController(
+      api: source,
+      localPreferences: await createLocalPreferences({
+        'selected_prayer_book_code': 'loc_test',
+      }),
+    );
+    addTearDown(controller.dispose);
+    await controller.initialize();
+
+    await tester.pumpWidget(
+      testMaterialApp(home: HomeScreen(controller: controller)),
+    );
+    await tester.pumpAndSettle();
+
+    final reading = find.text('João 1:1–5');
+    await tester.ensureVisible(reading);
+    await tester.tap(reading);
+    await tester.pumpAndSettle();
+
+    expect(
+      find.text(
+        'A referência está disponível; o texto integral pode ser aberto quando o conteúdo estiver publicado.',
+      ),
+      findsOneWidget,
+    );
+    expect(find.text('NAA'), findsOneWidget);
+    await tester.tap(find.text('Fechar'));
   });
 }
