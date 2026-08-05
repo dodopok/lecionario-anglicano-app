@@ -69,7 +69,11 @@ void main() {
     expect(portuguese.readingTrack, 'Sequência das leituras');
     expect(portuguese.bibleVersion, 'Versão da Bíblia');
     expect(portuguese.chooseBible, 'Escolher Bíblia');
+    expect(portuguese.settings, 'Configurações');
+    expect(portuguese.settingsSubtitle, 'Preferências do lecionário');
+    expect(portuguese.preferences, 'Preferências');
 
+    expect(english.brand, 'Lectionary');
     expect(english.brandSubline, 'ANGLICAN');
     expect(english.chooseEyebrow, 'FIRST STEP');
     expect(english.chooseTitle, 'Choose your\nPrayer Book');
@@ -92,7 +96,11 @@ void main() {
     expect(english.readingTrack, 'Reading track');
     expect(english.bibleVersion, 'Bible version');
     expect(english.chooseBible, 'Choose Bible');
+    expect(english.settings, 'Settings');
+    expect(english.settingsSubtitle, 'Lectionary preferences');
+    expect(english.preferences, 'Preferences');
 
+    expect(spanish.brand, 'Leccionario');
     expect(spanish.brandSubline, 'ANGLICANO');
     expect(spanish.chooseEyebrow, 'PRIMER PASO');
     expect(spanish.chooseTitle, 'Elige tu\nLibro de Oración');
@@ -114,6 +122,9 @@ void main() {
     expect(spanish.readingTrack, 'Secuencia de lecturas');
     expect(spanish.bibleVersion, 'Versión de la Biblia');
     expect(spanish.chooseBible, 'Elegir Biblia');
+    expect(spanish.settings, 'Configuración');
+    expect(spanish.settingsSubtitle, 'Preferencias del leccionario');
+    expect(spanish.preferences, 'Preferencias');
   });
 
   test('formats month, weekday and reading metadata per language', () {

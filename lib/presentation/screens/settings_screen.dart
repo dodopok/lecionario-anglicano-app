@@ -1,0 +1,127 @@
+import 'package:flutter/material.dart';
+
+import '../../core/theme/app_colors.dart';
+import '../../core/theme/app_typography.dart';
+import '../app_controller.dart';
+import '../app_copy.dart';
+import '../app_shell.dart';
+import '../widgets/design_primitives.dart';
+import '../widgets/preference_controls.dart';
+import '../widgets/sacred_mark.dart';
+
+class SettingsScreen extends StatelessWidget {
+  const SettingsScreen({required this.controller, super.key});
+
+  final AppController controller;
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: controller,
+      builder: (context, _) {
+        final copy = copyFor(controller);
+        final date = controller.selectedDay?.date ?? DateTime.now();
+        return Scaffold(
+          body: AppBackground(
+            child: SafeArea(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.fromLTRB(20, 18, 20, 34),
+                child: Center(
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 620),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        _SettingsHeader(copy: copy),
+                        const SizedBox(height: 30),
+                        SurfaceCard(
+                          padding: const EdgeInsets.all(16),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              Text(
+                                copy.preferences,
+                                style: AppTypography.display(
+                                  size: 25,
+                                  color: AppColors.ink,
+                                ),
+                              ),
+                              const SizedBox(height: 18),
+                              PreferenceControls(
+                                controller: controller,
+                                copy: copy,
+                                onReadingTypeChanged: (value) {
+                                  controller.setReadingType(value, date);
+                                },
+                                onBibleVersionChanged: (version) {
+                                  controller.chooseBibleVersion(version, date);
+                                },
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 20),
+                        Center(
+                          child: TextButton.icon(
+                            onPressed: () => Navigator.of(context).pop(),
+                            icon: const Icon(Icons.arrow_back_rounded, size: 18),
+                            label: Text(copy.close),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _SettingsHeader extends StatelessWidget {
+  const _SettingsHeader({required this.copy});
+
+  final AppCopy copy;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        IconButton(
+          onPressed: () => Navigator.of(context).pop(),
+          tooltip: copy.close,
+          icon: const Icon(Icons.arrow_back_rounded),
+        ),
+        const SizedBox(width: 3),
+        const SacredMark(size: 38),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                copy.settings,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: AppTypography.display(size: 28, height: .9),
+              ),
+              const SizedBox(height: 5),
+              Text(
+                copy.settingsSubtitle,
+                style: AppTypography.ui(
+                  size: 10,
+                  weight: FontWeight.w700,
+                  color: AppColors.muted,
+                  letterSpacing: 1.1,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
