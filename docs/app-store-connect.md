@@ -60,7 +60,7 @@ Isso informa que o app não usa criptografia não isenta própria. Se o backend 
 2. Gere um build assinado com o script:
 
    ```bash
-   FLUTTER_BUILD_NUMBER=2 ./tool/build_ios_release.sh
+   FLUTTER_BUILD_NUMBER=3 ./tool/build_ios_release.sh
    ```
 
 3. Se o ambiente de produção precisar de valores diferentes dos defaults, passe-os sem gravá-los no Git:
@@ -69,7 +69,7 @@ Isso informa que o app não usa criptografia não isenta própria. Se o backend 
    API_BASE_URL="https://seu-endpoint-real/api/v1" \
    APP_INTERNAL_IDENTIFIER="seu-identificador" \
    FLUTTER_BUILD_NAME="1.0.0" \
-    FLUTTER_BUILD_NUMBER="2" \
+    FLUTTER_BUILD_NUMBER="3" \
     ./tool/build_ios_release.sh
     ```
 

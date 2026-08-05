@@ -28,7 +28,7 @@ flutter build ios --release --no-codesign
 Para o archive que será enviado:
 
 ```bash
-FLUTTER_BUILD_NUMBER=2 ./tool/build_ios_release.sh
+FLUTTER_BUILD_NUMBER=3 ./tool/build_ios_release.sh
 ```
 
 Para validar o mesmo script sem certificados, use `IOS_NO_CODESIGN=1`; esse modo não gera um artefato enviável:

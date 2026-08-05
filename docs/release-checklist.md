@@ -63,5 +63,5 @@ flutter test --coverage
 ./tool/verify_ios_release.sh
 flutter build ios --release --no-codesign
 IOS_NO_CODESIGN=1 ./tool/build_ios_release.sh
-FLUTTER_BUILD_NUMBER=2 ./tool/build_ios_release.sh
+FLUTTER_BUILD_NUMBER=3 ./tool/build_ios_release.sh
 ```
