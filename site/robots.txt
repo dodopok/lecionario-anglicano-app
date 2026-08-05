@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://lecionarioapp.caminhoanglicano.com.br/sitemap.xml

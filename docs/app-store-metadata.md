@@ -111,11 +111,11 @@ Pacote preparado para a versão iOS 1.0 do Lecionário Anglicano. Os textos abai
 
 Na tela mostrada no App Store Connect, o campo fica na seção de metadados da versão, abaixo de palavras-chave, ao lado de **URL de marketing**.
 
-A URL de suporte deve apontar para uma página pública que explique como entrar em contato ou obter ajuda. Não use o endpoint da API como URL de suporte. Como ainda não foi fornecida uma página pública, deixe este valor pendente até publicar uma página real e testá-la sem login.
+A URL de suporte deve apontar para uma página pública que explique como obter ajuda. Depois de publicar o site em Vercel, use `https://lecionarioapp.caminhoanglicano.com.br/suporte/`. Não use o endpoint da API como URL de suporte.
 
 ### URL de marketing
 
-É uma página pública de apresentação do produto e é opcional para esta submissão. Se não houver uma landing page pública do app, deixe o campo em branco. Não é necessário preencher com a URL da API.
+É uma página pública de apresentação do produto e é opcional para esta submissão. Depois de publicar o site, use `https://lecionarioapp.caminhoanglicano.com.br/`. Não é necessário preencher com a URL da API.
 
 Antes de preencher qualquer um dos campos, confirme que a URL abre em uma janela anônima e que o caminho publicado corresponde ao produto. O domínio usado pela API, `caminhoanglicano.com.br`, não garante que uma página de suporte ou marketing exista nesse domínio.
 
@@ -140,4 +140,4 @@ Para cada idioma, abra o registro do app, a versão iOS 1.0 e a localização co
 5. deixe o copyright como `Caminho Anglicano`;
 6. nas informações de revisão, desmarque o login obrigatório.
 
-A política de privacidade tem um campo próprio nas informações gerais do app e também precisa de uma URL pública real antes da submissão.
+A política de privacidade tem um campo próprio nas informações gerais do app. Depois de publicar o site, use `https://lecionarioapp.caminhoanglicano.com.br/privacidade/`.
