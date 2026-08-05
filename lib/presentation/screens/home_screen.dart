@@ -8,8 +8,8 @@ import '../app_copy.dart';
 import '../app_shell.dart';
 import '../widgets/design_primitives.dart';
 import '../widgets/home_sections.dart';
-import '../widgets/preference_controls.dart';
 import '../widgets/sacred_mark.dart';
+import 'settings_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({required this.controller, super.key});
@@ -63,17 +63,7 @@ class _HomeScreenState extends State<HomeScreen> {
                               book: book,
                               controller: widget.controller,
                               onChooseBook: _openPrayerBookSheet,
-                            ),
-                            const SizedBox(height: 12),
-                            PreferenceControls(
-                              controller: widget.controller,
-                              copy: copy,
-                              onReadingTypeChanged: (value) {
-                                _changeReadingType(value, activeDate);
-                              },
-                              onBibleVersionChanged: (version) {
-                                _changeBibleVersion(version, activeDate);
-                              },
+                              onOpenSettings: _openSettings,
                             ),
                             const SizedBox(height: 24),
                             DailyHero(
@@ -145,12 +135,12 @@ class _HomeScreenState extends State<HomeScreen> {
     await _selectDate(DateTime.now());
   }
 
-  Future<void> _changeReadingType(String value, DateTime date) async {
-    await widget.controller.setReadingType(value, date);
-  }
-
-  Future<void> _changeBibleVersion(BibleVersion version, DateTime date) async {
-    await widget.controller.chooseBibleVersion(version, date);
+  Future<void> _openSettings() async {
+    await Navigator.of(context).push<void>(
+      MaterialPageRoute<void>(
+        builder: (_) => SettingsScreen(controller: widget.controller),
+      ),
+    );
   }
 
   Future<void> _previousMonth() async {
@@ -248,12 +238,14 @@ class _HomeHeader extends StatelessWidget {
     required this.book,
     required this.controller,
     required this.onChooseBook,
+    required this.onOpenSettings,
   });
 
   final AppCopy copy;
   final PrayerBook? book;
   final AppController controller;
   final VoidCallback onChooseBook;
+  final VoidCallback onOpenSettings;
 
   @override
   Widget build(BuildContext context) {
@@ -301,6 +293,17 @@ class _HomeHeader extends StatelessWidget {
               ),
               const SizedBox(width: 10),
             ],
+            IconButton(
+              onPressed: onOpenSettings,
+              tooltip: copy.settings,
+              padding: EdgeInsets.zero,
+              visualDensity: VisualDensity.compact,
+              constraints: const BoxConstraints.tightFor(
+                width: 36,
+                height: 36,
+              ),
+              icon: const Icon(Icons.tune_rounded, size: 20),
+            ),
             _BookPill(
               book: book,
               compact: compact,

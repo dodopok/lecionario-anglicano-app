@@ -8,6 +8,7 @@ import 'package:lecionario_anglicano/presentation/app_copy.dart';
 import 'package:lecionario_anglicano/presentation/app_shell.dart';
 import 'package:lecionario_anglicano/presentation/screens/home_screen.dart';
 import 'package:lecionario_anglicano/presentation/screens/loc_selection_screen.dart';
+import 'package:lecionario_anglicano/presentation/screens/settings_screen.dart';
 
 import 'helpers/pump_app.dart';
 import 'helpers/test_doubles.dart';
@@ -178,6 +179,40 @@ void main() {
     expect(find.text('No princípio.'), findsOneWidget);
   });
 
+  testWidgets('renders the month calendar on a narrow home layout', (
+    tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(390, 844));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    final source = FakeLectionaryDataSource(
+      books: [testBook()],
+      dayBuilder: testDay,
+    );
+    final controller = AppController(
+      api: source,
+      localPreferences: await createLocalPreferences({
+        'selected_prayer_book_code': 'loc_test',
+      }),
+    );
+    addTearDown(controller.dispose);
+    await controller.initialize();
+
+    await tester.pumpWidget(
+      testMaterialApp(home: HomeScreen(controller: controller)),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Mês'));
+    await tester.pumpAndSettle();
+
+    expect(
+      find.text(AppCopy(AppLanguage.pt).monthYear(DateTime.now())),
+      findsOneWidget,
+    );
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('uses API LOC covers and persists reading and Bible choices', (
     tester,
   ) async {
@@ -230,6 +265,14 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.byType(Image), findsAtLeastNWidgets(1));
+    expect(find.byIcon(Icons.tune_rounded), findsOneWidget);
+    expect(find.text('SEQUÊNCIA DAS LEITURAS'), findsNothing);
+
+    await tester.tap(find.byIcon(Icons.tune_rounded));
+    await tester.pumpAndSettle();
+    expect(find.byType(SettingsScreen), findsOneWidget);
+    expect(find.text('Preferências do lecionário'), findsOneWidget);
+    expect(find.text('Preferências'), findsOneWidget);
     expect(find.text('SEQUÊNCIA DAS LEITURAS'), findsOneWidget);
     expect(find.text('VERSÃO DA BÍBLIA'), findsOneWidget);
     expect(find.text('NVI'), findsOneWidget);

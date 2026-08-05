@@ -7,7 +7,11 @@ class AppCopy {
 
   final AppLanguage language;
 
-  String get brand => 'Lecionário';
+  String get brand => switch (language) {
+    AppLanguage.pt => 'Lecionário',
+    AppLanguage.en => 'Lectionary',
+    AppLanguage.es => 'Leccionario',
+  };
   String get brandSubline => switch (language) {
     AppLanguage.pt => 'ANGLICANO',
     AppLanguage.en => 'ANGLICAN',
@@ -120,6 +124,21 @@ class AppCopy {
     AppLanguage.pt => 'Escolher Bíblia',
     AppLanguage.en => 'Choose Bible',
     AppLanguage.es => 'Elegir Biblia',
+  };
+  String get settings => switch (language) {
+    AppLanguage.pt => 'Configurações',
+    AppLanguage.en => 'Settings',
+    AppLanguage.es => 'Configuración',
+  };
+  String get settingsSubtitle => switch (language) {
+    AppLanguage.pt => 'Preferências do lecionário',
+    AppLanguage.en => 'Lectionary preferences',
+    AppLanguage.es => 'Preferencias del leccionario',
+  };
+  String get preferences => switch (language) {
+    AppLanguage.pt => 'Preferências',
+    AppLanguage.en => 'Preferences',
+    AppLanguage.es => 'Preferencias',
   };
   String dateLong(DateTime date) {
     final locale = language.locale.toLanguageTag();

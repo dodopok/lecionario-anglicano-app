@@ -736,102 +736,117 @@ class MonthCalendar extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 5),
-          GridView.builder(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            itemCount: totalCells,
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 7,
-              crossAxisSpacing: 5,
-              mainAxisSpacing: 5,
-              childAspectRatio: 1.05,
-            ),
-            itemBuilder: (context, index) {
-              final dayNumber = index - firstDayOffset + 1;
-              if (dayNumber < 1 || dayNumber > totalDays) {
-                return const SizedBox.shrink();
-              }
-              final date = DateTime(
-                activeDate.year,
-                activeDate.month,
-                dayNumber,
-              );
-              final data = byDate[_key(date)];
-              final selected = _sameDay(date, activeDate);
-              final today = _sameDay(date, DateTime.now());
-              final color = liturgicalColor(data?.color);
-              return InkWell(
-                onTap: () => onSelect(date),
-                borderRadius: BorderRadius.circular(12),
-                child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 180),
-                  padding: const EdgeInsets.fromLTRB(7, 7, 7, 5),
-                  decoration: BoxDecoration(
-                    color: selected
-                        ? AppColors.pine
-                        : (today
-                              ? AppColors.copperWash
-                              : AppColors.paper.withValues(alpha: .42)),
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final cellWidth = (constraints.maxWidth - 30) / 7;
+              final cellHeight = cellWidth < 60
+                  ? 56.0
+                  : cellWidth < 100
+                  ? 68.0
+                  : 78.0;
+              final compactCell = cellWidth < 60;
+              return GridView.builder(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                itemCount: totalCells,
+                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 7,
+                  crossAxisSpacing: 5,
+                  mainAxisSpacing: 5,
+                  mainAxisExtent: cellHeight,
+                ),
+                itemBuilder: (context, index) {
+                  final dayNumber = index - firstDayOffset + 1;
+                  if (dayNumber < 1 || dayNumber > totalDays) {
+                    return const SizedBox.shrink();
+                  }
+                  final date = DateTime(
+                    activeDate.year,
+                    activeDate.month,
+                    dayNumber,
+                  );
+                  final data = byDate[_key(date)];
+                  final selected = _sameDay(date, activeDate);
+                  final today = _sameDay(date, DateTime.now());
+                  final color = liturgicalColor(data?.color);
+                  return InkWell(
+                    onTap: () => onSelect(date),
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                      color: selected
-                          ? AppColors.pine
-                          : today
-                          ? AppColors.copper
-                          : AppColors.line.withValues(alpha: .65),
-                    ),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 180),
+                      padding: const EdgeInsets.fromLTRB(7, 7, 7, 5),
+                      decoration: BoxDecoration(
+                        color: selected
+                            ? AppColors.pine
+                            : (today
+                                  ? AppColors.copperWash
+                                  : AppColors.paper.withValues(alpha: .42)),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: selected
+                              ? AppColors.pine
+                              : today
+                              ? AppColors.copper
+                              : AppColors.line.withValues(alpha: .65),
+                        ),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(
-                            '${date.day}',
-                            style: AppTypography.ui(
-                              size: 13,
-                              weight: FontWeight.w700,
-                              color: selected ? AppColors.white : AppColors.ink,
-                            ),
+                          Row(
+                            children: [
+                              Text(
+                                '${date.day}',
+                                style: AppTypography.ui(
+                                  size: compactCell ? 11 : 13,
+                                  weight: FontWeight.w700,
+                                  color: selected
+                                      ? AppColors.white
+                                      : AppColors.ink,
+                                ),
+                              ),
+                              if (!compactCell) ...[
+                                const Spacer(),
+                                Container(
+                                  width: 6,
+                                  height: 6,
+                                  decoration: BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    color: color,
+                                  ),
+                                ),
+                              ],
+                            ],
                           ),
                           const Spacer(),
-                          Container(
-                            width: 6,
-                            height: 6,
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              color: color,
+                          if (data?.celebrationName != null)
+                            Text(
+                              data!.celebrationName!,
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                              style: AppTypography.ui(
+                                size: 9,
+                                weight: FontWeight.w600,
+                                color: selected
+                                    ? AppColors.copperWash
+                                    : AppColors.muted,
+                                height: 1.05,
+                              ),
+                            )
+                          else
+                            Container(
+                              height: 2,
+                              width: 15,
+                              decoration: BoxDecoration(
+                                color: color.withValues(alpha: .55),
+                                borderRadius: BorderRadius.circular(4),
+                              ),
                             ),
-                          ),
                         ],
                       ),
-                      const Spacer(),
-                      if (data?.celebrationName != null)
-                        Text(
-                          data!.celebrationName!,
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                          style: AppTypography.ui(
-                            size: 9,
-                            weight: FontWeight.w600,
-                            color: selected
-                                ? AppColors.copperWash
-                                : AppColors.muted,
-                            height: 1.05,
-                          ),
-                        )
-                      else
-                        Container(
-                          height: 2,
-                          width: 15,
-                          decoration: BoxDecoration(
-                            color: color.withValues(alpha: .55),
-                            borderRadius: BorderRadius.circular(4),
-                          ),
-                        ),
-                    ],
-                  ),
-                ),
+                    ),
+                  );
+                },
               );
             },
           ),
