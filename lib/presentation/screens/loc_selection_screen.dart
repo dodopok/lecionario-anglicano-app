@@ -234,7 +234,32 @@ class _BooksColumn extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (books.isEmpty) return const SizedBox.shrink();
+    if (books.isEmpty) {
+      return SurfaceCard(
+        padding: const EdgeInsets.all(22),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Icon(
+              Icons.menu_book_outlined,
+              color: AppColors.copperDark,
+              size: 23,
+            ),
+            const SizedBox(width: 13),
+            Expanded(
+              child: Text(
+                copy.noPrayerBooksForLanguage,
+                style: AppTypography.ui(
+                  size: 16,
+                  color: AppColors.muted,
+                  height: 1.35,
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,

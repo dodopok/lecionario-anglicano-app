@@ -194,6 +194,43 @@ void main() {
   });
 
   test(
+    'switching language clears the incompatible LOC and keeps the new list',
+    () async {
+      final englishBook = testBook(
+        code: 'loc_en',
+        name: 'BCP Test',
+        language: AppLanguage.en,
+      );
+      final portugueseBook = testBook(code: 'loc_pt', language: AppLanguage.pt);
+      final source = FakeLectionaryDataSource(
+        books: [portugueseBook, englishBook],
+        dayBuilder: testDay,
+      );
+      final preferences = await createLocalPreferences({
+        'selected_prayer_book_code': portugueseBook.code,
+      });
+      final controller = AppController(
+        api: source,
+        localPreferences: preferences,
+      );
+      addTearDown(controller.dispose);
+
+      await controller.initialize();
+      await controller.setLanguage(AppLanguage.en);
+
+      expect(controller.locale, AppLanguage.en);
+      expect(controller.selectedPrayerBookCode, isNull);
+      expect(preferences.selectedPrayerBookCode, isNull);
+      expect(controller.booksForCurrentLanguage, [englishBook]);
+
+      await controller.choosePrayerBook(englishBook);
+
+      expect(controller.selectedPrayerBookCode, englishBook.code);
+      expect(source.requestedBibleLanguages, contains('en-US'));
+    },
+  );
+
+  test(
     'reuses cached months while still refreshing the selected day',
     () async {
       final source = FakeLectionaryDataSource(dayBuilder: testDay);
@@ -297,24 +334,21 @@ void main() {
     expect(source.getCalendarMonthCalls, 2);
   });
 
-  test(
-    'falls back to all books when the current language has no matches',
-    () async {
-      final book = testBook(language: AppLanguage.pt);
-      final source = FakeLectionaryDataSource(books: [book]);
-      final preferences = await createLocalPreferences();
-      final controller = AppController(
-        api: source,
-        localPreferences: preferences,
-      );
-      addTearDown(controller.dispose);
-      await controller.initialize();
+  test('does not expose books from another language when none match', () async {
+    final book = testBook(language: AppLanguage.pt);
+    final source = FakeLectionaryDataSource(books: [book]);
+    final preferences = await createLocalPreferences();
+    final controller = AppController(
+      api: source,
+      localPreferences: preferences,
+    );
+    addTearDown(controller.dispose);
+    await controller.initialize();
 
-      await controller.setLanguage(AppLanguage.es);
+    await controller.setLanguage(AppLanguage.es);
 
-      expect(controller.booksForCurrentLanguage, [book]);
-    },
-  );
+    expect(controller.booksForCurrentLanguage, isEmpty);
+  });
 
   test('disposes its data source', () async {
     final source = FakeLectionaryDataSource();

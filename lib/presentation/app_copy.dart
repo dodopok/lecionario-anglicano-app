@@ -140,6 +140,21 @@ class AppCopy {
     AppLanguage.en => 'Preferences',
     AppLanguage.es => 'Preferencias',
   };
+  String get languageLabel => switch (language) {
+    AppLanguage.pt => 'Idioma',
+    AppLanguage.en => 'Language',
+    AppLanguage.es => 'Idioma',
+  };
+  String get languageSubtitle => switch (language) {
+    AppLanguage.pt => 'Interface, LOCs e Bíblias disponíveis',
+    AppLanguage.en => 'Interface, prayer books, and available Bibles',
+    AppLanguage.es => 'Interfaz, LOCs y Biblias disponibles',
+  };
+  String get noPrayerBooksForLanguage => switch (language) {
+    AppLanguage.pt => 'Nenhum LOC disponível neste idioma.',
+    AppLanguage.en => 'No prayer book is available in this language.',
+    AppLanguage.es => 'No hay ningún LOC disponible en este idioma.',
+  };
   String get information => switch (language) {
     AppLanguage.pt => 'Informações',
     AppLanguage.en => 'Information',

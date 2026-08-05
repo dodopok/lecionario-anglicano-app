@@ -6,6 +6,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../core/app_links.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_typography.dart';
+import '../../data/models/lectionary_models.dart';
 import '../app_controller.dart';
 import '../app_copy.dart';
 import '../app_shell.dart';
@@ -14,11 +15,7 @@ import '../widgets/preference_controls.dart';
 import '../widgets/sacred_mark.dart';
 
 class SettingsScreen extends StatelessWidget {
-  const SettingsScreen({
-    required this.controller,
-    this.openUrl,
-    super.key,
-  });
+  const SettingsScreen({required this.controller, this.openUrl, super.key});
 
   final AppController controller;
   final Future<bool> Function(Uri uri)? openUrl;
@@ -52,6 +49,39 @@ class SettingsScreen extends StatelessWidget {
                       children: [
                         _SettingsHeader(copy: copy),
                         const SizedBox(height: 30),
+                        SurfaceCard(
+                          padding: const EdgeInsets.fromLTRB(16, 16, 16, 14),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              Text(
+                                copy.languageLabel,
+                                style: AppTypography.display(
+                                  size: 25,
+                                  color: AppColors.ink,
+                                ),
+                              ),
+                              const SizedBox(height: 3),
+                              Text(
+                                copy.languageSubtitle,
+                                style: AppTypography.ui(
+                                  size: 13,
+                                  color: AppColors.muted,
+                                ),
+                              ),
+                              const SizedBox(height: 12),
+                              Align(
+                                alignment: Alignment.centerLeft,
+                                child: LanguageSwitcher(
+                                  selected: controller.locale,
+                                  onChanged: (language) =>
+                                      _changeLanguage(context, language),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 16),
                         SurfaceCard(
                           padding: const EdgeInsets.all(16),
                           child: Column(
@@ -103,9 +133,8 @@ class SettingsScreen extends StatelessWidget {
                               _SettingsLinkTile(
                                 icon: Icons.privacy_tip_outlined,
                                 label: copy.privacyPolicy,
-                                onTap: () => _openExternal(
-                                  AppLinks.privacyPolicy,
-                                ),
+                                onTap: () =>
+                                    _openExternal(AppLinks.privacyPolicy),
                               ),
                               const Divider(height: 1),
                               _SettingsLinkTile(
@@ -120,7 +149,10 @@ class SettingsScreen extends StatelessWidget {
                         Center(
                           child: TextButton.icon(
                             onPressed: () => Navigator.of(context).pop(),
-                            icon: const Icon(Icons.arrow_back_rounded, size: 18),
+                            icon: const Icon(
+                              Icons.arrow_back_rounded,
+                              size: 18,
+                            ),
                             label: Text(copy.close),
                           ),
                         ),
@@ -134,6 +166,15 @@ class SettingsScreen extends StatelessWidget {
         );
       },
     );
+  }
+
+  Future<void> _changeLanguage(
+    BuildContext context,
+    AppLanguage language,
+  ) async {
+    await controller.setLanguage(language);
+    if (!context.mounted || !controller.needsPrayerBook) return;
+    if (Navigator.of(context).canPop()) Navigator.of(context).pop();
   }
 }
 
@@ -162,10 +203,7 @@ class _SettingsLinkTile extends StatelessWidget {
             Expanded(
               child: Text(
                 label,
-                style: AppTypography.ui(
-                  size: 15,
-                  weight: FontWeight.w700,
-                ),
+                style: AppTypography.ui(size: 15, weight: FontWeight.w700),
               ),
             ),
             const Icon(

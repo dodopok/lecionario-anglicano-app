@@ -61,7 +61,6 @@ class _HomeScreenState extends State<HomeScreen> {
                             _HomeHeader(
                               copy: copy,
                               book: book,
-                              controller: widget.controller,
                               onChooseBook: _openPrayerBookSheet,
                               onOpenSettings: _openSettings,
                             ),
@@ -236,14 +235,12 @@ class _HomeHeader extends StatelessWidget {
   const _HomeHeader({
     required this.copy,
     required this.book,
-    required this.controller,
     required this.onChooseBook,
     required this.onOpenSettings,
   });
 
   final AppCopy copy;
   final PrayerBook? book;
-  final AppController controller;
   final VoidCallback onChooseBook;
   final VoidCallback onOpenSettings;
 
@@ -280,28 +277,12 @@ class _HomeHeader extends StatelessWidget {
               ),
             ),
             const SizedBox(width: 8),
-            if (compact)
-              _LanguageMenu(
-                selected: controller.locale,
-                onChanged: controller.setLanguage,
-              )
-            else ...[
-              LanguageSwitcher(
-                selected: controller.locale,
-                onChanged: controller.setLanguage,
-                compact: true,
-              ),
-              const SizedBox(width: 10),
-            ],
             IconButton(
               onPressed: onOpenSettings,
               tooltip: copy.settings,
               padding: EdgeInsets.zero,
               visualDensity: VisualDensity.compact,
-              constraints: const BoxConstraints.tightFor(
-                width: 36,
-                height: 36,
-              ),
+              constraints: const BoxConstraints.tightFor(width: 36, height: 36),
               icon: const Icon(Icons.tune_rounded, size: 20),
             ),
             _BookPill(
@@ -313,51 +294,6 @@ class _HomeHeader extends StatelessWidget {
           ],
         );
       },
-    );
-  }
-}
-
-class _LanguageMenu extends StatelessWidget {
-  const _LanguageMenu({required this.selected, required this.onChanged});
-
-  final AppLanguage selected;
-  final ValueChanged<AppLanguage> onChanged;
-
-  @override
-  Widget build(BuildContext context) {
-    return PopupMenuButton<AppLanguage>(
-      tooltip: 'Language',
-      onSelected: onChanged,
-      color: AppColors.cream,
-      initialValue: selected,
-      icon: const Icon(
-        Icons.language_outlined,
-        size: 20,
-        color: AppColors.inkSoft,
-      ),
-      itemBuilder: (context) => AppLanguage.values
-          .map(
-            (language) => PopupMenuItem<AppLanguage>(
-              value: language,
-              child: Row(
-                children: [
-                  SizedBox(
-                    width: 30,
-                    child: Text(
-                      language.shortLabel,
-                      style: AppTypography.ui(
-                        size: 11,
-                        weight: FontWeight.w700,
-                      ),
-                    ),
-                  ),
-                  if (language == selected)
-                    const Icon(Icons.check, size: 16, color: AppColors.copper),
-                ],
-              ),
-            ),
-          )
-          .toList(),
     );
   }
 }

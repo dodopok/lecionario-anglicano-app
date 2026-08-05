@@ -28,6 +28,10 @@ class LocalPreferences {
     await _preferences.setString('selected_prayer_book_code', code);
   }
 
+  Future<void> clearPrayerBook() async {
+    await _preferences.remove('selected_prayer_book_code');
+  }
+
   Future<void> saveReadingType(String value) async {
     await _preferences.setString('selected_reading_type', value);
   }

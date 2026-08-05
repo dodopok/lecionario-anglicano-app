@@ -32,6 +32,7 @@ class FakeLectionaryDataSource implements LectionaryDataSource {
   final List<DateTime> requestedMonths = [];
   final List<String?> requestedReadingTypes = [];
   final List<String?> requestedBibleVersions = [];
+  final List<String?> requestedBibleLanguages = [];
   int getPrayerBooksCalls = 0;
   int getReadingTypeOptionsCalls = 0;
   int getBibleVersionsCalls = 0;
@@ -68,6 +69,7 @@ class FakeLectionaryDataSource implements LectionaryDataSource {
   @override
   Future<List<BibleVersion>> getBibleVersions({String? language}) async {
     getBibleVersionsCalls++;
+    requestedBibleLanguages.add(language);
     if (failBibleVersions) throw StateError('bible versions unavailable');
     return bibleVersions;
   }

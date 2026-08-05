@@ -25,6 +25,8 @@
 ## Produto e conteúdo
 
 - [ ] Testar a seleção inicial do LOC.
+- [ ] Testar a troca de idioma em Configurações e confirmar que a lista de LOCs acompanha o idioma.
+- [ ] Confirmar que as versões de Bíblia são consultadas para o idioma do LOC selecionado.
 - [ ] Testar hoje, semana e mês.
 - [ ] Testar idioma, reading type e versão da Bíblia quando fornecidos pela API.
 - [ ] Confirmar que as capas são as URLs/imagens retornadas pela API.
