@@ -7,7 +7,7 @@ Este documento separa o que já está no projeto do que precisa ser preenchido n
 - Nome exibido no iOS: `Lecionário Anglicano`
 - Bundle ID no Xcode: `br.com.caminhoanglicano.lecionarioanglicano`
 - Team ID atualmente configurado: `R573HPN65Q`
-- Versão no `pubspec.yaml`: `1.0.0+1`
+- Versão no `pubspec.yaml`: `1.0.0+3`
 - Deployment target: iOS 15.0
 - Endpoint padrão: `https://api.caminhoanglicano.com.br/api/v1`
 - Header de integração: `X-App-Internal-Id`
