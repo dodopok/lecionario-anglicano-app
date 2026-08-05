@@ -134,6 +134,29 @@ void main() {
     expect(collect.title, 'Título');
   });
 
+  test('parses API reading content with translation and verses', () {
+    final reading = Reading.fromJson({
+      'type': 'gospel',
+      'reference': 'João 1:1–5',
+      'content': {
+        'reference': 'João 1:1–5',
+        'translation': 'NVI',
+        'verses': [
+          {'number': 1, 'text': 'No princípio era o Verbo.'},
+          {'number': 2, 'text': 'Ele estava no princípio com Deus.'},
+        ],
+      },
+    });
+
+    expect(reading.translation, 'NVI');
+    expect(reading.content?.reference, 'João 1:1–5');
+    expect(reading.content?.verses.map((verse) => verse.number), [1, 2]);
+    expect(
+      reading.content?.verses.last.text,
+      'Ele estava no princípio com Deus.',
+    );
+  });
+
   test('parses list readings, collect variants and descriptions', () {
     final day = LectionaryDay.fromJson({
       'date': DateTime(2026, 8, 5),

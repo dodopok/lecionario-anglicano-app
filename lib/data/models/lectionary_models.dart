@@ -251,25 +251,84 @@ class Celebration {
   }
 }
 
+class ReadingVerse {
+  const ReadingVerse({required this.text, this.number});
+
+  final int? number;
+  final String text;
+
+  factory ReadingVerse.fromJson(Map<String, dynamic> json) {
+    final rawNumber = json['number'] ?? json['verse'];
+    return ReadingVerse(
+      number: rawNumber is num ? rawNumber.toInt() : int.tryParse('$rawNumber'),
+      text: '${json['text'] ?? json['texto'] ?? ''}',
+    );
+  }
+}
+
+class ReadingContent {
+  const ReadingContent({
+    this.reference,
+    this.translation,
+    this.verses = const [],
+  });
+
+  final String? reference;
+  final String? translation;
+  final List<ReadingVerse> verses;
+
+  factory ReadingContent.fromJson(Map<String, dynamic> json) {
+    final rawVerses = json['verses'];
+    return ReadingContent(
+      reference: json['reference'] as String? ?? json['referencia'] as String?,
+      translation: json['translation'] as String? ?? json['versao'] as String?,
+      verses: rawVerses is List
+          ? rawVerses
+                .whereType<Map>()
+                .map(
+                  (value) =>
+                      ReadingVerse.fromJson(Map<String, dynamic>.from(value)),
+                )
+                .where((verse) => verse.text.trim().isNotEmpty)
+                .toList()
+          : const [],
+    );
+  }
+}
+
 class Reading {
   const Reading({
     required this.kind,
     required this.reference,
     this.text,
     this.translation,
+    this.content,
   });
 
   final String kind;
   final String reference;
   final String? text;
   final String? translation;
+  final ReadingContent? content;
 
   factory Reading.fromJson(Map<String, dynamic> json, {String? kind}) {
+    final rawContent = json['content'];
+    final content = rawContent is Map
+        ? ReadingContent.fromJson(Map<String, dynamic>.from(rawContent))
+        : null;
+    final rawText = json['text'] ?? json['texto'];
     return Reading(
       kind: kind ?? '${json['type'] ?? json['kind'] ?? ''}',
-      reference: '${json['reference'] ?? json['referencia'] ?? ''}',
-      text: json['text'] as String? ?? json['texto'] as String?,
-      translation: json['translation'] as String? ?? json['versao'] as String?,
+      reference:
+          '${json['reference'] ?? json['referencia'] ?? content?.reference ?? ''}',
+      text: rawText is String
+          ? rawText
+          : (rawContent is String ? rawContent : null),
+      translation:
+          json['translation'] as String? ??
+          json['versao'] as String? ??
+          content?.translation,
+      content: content,
     );
   }
 }
