@@ -11,6 +11,7 @@ Este documento separa o que já está no projeto do que precisa ser preenchido n
 - Deployment target: iOS 13.0
 - Endpoint padrão: `https://api.caminhoanglicano.com.br/api/v1`
 - Header de integração: `X-App-Internal-Id`
+- Idiomas iniciais da interface: `pt-BR`, `en-US` e `es`
 
 Confirme o Bundle ID e o Team ID no seu Apple Developer antes do primeiro upload. Se o Bundle ID já estiver registrado, não o altere no projeto.
 

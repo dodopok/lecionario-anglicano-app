@@ -6,7 +6,7 @@ extension AppLanguageX on AppLanguage {
   Locale get locale => switch (this) {
     AppLanguage.pt => const Locale('pt', 'BR'),
     AppLanguage.en => const Locale('en', 'US'),
-    AppLanguage.es => const Locale('es', 'ES'),
+    AppLanguage.es => const Locale('es'),
   };
 
   String get code => switch (this) {

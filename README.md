@@ -21,6 +21,8 @@ flutter run \
 
 O app não substitui dados da API por conteúdo local: quando uma resposta falha ou não traz um campo, esse conteúdo permanece vazio.
 
+Os idiomas iniciais da interface são Português do Brasil (`pt-BR`), English (United States, `en-US`) e Español (`es`).
+
 ## Distribuição iOS
 
 O projeto já inclui ícone, launch screen, privacy manifest e configuração de assinatura para o target Runner. Para preparar um build do TestFlight, consulte:

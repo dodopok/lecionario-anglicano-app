@@ -36,6 +36,12 @@ void main() {
     expect(AppLanguage.es.locale.languageCode, 'es');
   });
 
+  test('declares the initial localized locales', () {
+    expect(AppLanguage.pt.locale.toLanguageTag(), 'pt-BR');
+    expect(AppLanguage.en.locale.toLanguageTag(), 'en-US');
+    expect(AppLanguage.es.locale.toLanguageTag(), 'es');
+  });
+
   test('covers the complete copy surface in every supported language', () {
     final portuguese = AppCopy(AppLanguage.pt);
     final english = AppCopy(AppLanguage.en);
