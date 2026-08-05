@@ -8,7 +8,7 @@ Site estático para publicar na Vercel:
 
 ## Antes de publicar
 
-Abra `site/config.js` e preencha `supportEmail` com um endereço público real da equipe. Não foi incluído um endereço fictício. `appStoreUrl` pode ser preenchido quando o app estiver publicado na App Store.
+O site já está configurado com o contato público `dev@dodopok.dev`. Revise esse endereço antes do deploy caso o canal oficial mude. `appStoreUrl` pode ser preenchido quando o app estiver publicado na App Store.
 
 ## Vercel
 

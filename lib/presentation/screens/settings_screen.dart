@@ -1,5 +1,9 @@
-import 'package:flutter/material.dart';
+import 'dart:async';
 
+import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
+
+import '../../core/app_links.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_typography.dart';
 import '../app_controller.dart';
@@ -10,9 +14,23 @@ import '../widgets/preference_controls.dart';
 import '../widgets/sacred_mark.dart';
 
 class SettingsScreen extends StatelessWidget {
-  const SettingsScreen({required this.controller, super.key});
+  const SettingsScreen({
+    required this.controller,
+    this.openUrl,
+    super.key,
+  });
 
   final AppController controller;
+  final Future<bool> Function(Uri uri)? openUrl;
+
+  void _openExternal(Uri uri) {
+    final customLauncher = openUrl;
+    if (customLauncher != null) {
+      unawaited(customLauncher(uri));
+      return;
+    }
+    unawaited(launchUrl(uri, mode: LaunchMode.externalApplication));
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -60,6 +78,44 @@ class SettingsScreen extends StatelessWidget {
                             ],
                           ),
                         ),
+                        const SizedBox(height: 16),
+                        SurfaceCard(
+                          padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              Text(
+                                copy.information,
+                                style: AppTypography.display(
+                                  size: 25,
+                                  color: AppColors.ink,
+                                ),
+                              ),
+                              const SizedBox(height: 3),
+                              Text(
+                                copy.informationSubtitle,
+                                style: AppTypography.ui(
+                                  size: 13,
+                                  color: AppColors.muted,
+                                ),
+                              ),
+                              const SizedBox(height: 10),
+                              _SettingsLinkTile(
+                                icon: Icons.privacy_tip_outlined,
+                                label: copy.privacyPolicy,
+                                onTap: () => _openExternal(
+                                  AppLinks.privacyPolicy,
+                                ),
+                              ),
+                              const Divider(height: 1),
+                              _SettingsLinkTile(
+                                icon: Icons.support_agent_outlined,
+                                label: copy.support,
+                                onTap: () => _openExternal(AppLinks.support),
+                              ),
+                            ],
+                          ),
+                        ),
                         const SizedBox(height: 20),
                         Center(
                           child: TextButton.icon(
@@ -77,6 +133,49 @@ class SettingsScreen extends StatelessWidget {
           ),
         );
       },
+    );
+  }
+}
+
+class _SettingsLinkTile extends StatelessWidget {
+  const _SettingsLinkTile({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(14),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 14),
+        child: Row(
+          children: [
+            Icon(icon, color: AppColors.copperDark, size: 20),
+            const SizedBox(width: 13),
+            Expanded(
+              child: Text(
+                label,
+                style: AppTypography.ui(
+                  size: 15,
+                  weight: FontWeight.w700,
+                ),
+              ),
+            ),
+            const Icon(
+              Icons.open_in_new_rounded,
+              color: AppColors.muted,
+              size: 17,
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

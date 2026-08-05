@@ -19,6 +19,7 @@
 - [ ] Conferir o ícone de produção e a tela inicial em um dispositivo real.
 - [ ] Conferir o `PrivacyInfo.xcprivacy` no target Runner.
 - [ ] Conferir que não foram adicionadas permissões de sistema sem necessidade.
+- [ ] Abrir os links de privacidade e suporte em Configurações.
 - [ ] Testar uma build de desenvolvimento em um iPhone físico; consulte [test-device-without-testflight.md](test-device-without-testflight.md).
 
 ## Produto e conteúdo
@@ -35,6 +36,8 @@
 - [ ] App record criado com o Bundle ID correto.
 - [ ] Metadados revisados pelo responsável pelo produto.
 - [ ] Política de privacidade publicada em URL real.
+- [ ] Política de privacidade também acessível dentro do app.
+- [ ] Página de suporte publicada com contato público real.
 - [ ] Questionário de App Privacy revisado com o responsável pela API.
 - [ ] Classificação etária, categoria e copyright preenchidos.
 - [ ] Screenshots reais adicionadas.
