@@ -170,4 +170,32 @@ void main() {
       throwsFormatException,
     );
   });
+
+  test(
+    'handles successful empty payloads and exposes API error text',
+    () async {
+      final client = MockClient((request) async {
+        if (request.url.path.endsWith('/prayer_books')) {
+          return http.Response('{}', 200);
+        }
+        if (request.url.path.endsWith('/8')) {
+          return http.Response('{}', 200);
+        }
+        return http.Response('{}', 200);
+      });
+      final api = LectionaryApi(client: client, baseUrl: 'https://api.test');
+      addTearDown(api.dispose);
+
+      expect(await api.getPrayerBooks(), isEmpty);
+      expect(await api.getCalendarMonth(DateTime(2026, 8), 'loc'), isEmpty);
+      expect(
+        (await api.getDay(DateTime(2026, 8, 5), 'loc')).season,
+        'Tempo Comum',
+      );
+      expect(
+        const ApiException(503, 'offline').toString(),
+        'ApiException(503)',
+      );
+    },
+  );
 }

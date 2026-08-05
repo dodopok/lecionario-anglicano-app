@@ -5,6 +5,7 @@ import 'package:intl/date_symbol_data_local.dart';
 import 'package:lecionario_anglicano/data/models/lectionary_models.dart';
 import 'package:lecionario_anglicano/presentation/app_controller.dart';
 import 'package:lecionario_anglicano/presentation/app_copy.dart';
+import 'package:lecionario_anglicano/presentation/app_shell.dart';
 import 'package:lecionario_anglicano/presentation/screens/home_screen.dart';
 import 'package:lecionario_anglicano/presentation/screens/loc_selection_screen.dart';
 
@@ -13,6 +14,28 @@ import 'helpers/test_doubles.dart';
 
 void main() {
   setUpAll(initializeDateFormatting);
+
+  testWidgets('shows a launch state before the controller initializes', (
+    tester,
+  ) async {
+    final controller = AppController(
+      api: FakeLectionaryDataSource(),
+      localPreferences: await createLocalPreferences(),
+    );
+    addTearDown(controller.dispose);
+
+    await tester.pumpWidget(
+      testMaterialApp(home: AppShell(controller: controller)),
+    );
+    expect(find.text('LECIONÁRIO'), findsOneWidget);
+
+    await controller.initialize();
+    await tester.pumpWidget(
+      testMaterialApp(home: AppShell(controller: controller)),
+    );
+    await tester.pumpAndSettle();
+    expect(find.byType(LocSelectionScreen), findsOneWidget);
+  });
 
   testWidgets('starts with LOC selection and enters the home experience', (
     tester,
@@ -183,5 +206,102 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Trocar livro de oração'), findsOneWidget);
+  });
+
+  testWidgets('navigates the wide calendar and changes the prayer book', (
+    tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(1200, 1000));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    final first = testBook();
+    final second = testBook(code: 'bcp_test', name: 'BCP Test');
+    final source = FakeLectionaryDataSource(
+      books: [first, second],
+      dayBuilder: testDay,
+    );
+    final preferences = await createLocalPreferences({
+      'selected_prayer_book_code': first.code,
+    });
+    final controller = AppController(
+      api: source,
+      localPreferences: preferences,
+    );
+    addTearDown(controller.dispose);
+    await controller.initialize();
+
+    await tester.pumpWidget(
+      testMaterialApp(home: HomeScreen(controller: controller)),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('LEITURAS DE HOJE'), findsOneWidget);
+    expect(find.text('PT'), findsOneWidget);
+    await tester.tap(find.text('EN'));
+    await tester.pumpAndSettle();
+    expect(controller.locale, AppLanguage.en);
+    expect(find.text("TODAY'S READINGS"), findsOneWidget);
+
+    await tester.tap(find.text('LOC Teste'));
+    await tester.pumpAndSettle();
+    expect(find.text('Change prayer book'), findsOneWidget);
+    await tester.tap(find.text('BCP Test').last);
+    await tester.pumpAndSettle();
+    expect(controller.selectedPrayerBookCode, second.code);
+    expect(preferences.selectedPrayerBookCode, second.code);
+
+    await tester.tap(find.text('Month'));
+    await tester.pumpAndSettle();
+    expect(
+      find.text(AppCopy(AppLanguage.en).monthYear(DateTime.now())),
+      findsOneWidget,
+    );
+
+    final nextMonth = DateTime(DateTime.now().year, DateTime.now().month + 1);
+    await tester.tap(find.byIcon(Icons.chevron_right_rounded));
+    await tester.pumpAndSettle();
+    expect(
+      find.text(AppCopy(AppLanguage.en).monthYear(nextMonth)),
+      findsOneWidget,
+    );
+    expect(
+      source.requestedDates,
+      contains(DateTime(nextMonth.year, nextMonth.month)),
+    );
+
+    await tester.tap(find.byIcon(Icons.chevron_left_rounded));
+    await tester.pumpAndSettle();
+    expect(
+      find.text(AppCopy(AppLanguage.en).monthYear(DateTime.now())),
+      findsOneWidget,
+    );
+  });
+
+  testWidgets('shows the local preview banner when both API calls fail', (
+    tester,
+  ) async {
+    final source = FakeLectionaryDataSource(dayBuilder: testDay)
+      ..failDay = true
+      ..failCalendarMonth = true;
+    final controller = AppController(
+      api: source,
+      localPreferences: await createLocalPreferences({
+        'selected_prayer_book_code': 'loc_2015',
+      }),
+    );
+    addTearDown(controller.dispose);
+    await controller.initialize();
+
+    await tester.pumpWidget(
+      testMaterialApp(home: HomeScreen(controller: controller)),
+    );
+    await tester.pumpAndSettle();
+
+    expect(
+      find.text(
+        'Prévia local · A API está indisponível. Mostrando conteúdo de prévia.',
+      ),
+      findsOneWidget,
+    );
   });
 }
