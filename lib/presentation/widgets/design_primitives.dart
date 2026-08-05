@@ -134,10 +134,10 @@ class BookCover extends StatelessWidget {
       height: height,
       child: ClipRRect(
         borderRadius: BorderRadius.circular(9),
-        child: book.thumbnailUrl == null
+        child: book.coverUrl == null
             ? fallback
             : Image.network(
-                book.thumbnailUrl!,
+                book.coverUrl!,
                 fit: BoxFit.cover,
                 errorBuilder: (context, error, stackTrace) => fallback,
               ),

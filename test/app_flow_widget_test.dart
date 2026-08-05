@@ -178,6 +178,77 @@ void main() {
     expect(find.text('No princípio.'), findsOneWidget);
   });
 
+  testWidgets('uses API LOC covers and persists reading and Bible choices', (
+    tester,
+  ) async {
+    final book = testBook(
+      thumbnailUrl: 'https://example.test/loc.png',
+      readingTypes: const [
+        ReadingTypeOption(
+          value: 'semicontinuous',
+          label: 'Semi-Contínuas',
+          isDefault: true,
+        ),
+        ReadingTypeOption(value: 'complementary', label: 'Complementares'),
+      ],
+      defaultReadingType: 'semicontinuous',
+    );
+    const secondBible = BibleVersion(
+      id: 'naa',
+      code: 'naa',
+      name: 'NAA',
+      fullName: 'Nova Almeida Atualizada',
+      language: 'pt-BR',
+    );
+    final source = FakeLectionaryDataSource(
+      books: [book],
+      bibleVersions: const [
+        BibleVersion(
+          id: 'nvi',
+          code: 'nvi',
+          name: 'NVI',
+          language: 'pt-BR',
+          recommended: true,
+        ),
+        secondBible,
+      ],
+      dayBuilder: testDay,
+    );
+    final preferences = await createLocalPreferences({
+      'selected_prayer_book_code': book.code,
+    });
+    final controller = AppController(
+      api: source,
+      localPreferences: preferences,
+    );
+    addTearDown(controller.dispose);
+    await controller.initialize();
+
+    await tester.pumpWidget(
+      testMaterialApp(home: HomeScreen(controller: controller)),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.byType(Image), findsAtLeastNWidgets(1));
+    expect(find.text('SEQUÊNCIA DAS LEITURAS'), findsOneWidget);
+    expect(find.text('VERSÃO DA BÍBLIA'), findsOneWidget);
+    expect(find.text('NVI'), findsOneWidget);
+
+    await tester.tap(find.text('SEQUÊNCIA DAS LEITURAS'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Complementares'));
+    await tester.pumpAndSettle();
+    expect(controller.selectedReadingType, 'complementary');
+    expect(preferences.selectedReadingType, 'complementary');
+
+    await tester.tap(find.text('VERSÃO DA BÍBLIA'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('NAA'));
+    await tester.pumpAndSettle();
+    expect(controller.selectedBibleVersionCode, 'naa');
+    expect(preferences.selectedBibleVersionCode, 'naa');
+  });
+
   testWidgets('uses a compact language menu on a narrow home layout', (
     tester,
   ) async {

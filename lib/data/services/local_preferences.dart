@@ -10,6 +10,12 @@ class LocalPreferences {
   String? get selectedPrayerBookCode =>
       _preferences.getString('selected_prayer_book_code');
 
+  String? get selectedReadingType =>
+      _preferences.getString('selected_reading_type');
+
+  String? get selectedBibleVersionCode =>
+      _preferences.getString('selected_bible_version_code');
+
   AppLanguage get language {
     final code = _preferences.getString('app_language');
     return AppLanguage.values.firstWhere(
@@ -20,6 +26,14 @@ class LocalPreferences {
 
   Future<void> savePrayerBook(String code) async {
     await _preferences.setString('selected_prayer_book_code', code);
+  }
+
+  Future<void> saveReadingType(String value) async {
+    await _preferences.setString('selected_reading_type', value);
+  }
+
+  Future<void> saveBibleVersion(String code) async {
+    await _preferences.setString('selected_bible_version_code', code);
   }
 
   Future<void> saveLanguage(AppLanguage language) async {

@@ -8,6 +8,7 @@ import '../app_copy.dart';
 import '../app_shell.dart';
 import '../widgets/design_primitives.dart';
 import '../widgets/home_sections.dart';
+import '../widgets/preference_controls.dart';
 import '../widgets/sacred_mark.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -62,6 +63,17 @@ class _HomeScreenState extends State<HomeScreen> {
                               book: book,
                               controller: widget.controller,
                               onChooseBook: _openPrayerBookSheet,
+                            ),
+                            const SizedBox(height: 12),
+                            PreferenceControls(
+                              controller: widget.controller,
+                              copy: copy,
+                              onReadingTypeChanged: (value) {
+                                _changeReadingType(value, activeDate);
+                              },
+                              onBibleVersionChanged: (version) {
+                                _changeBibleVersion(version, activeDate);
+                              },
                             ),
                             const SizedBox(height: 24),
                             DailyHero(
@@ -131,6 +143,14 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Future<void> _goToday() async {
     await _selectDate(DateTime.now());
+  }
+
+  Future<void> _changeReadingType(String value, DateTime date) async {
+    await widget.controller.setReadingType(value, date);
+  }
+
+  Future<void> _changeBibleVersion(BibleVersion version, DateTime date) async {
+    await widget.controller.chooseBibleVersion(version, date);
   }
 
   Future<void> _previousMonth() async {

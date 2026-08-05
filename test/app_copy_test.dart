@@ -60,6 +60,9 @@ void main() {
     expect(portuguese.close, 'Fechar');
     expect(portuguese.yearLabel, 'Ano');
     expect(portuguese.readingOpening, 'Abrir leitura');
+    expect(portuguese.readingTrack, 'Sequência das leituras');
+    expect(portuguese.bibleVersion, 'Versão da Bíblia');
+    expect(portuguese.chooseBible, 'Escolher Bíblia');
 
     expect(english.brandSubline, 'ANGLICAN');
     expect(english.chooseEyebrow, 'FIRST STEP');
@@ -80,6 +83,9 @@ void main() {
     expect(english.close, 'Close');
     expect(english.yearLabel, 'Year');
     expect(english.readingOpening, 'Open reading');
+    expect(english.readingTrack, 'Reading track');
+    expect(english.bibleVersion, 'Bible version');
+    expect(english.chooseBible, 'Choose Bible');
 
     expect(spanish.brandSubline, 'ANGLICANO');
     expect(spanish.chooseEyebrow, 'PRIMER PASO');
@@ -99,6 +105,9 @@ void main() {
     expect(spanish.close, 'Cerrar');
     expect(spanish.yearLabel, 'Año');
     expect(spanish.readingOpening, 'Abrir lectura');
+    expect(spanish.readingTrack, 'Secuencia de lecturas');
+    expect(spanish.bibleVersion, 'Versión de la Biblia');
+    expect(spanish.chooseBible, 'Elegir Biblia');
   });
 
   test('formats month, weekday and reading metadata per language', () {

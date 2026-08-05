@@ -21,12 +21,23 @@ class ApiConfig {
 abstract interface class LectionaryDataSource {
   Future<List<PrayerBook>> getPrayerBooks();
 
+  Future<List<ReadingTypeOption>> getReadingTypeOptions(String prayerBookCode);
+
+  Future<List<BibleVersion>> getBibleVersions({String? language});
+
   Future<List<CalendarDay>> getCalendarMonth(
     DateTime month,
-    String prayerBookCode,
-  );
+    String prayerBookCode, {
+    String? readingType,
+    String? bibleVersion,
+  });
 
-  Future<LectionaryDay> getDay(DateTime date, String prayerBookCode);
+  Future<LectionaryDay> getDay(
+    DateTime date,
+    String prayerBookCode, {
+    String? readingType,
+    String? bibleVersion,
+  });
 
   void dispose();
 }
@@ -49,10 +60,26 @@ class LectionaryApi implements LectionaryDataSource {
     'X-App-Internal-Id': _internalIdentifier,
   };
 
-  Uri _uri(String path, {String? prayerBookCode, Map<String, String>? extra}) {
-    final query = <String, String>{...?extra};
+  Uri _uri(
+    String path, {
+    String? prayerBookCode,
+    String? readingType,
+    String? bibleVersion,
+    String? language,
+  }) {
+    final query = <String, String>{};
+    if (language != null && language.trim().isNotEmpty) {
+      query['language'] = language;
+    }
     if (prayerBookCode != null) {
-      query['preferences'] = jsonEncode({'prayer_book_code': prayerBookCode});
+      final preferences = <String, String>{'prayer_book_code': prayerBookCode};
+      if (readingType != null && readingType.trim().isNotEmpty) {
+        preferences['reading_type'] = readingType;
+      }
+      if (bibleVersion != null && bibleVersion.trim().isNotEmpty) {
+        preferences['bible_version'] = bibleVersion;
+      }
+      query['preferences'] = jsonEncode(preferences);
     }
     return Uri.parse(
       '$_baseUrl$path',
@@ -75,15 +102,73 @@ class LectionaryApi implements LectionaryDataSource {
   }
 
   @override
-  Future<List<CalendarDay>> getCalendarMonth(
-    DateTime month,
+  Future<List<ReadingTypeOption>> getReadingTypeOptions(
     String prayerBookCode,
   ) async {
+    final response = await _client
+        .get(
+          _uri('/prayer_books/$prayerBookCode/preferences'),
+          headers: _headers,
+        )
+        .timeout(const Duration(seconds: 12));
+    _ensureSuccess(response);
+    final json = _decodeJson(response);
+    if (json is! Map) return const [];
+
+    final directOptions = json['reading_types'];
+    if (directOptions is List) {
+      return _parseReadingTypeOptions(directOptions);
+    }
+
+    final categories = json['categories'];
+    if (categories is! List) return const [];
+    for (final category in categories) {
+      if (category is! Map) continue;
+      final preferences = category['preferences'];
+      if (preferences is! List) continue;
+      for (final preference in preferences) {
+        if (preference is! Map || preference['key'] != 'reading_type') {
+          continue;
+        }
+        final options = preference['options'];
+        if (options is! List) return const [];
+        final defaultValue = preference['default_value']?.toString();
+        return _parseReadingTypeOptions(options, defaultValue: defaultValue);
+      }
+    }
+    return const [];
+  }
+
+  @override
+  Future<List<BibleVersion>> getBibleVersions({String? language}) async {
+    final response = await _client
+        .get(_uri('/bible_versions', language: language), headers: _headers)
+        .timeout(const Duration(seconds: 12));
+    _ensureSuccess(response);
+    final json = _decodeJson(response);
+    final values = json is Map ? json['data'] : json;
+    if (values is! List) return const [];
+    return values
+        .whereType<Map>()
+        .map((value) => BibleVersion.fromJson(Map<String, dynamic>.from(value)))
+        .where((version) => version.code.isNotEmpty)
+        .toList();
+  }
+
+  @override
+  Future<List<CalendarDay>> getCalendarMonth(
+    DateTime month,
+    String prayerBookCode, {
+    String? readingType,
+    String? bibleVersion,
+  }) async {
     final response = await _client
         .get(
           _uri(
             '/calendar/${month.year}/${month.month}',
             prayerBookCode: prayerBookCode,
+            readingType: readingType,
+            bibleVersion: bibleVersion,
           ),
           headers: _headers,
         )
@@ -99,12 +184,19 @@ class LectionaryApi implements LectionaryDataSource {
   }
 
   @override
-  Future<LectionaryDay> getDay(DateTime date, String prayerBookCode) async {
+  Future<LectionaryDay> getDay(
+    DateTime date,
+    String prayerBookCode, {
+    String? readingType,
+    String? bibleVersion,
+  }) async {
     final response = await _client
         .get(
           _uri(
             '/calendar/${date.year}/${date.month}/${date.day}',
             prayerBookCode: prayerBookCode,
+            readingType: readingType,
+            bibleVersion: bibleVersion,
           ),
           headers: _headers,
         )
@@ -130,6 +222,25 @@ class LectionaryApi implements LectionaryDataSource {
 
   @override
   void dispose() => _client.close();
+}
+
+List<ReadingTypeOption> _parseReadingTypeOptions(
+  List<dynamic> raw, {
+  String? defaultValue,
+}) {
+  return raw
+      .map(
+        (value) => value is Map
+            ? ReadingTypeOption.fromJson(Map<String, dynamic>.from(value))
+            : ReadingTypeOption(value: '$value'),
+      )
+      .where((option) => option.value.trim().isNotEmpty)
+      .map(
+        (option) => defaultValue == option.value
+            ? option.copyWith(isDefault: true)
+            : option,
+      )
+      .toList();
 }
 
 class ApiException implements Exception {

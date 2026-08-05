@@ -88,6 +88,89 @@ void main() {
     },
   );
 
+  test('loads and persists reading type and Bible preferences', () async {
+    final book = testBook(
+      readingTypes: const [
+        ReadingTypeOption(
+          value: 'semicontinuous',
+          label: 'Semi-Contínuas',
+          isDefault: true,
+        ),
+        ReadingTypeOption(value: 'complementary', label: 'Complementares'),
+      ],
+      defaultReadingType: 'semicontinuous',
+    );
+    const secondBible = BibleVersion(
+      id: 'naa',
+      code: 'naa',
+      name: 'NAA',
+      fullName: 'Nova Almeida Atualizada',
+      language: 'pt-BR',
+    );
+    final source = FakeLectionaryDataSource(
+      books: [book],
+      bibleVersions: const [
+        BibleVersion(
+          id: 'nvi',
+          code: 'nvi',
+          name: 'NVI',
+          language: 'pt-BR',
+          recommended: true,
+        ),
+        secondBible,
+      ],
+      dayBuilder: testDay,
+    );
+    final preferences = await createLocalPreferences({
+      'selected_prayer_book_code': book.code,
+    });
+    final controller = AppController(
+      api: source,
+      localPreferences: preferences,
+    );
+    addTearDown(controller.dispose);
+
+    await controller.initialize();
+
+    expect(controller.selectedReadingType, 'semicontinuous');
+    expect(controller.selectedBibleVersionCode, 'nvi');
+    expect(controller.readingTypeOptions, hasLength(2));
+    expect(controller.bibleVersions, hasLength(2));
+
+    final date = DateTime(2026, 8, 5);
+    await controller.setReadingType('complementary', date);
+    expect(preferences.selectedReadingType, 'complementary');
+    expect(source.requestedReadingTypes, contains('complementary'));
+
+    await controller.chooseBibleVersion(secondBible, date);
+    expect(preferences.selectedBibleVersionCode, 'naa');
+    expect(source.requestedBibleVersions, contains('naa'));
+  });
+
+  test(
+    'does not reuse a saved reading type for an LOC that lacks it',
+    () async {
+      final book = testBook(
+        readingTypes: const [
+          ReadingTypeOption(value: 'semicontinuous', isDefault: true),
+        ],
+        defaultReadingType: 'semicontinuous',
+      );
+      final controller = AppController(
+        api: FakeLectionaryDataSource(books: [book]),
+        localPreferences: await createLocalPreferences({
+          'selected_prayer_book_code': book.code,
+          'selected_reading_type': 'complementary',
+        }),
+      );
+      addTearDown(controller.dispose);
+
+      await controller.initialize();
+
+      expect(controller.selectedReadingType, 'semicontinuous');
+    },
+  );
+
   test('persists language changes and filters available LOCs', () async {
     final source = FakeLectionaryDataSource(
       books: [

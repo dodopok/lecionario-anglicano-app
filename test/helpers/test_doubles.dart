@@ -8,18 +8,38 @@ import 'package:lecionario_anglicano/data/services/local_preferences.dart';
 class FakeLectionaryDataSource implements LectionaryDataSource {
   FakeLectionaryDataSource({
     List<PrayerBook>? books,
+    List<BibleVersion>? bibleVersions,
     LectionaryDay Function(DateTime date)? dayBuilder,
   }) : books = books ?? [testBook(code: 'loc_2015', name: 'LOC 2015')],
+       bibleVersions =
+           bibleVersions ??
+           const [
+             BibleVersion(
+               id: 'nvi',
+               code: 'nvi',
+               name: 'NVI',
+               fullName: 'Nova Versão Internacional',
+               language: 'pt-BR',
+               recommended: true,
+             ),
+           ],
        dayBuilder = dayBuilder ?? testDay;
 
   List<PrayerBook> books;
+  List<BibleVersion> bibleVersions;
   LectionaryDay Function(DateTime date) dayBuilder;
   final List<DateTime> requestedDates = [];
   final List<DateTime> requestedMonths = [];
+  final List<String?> requestedReadingTypes = [];
+  final List<String?> requestedBibleVersions = [];
   int getPrayerBooksCalls = 0;
+  int getReadingTypeOptionsCalls = 0;
+  int getBibleVersionsCalls = 0;
   int getCalendarMonthCalls = 0;
   int getDayCalls = 0;
   bool failPrayerBooks = false;
+  bool failReadingTypeOptions = false;
+  bool failBibleVersions = false;
   bool failCalendarMonth = false;
   bool failDay = false;
   bool disposed = false;
@@ -32,20 +52,52 @@ class FakeLectionaryDataSource implements LectionaryDataSource {
   }
 
   @override
-  Future<List<CalendarDay>> getCalendarMonth(
-    DateTime month,
+  Future<List<ReadingTypeOption>> getReadingTypeOptions(
     String prayerBookCode,
   ) async {
+    getReadingTypeOptionsCalls++;
+    if (failReadingTypeOptions) {
+      throw StateError('reading type options unavailable');
+    }
+    for (final book in books) {
+      if (book.code == prayerBookCode) return book.readingTypes;
+    }
+    return const [];
+  }
+
+  @override
+  Future<List<BibleVersion>> getBibleVersions({String? language}) async {
+    getBibleVersionsCalls++;
+    if (failBibleVersions) throw StateError('bible versions unavailable');
+    return bibleVersions;
+  }
+
+  @override
+  Future<List<CalendarDay>> getCalendarMonth(
+    DateTime month,
+    String prayerBookCode, {
+    String? readingType,
+    String? bibleVersion,
+  }) async {
     getCalendarMonthCalls++;
     requestedMonths.add(month);
+    requestedReadingTypes.add(readingType);
+    requestedBibleVersions.add(bibleVersion);
     if (failCalendarMonth) throw StateError('month unavailable');
     return testMonth(month);
   }
 
   @override
-  Future<LectionaryDay> getDay(DateTime date, String prayerBookCode) async {
+  Future<LectionaryDay> getDay(
+    DateTime date,
+    String prayerBookCode, {
+    String? readingType,
+    String? bibleVersion,
+  }) async {
     getDayCalls++;
     requestedDates.add(date);
+    requestedReadingTypes.add(readingType);
+    requestedBibleVersions.add(bibleVersion);
     if (failDay) throw StateError('day unavailable');
     return dayBuilder(date);
   }
@@ -68,6 +120,9 @@ PrayerBook testBook({
   String code = 'loc_test',
   String name = 'LOC Teste',
   AppLanguage language = AppLanguage.pt,
+  String? thumbnailUrl,
+  List<ReadingTypeOption> readingTypes = const [],
+  String? defaultReadingType,
 }) {
   return PrayerBook(
     id: code,
@@ -82,6 +137,9 @@ PrayerBook testBook({
     },
     jurisdiction: 'TEST',
     year: 2026,
+    thumbnailUrl: thumbnailUrl,
+    readingTypes: readingTypes,
+    defaultReadingType: defaultReadingType,
   );
 }
 
