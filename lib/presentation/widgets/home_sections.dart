@@ -121,7 +121,10 @@ class DailyHero extends StatelessWidget {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Row(
+                          Wrap(
+                            spacing: 10,
+                            runSpacing: 4,
+                            crossAxisAlignment: WrapCrossAlignment.center,
                             children: [
                               Text(
                                 isToday ? copy.today : copy.selected,
@@ -130,8 +133,7 @@ class DailyHero extends StatelessWidget {
                                   size: 10,
                                 ),
                               ),
-                              if (!isToday) ...[
-                                const SizedBox(width: 10),
+                              if (!isToday)
                                 InkWell(
                                   onTap: onToday,
                                   borderRadius: BorderRadius.circular(20),
@@ -161,7 +163,6 @@ class DailyHero extends StatelessWidget {
                                     ),
                                   ),
                                 ),
-                              ],
                             ],
                           ),
                           const SizedBox(height: 11),
@@ -510,6 +511,7 @@ class WeekStrip extends StatelessWidget {
               onTap: () => onSelect(date),
               borderRadius: BorderRadius.circular(16),
               child: AnimatedContainer(
+                key: ValueKey('week-day-${_key(date)}'),
                 duration: const Duration(milliseconds: 190),
                 padding: const EdgeInsets.symmetric(
                   vertical: 12,
@@ -853,6 +855,7 @@ class MonthCalendar extends StatelessWidget {
                     onTap: () => onSelect(date),
                     borderRadius: BorderRadius.circular(12),
                     child: AnimatedContainer(
+                      key: ValueKey('month-day-${_key(date)}'),
                       duration: const Duration(milliseconds: 180),
                       padding: const EdgeInsets.fromLTRB(7, 7, 7, 5),
                       decoration: BoxDecoration(
@@ -977,6 +980,7 @@ class ReadingsCard extends StatelessWidget {
     required this.day,
     required this.copy,
     required this.onOpen,
+    this.title,
     this.isLoading = false,
     super.key,
   });
@@ -984,6 +988,7 @@ class ReadingsCard extends StatelessWidget {
   final LectionaryDay? day;
   final AppCopy copy;
   final ValueChanged<Reading> onOpen;
+  final String? title;
   final bool isLoading;
 
   @override
@@ -999,7 +1004,7 @@ class ReadingsCard extends StatelessWidget {
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Expanded(child: Eyebrow(copy.readings)),
+              Expanded(child: Eyebrow(title ?? copy.readings)),
               const Icon(
                 Icons.menu_book_outlined,
                 size: 19,
