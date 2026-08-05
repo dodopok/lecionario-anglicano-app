@@ -1,9 +1,8 @@
 import 'dart:convert';
 
-import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 
-import '../../core/theme/app_colors.dart';
 import '../models/lectionary_models.dart';
 
 class ApiConfig {
@@ -141,105 +140,4 @@ class ApiException implements Exception {
 
   @override
   String toString() => 'ApiException($statusCode)';
-}
-
-class DemoData {
-  DemoData._();
-
-  static const books = <PrayerBook>[
-    PrayerBook(
-      id: 'demo-loc-2015',
-      code: 'loc_2015',
-      name: 'LOC 2015',
-      fullName: 'Livro de Oração Comum',
-      description: 'A liturgia da Igreja Episcopal Anglicana do Brasil.',
-      language: 'pt-BR',
-      jurisdiction: 'IEAB',
-      year: 2015,
-      recommended: true,
-    ),
-    PrayerBook(
-      id: 'demo-bcp-1979',
-      code: 'bcp_1979',
-      name: 'BCP 1979',
-      fullName: 'Book of Common Prayer',
-      description: 'The Episcopal Church in the United States.',
-      language: 'en-US',
-      jurisdiction: 'TEC',
-      year: 1979,
-    ),
-    PrayerBook(
-      id: 'demo-loc-es',
-      code: 'loc_es',
-      name: 'LOC 2019',
-      fullName: 'Libro de Oración Común',
-      description: 'La liturgia anglicana en español.',
-      language: 'es-ES',
-      jurisdiction: 'IAB',
-      year: 2019,
-    ),
-  ];
-
-  static LectionaryDay day(DateTime date) {
-    return LectionaryDay(
-      date: date,
-      dayOfWeek: '',
-      season: 'Tempo depois de Pentecostes',
-      color: 'verde',
-      liturgicalYear: 'C',
-      weekName: '18ª semana do Tempo Comum',
-      description: const [
-        'Um dia comum também pode ser uma porta de entrada para a presença de Deus.',
-      ],
-      celebration: const Celebration(
-        name: 'A vida diante de Deus',
-        type: 'comemoração',
-        description: 'Um convite à atenção, à escuta e à esperança.',
-      ),
-      readings: const [
-        Reading(kind: 'first_reading', reference: '1 Reis 19:4–8'),
-        Reading(kind: 'psalm', reference: 'Salmo 34:1–8'),
-        Reading(kind: 'second_reading', reference: 'Efésios 4:1–7'),
-        Reading(kind: 'gospel', reference: 'Lucas 9:28–36'),
-      ],
-      collects: const [
-        Collect(
-          text:
-              'Deus de toda misericórdia, abre nossos olhos para reconhecer tua presença no caminho e dá-nos coragem para caminhar em tua luz.',
-        ),
-      ],
-    );
-  }
-
-  static List<CalendarDay> month(DateTime month) {
-    final days = DateUtils.getDaysInMonth(month.year, month.month);
-    return List.generate(days, (index) {
-      final date = DateTime(month.year, month.month, index + 1);
-      final color = switch (index % 8) {
-        0 || 3 || 6 => 'verde',
-        1 => 'branco',
-        2 => 'vermelho',
-        4 => 'roxo',
-        5 => 'rosa',
-        _ => 'azul',
-      };
-      return CalendarDay(
-        date: date,
-        color: color,
-        celebrationName: index == 4 ? 'A vida diante de Deus' : null,
-        weekName: 'Tempo Comum',
-      );
-    });
-  }
-
-  static Color colorFor(String color) {
-    return switch (color.toLowerCase()) {
-      'branco' || 'white' => AppColors.liturgicalWhite,
-      'vermelho' || 'red' => AppColors.liturgicalRed,
-      'roxo' || 'violeta' || 'purple' => AppColors.liturgicalPurple,
-      'rosa' || 'rose' => AppColors.liturgicalRose,
-      'azul' || 'blue' => AppColors.liturgicalBlue,
-      _ => AppColors.liturgicalGreen,
-    };
-  }
 }

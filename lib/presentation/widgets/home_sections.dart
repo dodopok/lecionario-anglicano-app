@@ -25,10 +25,16 @@ class DailyHero extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final accent = liturgicalColor(day?.color ?? 'verde');
+    final accent = liturgicalColor(day?.color);
     final isToday = _sameDay(activeDate, DateTime.now());
     final description =
         day?.description?.firstOrNull ?? day?.celebration?.description;
+    final season = day?.season;
+    final celebration = day?.celebration?.name.trim().isNotEmpty == true
+        ? day!.celebration!.name
+        : day?.weekName?.trim().isNotEmpty == true
+        ? day!.weekName
+        : null;
 
     return Container(
       clipBehavior: Clip.antiAlias,
@@ -173,8 +179,9 @@ class DailyHero extends StatelessWidget {
                                       borderRadius: BorderRadius.circular(9),
                                     ),
                                   )
-                                : Text(
-                                    day?.season ?? 'Tempo Comum',
+                                : season?.isNotEmpty == true
+                                ? Text(
+                                    season!,
                                     key: const ValueKey('season'),
                                     maxLines: 2,
                                     overflow: TextOverflow.ellipsis,
@@ -185,22 +192,26 @@ class DailyHero extends StatelessWidget {
                                       height: .92,
                                       letterSpacing: -.5,
                                     ),
+                                  )
+                                : const SizedBox(
+                                    key: ValueKey('empty-season'),
+                                    height: 40,
                                   ),
                           ),
-                          const SizedBox(height: 13),
-                          Text(
-                            day?.celebration?.name ??
-                                day?.weekName ??
-                                copy.noCelebration,
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                            style: AppTypography.ui(
-                              size: 14,
-                              weight: FontWeight.w600,
-                              color: AppColors.copperWash,
-                              letterSpacing: .2,
+                          if (celebration != null) ...[
+                            const SizedBox(height: 13),
+                            Text(
+                              celebration,
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                              style: AppTypography.ui(
+                                size: 14,
+                                weight: FontWeight.w600,
+                                color: AppColors.copperWash,
+                                letterSpacing: .2,
+                              ),
                             ),
-                          ),
+                          ],
                           if (description != null &&
                               description.isNotEmpty) ...[
                             const SizedBox(height: 13),
@@ -224,10 +235,12 @@ class DailyHero extends StatelessWidget {
                             spacing: 8,
                             runSpacing: 8,
                             children: [
-                              _HeroMeta(
-                                label: copy.colorLabel(day?.color ?? 'verde'),
-                                color: accent,
-                              ),
+                              if (day?.color case final color?
+                                  when color.isNotEmpty)
+                                _HeroMeta(
+                                  label: copy.colorLabel(color),
+                                  color: accent,
+                                ),
                               if (day?.liturgicalYear != null)
                                 _HeroMeta(
                                   label:
@@ -434,7 +447,7 @@ class WeekStrip extends StatelessWidget {
     return Row(
       children: days.map((date) {
         final data = byDate[_key(date)];
-        final color = liturgicalColor(data?.color ?? 'verde');
+        final color = liturgicalColor(data?.color);
         final selected = _sameDay(date, activeDate);
         final today = _sameDay(date, DateTime.now());
         return Expanded(
@@ -541,7 +554,7 @@ class WeekSchedule extends StatelessWidget {
           ...days.map((date) {
             final data = byDate[_key(date)];
             final isActive = _sameDay(date, activeDate);
-            final color = liturgicalColor(data?.color ?? 'verde');
+            final color = liturgicalColor(data?.color);
             return InkWell(
               onTap: () => onSelect(date),
               borderRadius: BorderRadius.circular(14),
@@ -590,27 +603,43 @@ class WeekSchedule extends StatelessWidget {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(
-                            data?.celebrationName ??
-                                data?.weekName ??
-                                copy.noCelebration,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: AppTypography.ui(
-                              size: 14,
-                              weight: isActive
-                                  ? FontWeight.w700
-                                  : FontWeight.w600,
+                          if (data?.celebrationName case final name?
+                              when name.isNotEmpty)
+                            Text(
+                              name,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: AppTypography.ui(
+                                size: 14,
+                                weight: isActive
+                                    ? FontWeight.w700
+                                    : FontWeight.w600,
+                              ),
+                            )
+                          else if (data?.weekName case final name?
+                              when name.isNotEmpty)
+                            Text(
+                              name,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: AppTypography.ui(
+                                size: 14,
+                                weight: isActive
+                                    ? FontWeight.w700
+                                    : FontWeight.w600,
+                              ),
                             ),
-                          ),
-                          const SizedBox(height: 3),
-                          Text(
-                            copy.colorLabel(data?.color ?? 'verde'),
-                            style: AppTypography.ui(
-                              size: 12,
-                              color: AppColors.muted,
+                          if (data?.color case final color?
+                              when color.isNotEmpty) ...[
+                            const SizedBox(height: 3),
+                            Text(
+                              copy.colorLabel(color),
+                              style: AppTypography.ui(
+                                size: 12,
+                                color: AppColors.muted,
+                              ),
                             ),
-                          ),
+                          ],
                         ],
                       ),
                     ),
@@ -730,7 +759,7 @@ class MonthCalendar extends StatelessWidget {
               final data = byDate[_key(date)];
               final selected = _sameDay(date, activeDate);
               final today = _sameDay(date, DateTime.now());
-              final color = liturgicalColor(data?.color ?? 'verde');
+              final color = liturgicalColor(data?.color);
               return InkWell(
                 onTap: () => onSelect(date),
                 borderRadius: BorderRadius.circular(12),
@@ -846,7 +875,9 @@ class ReadingsCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final readings = day?.readings ?? const <Reading>[];
+    final readings = (day?.readings ?? const <Reading>[])
+        .where((reading) => reading.reference.trim().isNotEmpty)
+        .toList();
     return SurfaceCard(
       padding: const EdgeInsets.fromLTRB(20, 20, 20, 16),
       child: Column(
@@ -967,7 +998,9 @@ class CollectCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final collect = day?.collects.firstOrNull;
-    if (collect == null) return const SizedBox.shrink();
+    if (collect == null || collect.text.trim().isEmpty) {
+      return const SizedBox.shrink();
+    }
     return SurfaceCard(
       padding: const EdgeInsets.fromLTRB(20, 20, 20, 21),
       child: Column(
@@ -993,40 +1026,6 @@ class CollectCard extends StatelessWidget {
               color: AppColors.inkSoft,
               height: 1.16,
               style: FontStyle.italic,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class DemoBanner extends StatelessWidget {
-  const DemoBanner({required this.copy, super.key});
-
-  final AppCopy copy;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
-      decoration: BoxDecoration(
-        color: AppColors.copperWash.withValues(alpha: .7),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.copper.withValues(alpha: .22)),
-      ),
-      child: Row(
-        children: [
-          const Icon(
-            Icons.cloud_off_outlined,
-            size: 16,
-            color: AppColors.copperDark,
-          ),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Text(
-              '${copy.demoMode} · ${copy.demoDescription}',
-              style: AppTypography.ui(size: 12, color: AppColors.copperDark),
             ),
           ),
         ],

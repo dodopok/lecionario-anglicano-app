@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:lecionario_anglicano/data/models/lectionary_models.dart';
@@ -8,8 +9,8 @@ class FakeLectionaryDataSource implements LectionaryDataSource {
   FakeLectionaryDataSource({
     List<PrayerBook>? books,
     LectionaryDay Function(DateTime date)? dayBuilder,
-  }) : books = books ?? DemoData.books,
-       dayBuilder = dayBuilder ?? DemoData.day;
+  }) : books = books ?? [testBook(code: 'loc_2015', name: 'LOC 2015')],
+       dayBuilder = dayBuilder ?? testDay;
 
   List<PrayerBook> books;
   LectionaryDay Function(DateTime date) dayBuilder;
@@ -38,7 +39,7 @@ class FakeLectionaryDataSource implements LectionaryDataSource {
     getCalendarMonthCalls++;
     requestedMonths.add(month);
     if (failCalendarMonth) throw StateError('month unavailable');
-    return DemoData.month(month);
+    return testMonth(month);
   }
 
   @override
@@ -97,5 +98,17 @@ LectionaryDay testDay(DateTime date) {
       Reading(kind: 'gospel', reference: 'João 1:1–5', text: 'No princípio.'),
     ],
     collects: const [Collect(text: 'Coleta de teste.')],
+  );
+}
+
+List<CalendarDay> testMonth(DateTime month) {
+  return List.generate(
+    DateUtils.getDaysInMonth(month.year, month.month),
+    (index) => CalendarDay(
+      date: DateTime(month.year, month.month, index + 1),
+      color: index.isEven ? 'verde' : 'branco',
+      celebrationName: index == 4 ? 'Celebração de teste' : null,
+      weekName: 'Semana de teste',
+    ),
   );
 }

@@ -45,24 +45,23 @@ class PrayerBook {
   final String code;
   final String name;
   final String fullName;
-  final String description;
+  final String? description;
   final String language;
   final String jurisdiction;
-  final int year;
+  final int? year;
   final bool recommended;
   final String? thumbnailUrl;
 
   factory PrayerBook.fromJson(Map<String, dynamic> json) {
     return PrayerBook(
-      id: '${json['id'] ?? json['code'] ?? 'loc'}',
-      code: '${json['code'] ?? json['id'] ?? 'loc'}',
-      name: '${json['name'] ?? json['full_name'] ?? 'Livro de Oração Comum'}',
-      fullName:
-          '${json['full_name'] ?? json['name'] ?? 'Livro de Oração Comum'}',
-      description: '${json['description'] ?? ''}',
-      language: '${json['language'] ?? 'pt-BR'}',
+      id: '${json['id'] ?? json['code'] ?? ''}',
+      code: '${json['code'] ?? json['id'] ?? ''}',
+      name: '${json['name'] ?? json['full_name'] ?? ''}',
+      fullName: '${json['full_name'] ?? json['name'] ?? ''}',
+      description: json['description'] as String?,
+      language: '${json['language'] ?? ''}',
       jurisdiction: '${json['jurisdiction'] ?? ''}',
-      year: (json['year'] as num?)?.toInt() ?? DateTime.now().year,
+      year: (json['year'] as num?)?.toInt(),
       recommended: json['is_recommended'] as bool? ?? false,
       thumbnailUrl: json['thumbnail_url'] as String?,
     );
@@ -89,14 +88,14 @@ class CalendarDay {
   });
 
   final DateTime date;
-  final String color;
+  final String? color;
   final String? celebrationName;
   final String? weekName;
 
   factory CalendarDay.fromJson(Map<String, dynamic> json) {
     return CalendarDay(
       date: parseApiDate(json['date']),
-      color: '${json['color'] ?? json['liturgical_color'] ?? 'verde'}',
+      color: (json['color'] ?? json['liturgical_color']) as String?,
       celebrationName:
           json['celebration_name'] as String? ??
           (json['celebration'] is Map
@@ -145,7 +144,7 @@ class Reading {
 
   factory Reading.fromJson(Map<String, dynamic> json, {String? kind}) {
     return Reading(
-      kind: kind ?? '${json['type'] ?? json['kind'] ?? 'reading'}',
+      kind: kind ?? '${json['type'] ?? json['kind'] ?? ''}',
       reference: '${json['reference'] ?? json['referencia'] ?? ''}',
       text: json['text'] as String? ?? json['texto'] as String?,
       translation: json['translation'] as String? ?? json['versao'] as String?,
@@ -183,9 +182,9 @@ class LectionaryDay {
   });
 
   final DateTime date;
-  final String dayOfWeek;
-  final String season;
-  final String color;
+  final String? dayOfWeek;
+  final String? season;
+  final String? color;
   final String? liturgicalYear;
   final String? weekName;
   final String? sundayName;
@@ -237,17 +236,19 @@ class LectionaryDay {
 
     final rawDescription = json['description'];
     final description = rawDescription is List
-        ? rawDescription.map((item) => '$item').toList()
+        ? rawDescription.whereType<String>().toList()
         : rawDescription == null
         ? null
-        : <String>['$rawDescription'];
+        : rawDescription is String
+        ? <String>[rawDescription]
+        : null;
 
     final rawCelebration = json['celebration'];
     return LectionaryDay(
       date: parseApiDate(json['date']),
-      dayOfWeek: '${json['day_of_week'] ?? json['weekDay'] ?? ''}',
-      season: '${json['liturgical_season'] ?? json['season'] ?? 'Tempo Comum'}',
-      color: '${json['liturgical_color'] ?? json['color'] ?? 'verde'}',
+      dayOfWeek: (json['day_of_week'] ?? json['weekDay']) as String?,
+      season: (json['liturgical_season'] ?? json['season']) as String?,
+      color: (json['liturgical_color'] ?? json['color']) as String?,
       liturgicalYear:
           json['liturgical_year'] as String? ?? json['cycle'] as String?,
       weekName: json['week_name'] as String? ?? json['week'] as String?,
@@ -281,5 +282,5 @@ DateTime parseApiDate(Object? raw) {
       int.parse(br.group(1)!),
     );
   }
-  return DateTime.now();
+  throw const FormatException('Data ausente ou inválida na resposta da API.');
 }

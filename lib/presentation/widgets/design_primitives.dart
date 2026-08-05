@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_typography.dart';
 import '../../data/models/lectionary_models.dart';
-import '../../data/services/lectionary_api.dart';
 import 'sacred_mark.dart';
 
 class Eyebrow extends StatelessWidget {
@@ -155,11 +154,10 @@ class _FallbackBookCover extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isEnglish = book.appLanguage == AppLanguage.en;
-    final label = book.name
+    final rawLabel = (book.name.isNotEmpty ? book.name : book.code)
         .replaceAll(RegExp(r'[^A-Za-z0-9]'), '')
-        .padRight(2, 'L')
-        .substring(0, 2)
         .toUpperCase();
+    final label = rawLabel.length > 2 ? rawLabel.substring(0, 2) : rawLabel;
 
     return DecoratedBox(
       decoration: BoxDecoration(
@@ -234,18 +232,19 @@ class _FallbackBookCover extends StatelessWidget {
                         ),
                       ),
                     ),
-                    Align(
-                      alignment: Alignment.bottomRight,
-                      child: Text(
-                        '${book.year}',
-                        style: AppTypography.ui(
-                          size: 8,
-                          weight: FontWeight.w700,
-                          color: AppColors.white.withValues(alpha: .74),
-                          letterSpacing: 1,
+                    if (book.year != null)
+                      Align(
+                        alignment: Alignment.bottomRight,
+                        child: Text(
+                          '${book.year}',
+                          style: AppTypography.ui(
+                            size: 8,
+                            weight: FontWeight.w700,
+                            color: AppColors.white.withValues(alpha: .74),
+                            letterSpacing: 1,
+                          ),
                         ),
                       ),
-                    ),
                   ],
                 ),
               ),
@@ -257,7 +256,10 @@ class _FallbackBookCover extends StatelessWidget {
   }
 }
 
-Color liturgicalColor(String color) => DemoData.colorFor(color);
+Color liturgicalColor(String? color) {
+  if (color == null || color.trim().isEmpty) return AppColors.mutedLight;
+  return AppColors.liturgical(color);
+}
 
 Color liturgicalWash(String color) {
   return liturgicalColor(color).withValues(alpha: .11);

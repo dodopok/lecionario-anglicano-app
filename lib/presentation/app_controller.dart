@@ -18,7 +18,6 @@ class AppController extends ChangeNotifier {
   bool isInitializing = true;
   bool isLoadingDay = false;
   bool isLoadingMonth = false;
-  bool isDemoMode = false;
   String? lastError;
 
   PrayerBook? get selectedPrayerBook {
@@ -43,13 +42,10 @@ class AppController extends ChangeNotifier {
 
     try {
       prayerBooks = await api.getPrayerBooks();
-      if (prayerBooks.isEmpty) {
-        throw const FormatException('Nenhum LOC disponível.');
-      }
+      lastError = null;
     } catch (error) {
-      isDemoMode = true;
       lastError = '$error';
-      prayerBooks = DemoData.books;
+      prayerBooks = const [];
     }
 
     if (selectedPrayerBookCode != null &&
@@ -108,12 +104,10 @@ class AppController extends ChangeNotifier {
   Future<void> _loadDay(DateTime date, String code) async {
     try {
       selectedDay = await api.getDay(date, code);
-      isDemoMode = false;
       lastError = null;
     } catch (error) {
-      isDemoMode = true;
       lastError = '$error';
-      selectedDay = DemoData.day(date);
+      selectedDay = null;
     }
   }
 
@@ -124,9 +118,8 @@ class AppController extends ChangeNotifier {
     try {
       _monthCache[key] = await api.getCalendarMonth(month, code);
     } catch (error) {
-      isDemoMode = true;
       lastError = '$error';
-      _monthCache[key] = DemoData.month(month);
+      _monthCache[key] = const [];
     }
   }
 

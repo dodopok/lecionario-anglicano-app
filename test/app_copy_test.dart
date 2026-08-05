@@ -57,14 +57,9 @@ void main() {
     expect(portuguese.liturgicalColor, 'COR LITÚRGICA');
     expect(portuguese.selected, 'SELECIONADO');
     expect(portuguese.backToToday, 'Voltar para hoje');
-    expect(portuguese.demoMode, 'Prévia local');
-    expect(portuguese.demoDescription, contains('indisponível'));
-    expect(portuguese.noReadingText, contains('referência'));
     expect(portuguese.close, 'Fechar');
-    expect(portuguese.noCelebration, contains('vida comum'));
     expect(portuguese.yearLabel, 'Ano');
     expect(portuguese.readingOpening, 'Abrir leitura');
-    expect(portuguese.networkNote, contains('app-internal-id'));
 
     expect(english.brandSubline, 'ANGLICAN');
     expect(english.chooseEyebrow, 'FIRST STEP');
@@ -82,14 +77,9 @@ void main() {
     expect(english.liturgicalColor, 'LITURGICAL COLOR');
     expect(english.selected, 'SELECTED');
     expect(english.backToToday, 'Back to today');
-    expect(english.demoMode, 'Local preview');
-    expect(english.demoDescription, contains('unavailable'));
-    expect(english.noReadingText, contains('reference'));
     expect(english.close, 'Close');
-    expect(english.noCelebration, contains('ordinary life'));
     expect(english.yearLabel, 'Year');
     expect(english.readingOpening, 'Open reading');
-    expect(english.networkNote, contains('app-internal-id'));
 
     expect(spanish.brandSubline, 'ANGLICANO');
     expect(spanish.chooseEyebrow, 'PRIMER PASO');
@@ -106,14 +96,9 @@ void main() {
     expect(spanish.liturgicalColor, 'COLOR LITÚRGICO');
     expect(spanish.selected, 'SELECCIONADO');
     expect(spanish.backToToday, 'Volver a hoy');
-    expect(spanish.demoMode, 'Vista previa local');
-    expect(spanish.demoDescription, contains('disponible'));
-    expect(spanish.noReadingText, contains('referencia'));
     expect(spanish.close, 'Cerrar');
-    expect(spanish.noCelebration, contains('cotidiana'));
     expect(spanish.yearLabel, 'Año');
     expect(spanish.readingOpening, 'Abrir lectura');
-    expect(spanish.networkNote, contains('app-internal-id'));
   });
 
   test('formats month, weekday and reading metadata per language', () {

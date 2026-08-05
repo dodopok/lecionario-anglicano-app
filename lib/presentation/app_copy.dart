@@ -91,34 +91,10 @@ class AppCopy {
     AppLanguage.en => 'Back to today',
     AppLanguage.es => 'Volver a hoy',
   };
-  String get demoMode => switch (language) {
-    AppLanguage.pt => 'Prévia local',
-    AppLanguage.en => 'Local preview',
-    AppLanguage.es => 'Vista previa local',
-  };
-  String get demoDescription => switch (language) {
-    AppLanguage.pt => 'A API está indisponível. Mostrando conteúdo de prévia.',
-    AppLanguage.en => 'The API is unavailable. Showing preview content.',
-    AppLanguage.es =>
-      'La API no está disponible. Mostrando contenido de vista previa.',
-  };
-  String get noReadingText => switch (language) {
-    AppLanguage.pt =>
-      'A referência está disponível; o texto integral pode ser aberto quando o conteúdo estiver publicado.',
-    AppLanguage.en =>
-      'The reference is available; the full text will appear when the content is published.',
-    AppLanguage.es =>
-      'La referencia está disponible; el texto completo aparecerá cuando el contenido esté publicado.',
-  };
   String get close => switch (language) {
     AppLanguage.pt => 'Fechar',
     AppLanguage.en => 'Close',
     AppLanguage.es => 'Cerrar',
-  };
-  String get noCelebration => switch (language) {
-    AppLanguage.pt => 'Um dia no ritmo da vida comum',
-    AppLanguage.en => 'A day in the rhythm of ordinary life',
-    AppLanguage.es => 'Un día en el ritmo de la vida cotidiana',
   };
   String get yearLabel => switch (language) {
     AppLanguage.pt => 'Ano',
@@ -130,12 +106,6 @@ class AppCopy {
     AppLanguage.en => 'Open reading',
     AppLanguage.es => 'Abrir lectura',
   };
-  String get networkNote => switch (language) {
-    AppLanguage.pt => 'Sincronizado pelo app-internal-id',
-    AppLanguage.en => 'Synced through app-internal-id',
-    AppLanguage.es => 'Sincronizado por app-internal-id',
-  };
-
   String dateLong(DateTime date) {
     final locale = language.locale.toLanguageTag();
     final format = switch (language) {
@@ -190,11 +160,14 @@ class AppCopy {
         AppLanguage.es => 'Evangelio',
       };
     }
-    return switch (language) {
-      AppLanguage.pt => 'Salmo',
-      AppLanguage.en => 'Psalm',
-      AppLanguage.es => 'Salmo',
-    };
+    if (normalized.contains('psalm') || normalized.contains('salmo')) {
+      return switch (language) {
+        AppLanguage.pt => 'Salmo',
+        AppLanguage.en => 'Psalm',
+        AppLanguage.es => 'Salmo',
+      };
+    }
+    return kind;
   }
 
   String colorLabel(String color) {
@@ -229,11 +202,28 @@ class AppCopy {
         AppLanguage.es => 'Rosa',
       };
     }
-    return switch (language) {
-      AppLanguage.pt => 'Verde',
-      AppLanguage.en => 'Green',
-      AppLanguage.es => 'Verde',
-    };
+    if (normalized.contains('verde') || normalized == 'green') {
+      return switch (language) {
+        AppLanguage.pt => 'Verde',
+        AppLanguage.en => 'Green',
+        AppLanguage.es => 'Verde',
+      };
+    }
+    if (normalized.contains('azul') || normalized == 'blue') {
+      return switch (language) {
+        AppLanguage.pt => 'Azul',
+        AppLanguage.en => 'Blue',
+        AppLanguage.es => 'Azul',
+      };
+    }
+    if (normalized.contains('preto') || normalized == 'black') {
+      return switch (language) {
+        AppLanguage.pt => 'Preto',
+        AppLanguage.en => 'Black',
+        AppLanguage.es => 'Negro',
+      };
+    }
+    return color;
   }
 
   String _capitalize(String value) {

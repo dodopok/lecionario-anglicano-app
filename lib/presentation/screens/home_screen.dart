@@ -64,10 +64,6 @@ class _HomeScreenState extends State<HomeScreen> {
                               onChooseBook: _openPrayerBookSheet,
                             ),
                             const SizedBox(height: 24),
-                            if (widget.controller.isDemoMode) ...[
-                              DemoBanner(copy: copy),
-                              const SizedBox(height: 16),
-                            ],
                             DailyHero(
                               day: widget.controller.selectedDay,
                               activeDate: activeDate,
@@ -113,7 +109,7 @@ class _HomeScreenState extends State<HomeScreen> {
                               },
                             ),
                             const SizedBox(height: 34),
-                            _HomeFooter(copy: copy),
+                            const _HomeFooter(),
                           ],
                         ),
                       ),
@@ -195,15 +191,16 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ),
               const SizedBox(height: 18),
-              Text(
-                reading.text ?? copy.noReadingText,
-                style: AppTypography.display(
-                  size: 21,
-                  weight: FontWeight.w500,
-                  color: AppColors.inkSoft,
-                  height: 1.2,
+              if (reading.text case final text? when text.isNotEmpty)
+                Text(
+                  text,
+                  style: AppTypography.display(
+                    size: 21,
+                    weight: FontWeight.w500,
+                    color: AppColors.inkSoft,
+                    height: 1.2,
+                  ),
                 ),
-              ),
               if (reading.translation != null) ...[
                 const SizedBox(height: 16),
                 Text(
@@ -357,6 +354,11 @@ class _BookPill extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final bookTitle = book == null
+        ? label
+        : book!.name.isNotEmpty
+        ? book!.name
+        : book!.code;
     return Semantics(
       button: true,
       label: label,
@@ -394,7 +396,7 @@ class _BookPill extends StatelessWidget {
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      book?.name ?? label,
+                      bookTitle,
                       style: AppTypography.ui(
                         size: 13,
                         weight: FontWeight.w700,
@@ -406,7 +408,7 @@ class _BookPill extends StatelessWidget {
                 ConstrainedBox(
                   constraints: const BoxConstraints(maxWidth: 78),
                   child: Text(
-                    book?.name ?? label,
+                    bookTitle,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: AppTypography.ui(size: 12, weight: FontWeight.w700),
@@ -582,9 +584,7 @@ class _NarrowContent extends StatelessWidget {
 }
 
 class _HomeFooter extends StatelessWidget {
-  const _HomeFooter({required this.copy});
-
-  final AppCopy copy;
+  const _HomeFooter();
 
   @override
   Widget build(BuildContext context) {
@@ -592,14 +592,7 @@ class _HomeFooter extends StatelessWidget {
       children: [
         Container(width: 26, height: 1, color: AppColors.copper),
         const SizedBox(width: 10),
-        Expanded(
-          child: Text(
-            copy.networkNote,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: AppTypography.ui(size: 11, color: AppColors.muted),
-          ),
-        ),
+        const Spacer(),
         const Spacer(),
         const Icon(
           Icons.shield_outlined,
@@ -666,20 +659,27 @@ class _PrayerBookSheet extends StatelessWidget {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                book.name,
+                                book.name.isNotEmpty ? book.name : book.code,
                                 style: AppTypography.display(
                                   size: 22,
                                   height: 1,
                                 ),
                               ),
-                              const SizedBox(height: 4),
-                              Text(
-                                '${book.jurisdiction} · ${book.year}',
-                                style: AppTypography.ui(
-                                  size: 12,
-                                  color: AppColors.muted,
+                              if (book.jurisdiction.isNotEmpty ||
+                                  book.year != null) ...[
+                                const SizedBox(height: 4),
+                                Text(
+                                  [
+                                    if (book.jurisdiction.isNotEmpty)
+                                      book.jurisdiction,
+                                    if (book.year != null) '${book.year}',
+                                  ].join(' · '),
+                                  style: AppTypography.ui(
+                                    size: 12,
+                                    color: AppColors.muted,
+                                  ),
                                 ),
-                              ),
+                              ],
                             ],
                           ),
                         ),
