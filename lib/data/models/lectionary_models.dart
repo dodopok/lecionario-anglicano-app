@@ -25,8 +25,6 @@ extension AppLanguageX on AppLanguage {
   }
 }
 
-enum CalendarView { week, month }
-
 class ReadingTypeOption {
   const ReadingTypeOption({
     required this.value,
@@ -207,12 +205,14 @@ class CalendarDay {
     required this.color,
     this.celebrationName,
     this.weekName,
+    this.sundayName,
   });
 
   final DateTime date;
   final String? color;
   final String? celebrationName;
   final String? weekName;
+  final String? sundayName;
 
   factory CalendarDay.fromJson(Map<String, dynamic> json) {
     return CalendarDay(
@@ -224,6 +224,7 @@ class CalendarDay {
               ? (json['celebration'] as Map)['name'] as String?
               : null),
       weekName: json['week_name'] as String? ?? json['week'] as String?,
+      sundayName: json['sunday_name'] as String?,
     );
   }
 }

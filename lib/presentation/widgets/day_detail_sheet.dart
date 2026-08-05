@@ -47,6 +47,7 @@ class _DayDetailSheetState extends State<DayDetailSheet> {
   Widget build(BuildContext context) {
     final bottomInset = MediaQuery.viewInsetsOf(context).bottom;
     final maxHeight = MediaQuery.sizeOf(context).height * .92;
+    final isToday = DateUtils.isSameDay(widget.date, DateTime.now());
 
     return SafeArea(
       top: false,
@@ -54,7 +55,7 @@ class _DayDetailSheetState extends State<DayDetailSheet> {
         key: const ValueKey('mobile-day-detail-sheet'),
         constraints: BoxConstraints(maxHeight: maxHeight),
         child: SingleChildScrollView(
-          padding: EdgeInsets.fromLTRB(16, 2, 16, 24 + bottomInset),
+          padding: EdgeInsets.fromLTRB(16, 2, 16, 20 + bottomInset),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
@@ -64,24 +65,32 @@ class _DayDetailSheetState extends State<DayDetailSheet> {
                   key: const ValueKey('mobile-day-detail-close'),
                   onPressed: () => Navigator.of(context).pop(),
                   tooltip: widget.copy.close,
-                  icon: const Icon(Icons.close_rounded),
+                  icon: const Icon(Icons.close_rounded, size: 20),
                   color: AppColors.muted,
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints.tightFor(
+                    width: 40,
+                    height: 40,
+                  ),
                 ),
               ),
+              const SizedBox(height: 4),
               DailyHero(
                 key: const ValueKey('mobile-day-detail-hero'),
                 day: day,
                 activeDate: widget.date,
                 copy: widget.copy,
                 isLoading: isLoading,
-                onToday: () => Navigator.of(context).pop(),
               ),
+              if (!isLoading) DayDescription(day: day),
               const SizedBox(height: 14),
               ReadingsCard(
                 key: const ValueKey('mobile-day-detail-readings'),
                 day: day,
                 copy: widget.copy,
-                title: widget.copy.readingsForDay,
+                title: isToday
+                    ? widget.copy.readings
+                    : widget.copy.readingsForDay,
                 onOpen: widget.onOpenReading,
                 isLoading: isLoading,
               ),
