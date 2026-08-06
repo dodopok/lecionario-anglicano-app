@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:lecionario_anglicano/data/models/lectionary_models.dart';
+import 'package:lecionario_anglicano/data/services/load_failure.dart';
 import 'package:lecionario_anglicano/presentation/app_controller.dart';
 
 import 'helpers/test_doubles.dart';
@@ -83,7 +84,7 @@ void main() {
         DateTime(primaryDate.year, primaryDate.month + 1),
       );
 
-      expect(preview?.date, previewDate);
+      expect(preview.day?.date, previewDate);
       expect(controller.selectedDay?.date, primaryDate);
       expect(source.getDayCalls, 2);
       expect(
@@ -298,7 +299,8 @@ void main() {
 
     await controller.initialize();
 
-    expect(controller.lastError, isNotNull);
+    expect(controller.failure, const LoadFailure(LoadFailureKind.server));
+    expect(controller.strandedBy, isNotNull);
     expect(controller.selectedDay, isNull);
     expect(controller.monthDays(DateTime.now()), isEmpty);
   });
@@ -317,7 +319,7 @@ void main() {
 
     await controller.initialize();
 
-    expect(controller.lastError, contains('books unavailable'));
+    expect(controller.failure, const LoadFailure(LoadFailureKind.server));
     expect(controller.prayerBooks, isEmpty);
     expect(controller.selectedPrayerBookCode, isNull);
     expect(controller.needsPrayerBook, isTrue);
@@ -430,5 +432,112 @@ void main() {
     controller.dispose();
 
     expect(source.disposed, isTrue);
+  });
+
+  test('tells a lost connection from a bad answer', () async {
+    final source = FakeLectionaryDataSource(books: [testBook()])..goOffline();
+    final controller = AppController(
+      api: source,
+      localPreferences: await createLocalPreferences(),
+    );
+    addTearDown(controller.dispose);
+
+    await controller.initialize();
+    expect(controller.failure, const LoadFailure(LoadFailureKind.offline));
+  });
+
+  test('clears the failure once the lectionary answers again', () async {
+    final source = FakeLectionaryDataSource(
+      books: [testBook()],
+      dayBuilder: testDay,
+    );
+    final controller = AppController(
+      api: source,
+      localPreferences: await createLocalPreferences({
+        'selected_prayer_book_code': 'loc_test',
+      }),
+    );
+    addTearDown(controller.dispose);
+    source.goOffline();
+    source.failPrayerBooks = false;
+
+    await controller.initialize();
+    expect(controller.failure?.isOffline, isTrue);
+    expect(controller.strandedBy, isNotNull);
+
+    source.goOnline();
+    await controller.retryDay();
+
+    expect(controller.failure, isNull);
+    expect(controller.strandedBy, isNull);
+    expect(controller.selectedDay, isNotNull);
+    expect(controller.monthDays(DateTime.now()), isNotEmpty);
+  });
+
+  test('asks for the prayer books again after they failed', () async {
+    final source = FakeLectionaryDataSource(
+      books: [testBook()],
+      dayBuilder: testDay,
+    )..goOffline();
+    final controller = AppController(
+      api: source,
+      localPreferences: await createLocalPreferences({
+        'selected_prayer_book_code': 'loc_test',
+      }),
+    );
+    addTearDown(controller.dispose);
+
+    await controller.initialize();
+    expect(controller.prayerBooks, isEmpty);
+    expect(controller.needsPrayerBook, isTrue);
+
+    source.goOnline();
+    await controller.retryPrayerBooks();
+
+    expect(controller.failure, isNull);
+    expect(controller.prayerBooks, isNotEmpty);
+    expect(controller.isInitializing, isFalse);
+  });
+
+  test('leaves a day standing when only its preferences fail', () async {
+    final source =
+        FakeLectionaryDataSource(books: [testBook()], dayBuilder: testDay)
+          ..failReadingTypeOptions = true
+          ..failBibleVersions = true;
+    final controller = AppController(
+      api: source,
+      localPreferences: await createLocalPreferences({
+        'selected_prayer_book_code': 'loc_test',
+      }),
+    );
+    addTearDown(controller.dispose);
+
+    await controller.initialize();
+
+    // A preference list nobody can read does not make the day unreadable.
+    expect(controller.failure, isNull);
+    expect(controller.strandedBy, isNull);
+    expect(controller.selectedDay, isNotNull);
+  });
+
+  test('is not stranded while part of the day still arrived', () async {
+    final source = FakeLectionaryDataSource(
+      books: [testBook()],
+      dayBuilder: testDay,
+    )..failDay = true;
+    final controller = AppController(
+      api: source,
+      localPreferences: await createLocalPreferences({
+        'selected_prayer_book_code': 'loc_test',
+      }),
+    );
+    addTearDown(controller.dispose);
+
+    await controller.initialize();
+
+    expect(controller.selectedDay, isNull);
+    expect(controller.monthDays(DateTime.now()), isNotEmpty);
+    expect(controller.failure, isNotNull);
+    expect(controller.strandedBy, isNull);
   });
 }

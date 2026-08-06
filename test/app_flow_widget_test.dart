@@ -733,7 +733,11 @@ void main() {
   // Real phone geometry, insets included: without them the layout gets ~80pt
   // it does not have on the device.
   for (final (name, size, insets) in [
-    ('a tall phone', const Size(390, 844), const EdgeInsets.only(top: 47, bottom: 34)),
+    (
+      'a tall phone',
+      const Size(390, 844),
+      const EdgeInsets.only(top: 47, bottom: 34),
+    ),
     ('a small phone', const Size(375, 667), EdgeInsets.zero),
   ]) {
     testWidgets('fits $name on a single screen, without scrolling', (
@@ -1012,10 +1016,7 @@ void main() {
 
     await tester.tap(find.byKey(const ValueKey('calendar-previous-month')));
     await tester.pumpAndSettle();
-    expect(
-      find.text(AppCopy(AppLanguage.pt).monthYear(now)),
-      findsOneWidget,
-    );
+    expect(find.text(AppCopy(AppLanguage.pt).monthYear(now)), findsOneWidget);
   });
 
   testWidgets('moves Sunday to the middle of the calendar from settings', (
@@ -1101,10 +1102,7 @@ void main() {
     await tester.drag(find.text('João 1:1–5'), const Offset(0, 700));
     await tester.pumpAndSettle();
 
-    expect(
-      find.byKey(const ValueKey('mobile-day-detail-sheet')),
-      findsNothing,
-    );
+    expect(find.byKey(const ValueKey('mobile-day-detail-sheet')), findsNothing);
   });
 
   testWidgets('the day sheet holds its height while the day loads', (
@@ -1143,5 +1141,252 @@ void main() {
 
     expect(find.byType(SkeletonBox), findsNothing);
     expect(tester.getRect(sheet), whileLoading);
+  });
+
+  group('when the lectionary cannot be reached', () {
+    Future<AppController> offlineController({bool withBooks = true}) async {
+      final source = FakeLectionaryDataSource(
+        books: [testBook()],
+        dayBuilder: testDay,
+      )..goOffline();
+      if (withBooks) source.failPrayerBooks = false;
+      final controller = AppController(
+        api: source,
+        localPreferences: await createLocalPreferences({
+          'selected_prayer_book_code': 'loc_test',
+        }),
+      );
+      await controller.initialize();
+      return controller;
+    }
+
+    testWidgets('the phone home says so, and offers to ask again', (
+      tester,
+    ) async {
+      await tester.binding.setSurfaceSize(const Size(390, 844));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+
+      final controller = await offlineController();
+      addTearDown(controller.dispose);
+      final source = controller.api as FakeLectionaryDataSource;
+
+      await tester.pumpWidget(testControllerApp(controller));
+      await tester.pumpAndSettle();
+
+      expect(find.byKey(const ValueKey('failure-notice')), findsOneWidget);
+      expect(find.text('Sem conexão'), findsOneWidget);
+      // Not an empty day pretending to be a day.
+      expect(find.byType(MonthCalendar), findsNothing);
+
+      source.goOnline();
+      await tester.tap(find.byKey(const ValueKey('failure-retry')));
+      await tester.pumpAndSettle();
+
+      expect(find.byKey(const ValueKey('failure-notice')), findsNothing);
+      expect(find.byType(MonthCalendar), findsOneWidget);
+      expect(find.textContaining('Tempo de teste'), findsOneWidget);
+    });
+
+    testWidgets('a bad answer reads differently from a lost connection', (
+      tester,
+    ) async {
+      await tester.binding.setSurfaceSize(const Size(390, 844));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+
+      final source =
+          FakeLectionaryDataSource(books: [testBook()], dayBuilder: testDay)
+            ..failDay = true
+            ..failCalendarMonth = true;
+      final controller = AppController(
+        api: source,
+        localPreferences: await createLocalPreferences({
+          'selected_prayer_book_code': 'loc_test',
+        }),
+      );
+      addTearDown(controller.dispose);
+      await controller.initialize();
+
+      await tester.pumpWidget(testControllerApp(controller));
+      await tester.pumpAndSettle();
+
+      expect(find.text('O lecionário não respondeu'), findsOneWidget);
+      expect(find.text('Sem conexão'), findsNothing);
+    });
+
+    testWidgets('the month keeps what arrived, with the notice beside it', (
+      tester,
+    ) async {
+      await tester.binding.setSurfaceSize(const Size(390, 844));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+
+      final source = FakeLectionaryDataSource(
+        books: [testBook()],
+        dayBuilder: testDay,
+      )..failDay = true;
+      final controller = AppController(
+        api: source,
+        localPreferences: await createLocalPreferences({
+          'selected_prayer_book_code': 'loc_test',
+        }),
+      );
+      addTearDown(controller.dispose);
+      await controller.initialize();
+
+      await tester.pumpWidget(testControllerApp(controller));
+      await tester.pumpAndSettle();
+
+      expect(find.byKey(const ValueKey('failure-notice')), findsOneWidget);
+      expect(find.byType(MonthCalendar), findsOneWidget);
+    });
+
+    testWidgets('the prayer book list says so instead of looking empty', (
+      tester,
+    ) async {
+      final source = FakeLectionaryDataSource(books: [testBook()])..goOffline();
+      final controller = AppController(
+        api: source,
+        localPreferences: await createLocalPreferences(),
+      );
+      addTearDown(controller.dispose);
+      await controller.initialize();
+
+      await tester.pumpWidget(testControllerApp(controller));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(LocSelectionScreen), findsOneWidget);
+      expect(find.text('Sem conexão'), findsOneWidget);
+      expect(find.text('Nenhum LOC disponível neste idioma.'), findsNothing);
+
+      source.goOnline();
+      await tester.tap(find.byKey(const ValueKey('failure-retry')));
+      await tester.pumpAndSettle();
+
+      expect(find.text('LOC Teste'), findsOneWidget);
+      expect(find.byKey(const ValueKey('failure-notice')), findsNothing);
+    });
+
+    testWidgets('the day sheet says so in place of empty cards', (
+      tester,
+    ) async {
+      await tester.binding.setSurfaceSize(const Size(390, 844));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+
+      final source = FakeLectionaryDataSource(
+        books: [testBook()],
+        dayBuilder: testDay,
+      );
+      final controller = AppController(
+        api: source,
+        localPreferences: await createLocalPreferences({
+          'selected_prayer_book_code': 'loc_test',
+        }),
+      );
+      addTearDown(controller.dispose);
+      await controller.initialize();
+
+      await tester.pumpWidget(
+        testMaterialApp(home: HomeScreen(controller: controller)),
+      );
+      await tester.pumpAndSettle();
+
+      source.failAsOffline = true;
+      source.failDay = true;
+      await tester.tap(find.byType(DailyHero));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Sem conexão'), findsOneWidget);
+      expect(find.text('LEITURAS DE HOJE'), findsNothing);
+
+      source.goOnline();
+      await tester.tap(find.byKey(const ValueKey('failure-retry')));
+      await tester.pumpAndSettle();
+
+      expect(find.text('LEITURAS DE HOJE'), findsOneWidget);
+      expect(find.byKey(const ValueKey('failure-notice')), findsNothing);
+    });
+  });
+
+  group('on a tablet', () {
+    Future<AppController> tabletController() async {
+      final controller = AppController(
+        api: FakeLectionaryDataSource(books: [testBook()], dayBuilder: testDay),
+        localPreferences: await createLocalPreferences({
+          'selected_prayer_book_code': 'loc_test',
+        }),
+      );
+      await controller.initialize();
+      return controller;
+    }
+
+    Future<void> pumpAt(WidgetTester tester, Size size) async {
+      await tester.binding.setSurfaceSize(size);
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+      final controller = await tabletController();
+      addTearDown(controller.dispose);
+      await tester.pumpWidget(
+        testMaterialApp(
+          home: MediaQuery(
+            data: MediaQueryData(size: size),
+            child: HomeScreen(controller: controller),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+    }
+
+    testWidgets('an iPad in portrait reads both columns at once', (
+      tester,
+    ) async {
+      await pumpAt(tester, const Size(834, 1194));
+
+      // The day sits beside the month rather than behind a tap.
+      expect(find.text('LEITURAS DE HOJE'), findsOneWidget);
+      expect(find.text('COLETA DO DIA'), findsOneWidget);
+      expect(find.text('Abrir o dia de hoje'), findsNothing);
+
+      final calendar = tester.getRect(find.byType(MonthCalendar));
+      final readings = tester.getRect(find.byType(ReadingsCard));
+      expect(readings.left, greaterThan(calendar.right - 1));
+      // And fills the screen instead of scrolling a stretched page.
+      expect(calendar.bottom, greaterThan(1194 * .6));
+    });
+
+    testWidgets('an iPad mini in portrait does too', (tester) async {
+      await pumpAt(tester, const Size(744, 1133));
+      expect(find.text('LEITURAS DE HOJE'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('a phone-sized window keeps the single column', (tester) async {
+      await pumpAt(tester, const Size(390, 844));
+      expect(find.text('LEITURAS DE HOJE'), findsNothing);
+      expect(find.text('Abrir o dia de hoje'), findsOneWidget);
+    });
+
+    testWidgets('a wide but short window scrolls one column instead', (
+      tester,
+    ) async {
+      // A phone on its side, or a short desktop window: wide enough for two
+      // columns, nowhere near tall enough for them.
+      await pumpAt(tester, const Size(844, 390));
+
+      expect(find.text('LEITURAS DE HOJE'), findsNothing);
+      expect(find.byType(Scrollable), findsWidgets);
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('a sheet stays a column, not the width of the screen', (
+      tester,
+    ) async {
+      await pumpAt(tester, const Size(834, 1194));
+
+      await tester.tap(find.text('João 1:1–5'));
+      await tester.pumpAndSettle();
+
+      expect(
+        tester.getSize(find.byKey(const ValueKey('reading-sheet'))).width,
+        lessThanOrEqualTo(640),
+      );
+    });
   });
 }

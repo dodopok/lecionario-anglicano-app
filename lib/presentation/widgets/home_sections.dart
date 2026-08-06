@@ -84,7 +84,10 @@ class DailyHero extends StatelessWidget {
                         ),
                         if (!isToday && onToday != null) ...[
                           const SizedBox(width: 10),
-                          _BackToToday(label: copy.backToToday, onTap: onToday!),
+                          _BackToToday(
+                            label: copy.backToToday,
+                            onTap: onToday!,
+                          ),
                         ],
                       ],
                     ),
@@ -200,18 +203,8 @@ String _eyebrow(bool isToday, LectionaryDay? day, AppCopy copy) {
 /// carry is secondary, and moves to the line below.
 String? _dayTitle(LectionaryDay? day, DateTime date) {
   final candidates = date.weekday == DateTime.sunday
-      ? [
-          day?.sundayName,
-          day?.weekName,
-          day?.celebration?.name,
-          day?.season,
-        ]
-      : [
-          day?.celebration?.name,
-          day?.sundayName,
-          day?.weekName,
-          day?.season,
-        ];
+      ? [day?.sundayName, day?.weekName, day?.celebration?.name, day?.season]
+      : [day?.celebration?.name, day?.sundayName, day?.weekName, day?.season];
   for (final value in candidates) {
     if (value != null && value.trim().isNotEmpty) return value.trim();
   }
@@ -367,7 +360,9 @@ class MonthCalendar extends StatelessWidget {
         }),
       );
       if (week > 0) rows.add(const SizedBox(height: _cellGap));
-      rows.add(fillHeight ? Expanded(child: row) : SizedBox(height: 62, child: row));
+      rows.add(
+        fillHeight ? Expanded(child: row) : SizedBox(height: 62, child: row),
+      );
     }
 
     final grid = Column(
@@ -478,7 +473,11 @@ class _DayCell extends StatelessWidget {
     return Semantics(
       button: true,
       selected: isToday,
-      label: ['${date.day}', ?label, ?(label == feast ? null : feast)].join(', '),
+      label: [
+        '${date.day}',
+        ?label,
+        ?(label == feast ? null : feast),
+      ].join(', '),
       child: Material(
         color: background,
         clipBehavior: Clip.antiAlias,
@@ -728,7 +727,9 @@ class ReadingsCard extends StatelessWidget {
 
 String readingsAsText(List<Reading> readings, AppCopy copy) {
   return readings
-      .map((reading) => '${copy.readingLabel(reading.kind)}: ${reading.reference}')
+      .map(
+        (reading) => '${copy.readingLabel(reading.kind)}: ${reading.reference}',
+      )
       .join('\n');
 }
 
@@ -932,7 +933,6 @@ class CollectCard extends StatelessWidget {
     );
   }
 }
-
 
 /// The note the API publishes about the day, when there is one.
 class DayDescription extends StatelessWidget {

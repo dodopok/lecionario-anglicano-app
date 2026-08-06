@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 
 import '../data/models/lectionary_models.dart';
 import '../data/services/lectionary_api.dart';
+import '../data/services/load_failure.dart';
 import '../data/services/local_preferences.dart';
 
 class AppController extends ChangeNotifier {
@@ -24,7 +25,11 @@ class AppController extends ChangeNotifier {
   bool isLoadingDay = false;
   bool isLoadingMonth = false;
   bool isLoadingPreferences = false;
-  String? lastError;
+
+  /// Why the lectionary on screen is missing, when it is. Preference lookups
+  /// are left out of this: they fail quietly and the day still reads.
+  LoadFailure? failure;
+  DateTime _lastRequestedDate = DateTime.now();
 
   PrayerBook? get selectedPrayerBook {
     for (final book in prayerBooks) {
@@ -51,13 +56,7 @@ class AppController extends ChangeNotifier {
     sundayInCenter = localPreferences.sundayInCenter;
     selectedPrayerBookCode = localPreferences.selectedPrayerBookCode;
 
-    try {
-      prayerBooks = await api.getPrayerBooks();
-      lastError = null;
-    } catch (error) {
-      lastError = '$error';
-      prayerBooks = const [];
-    }
+    await _loadPrayerBooks();
 
     final restoredBook = selectedPrayerBook;
     if (restoredBook == null || restoredBook.appLanguage != locale) {
@@ -73,6 +72,37 @@ class AppController extends ChangeNotifier {
       await _loadBookPreferences(book);
       await loadForDate(DateTime.now());
     }
+  }
+
+  Future<void> _loadPrayerBooks() async {
+    try {
+      prayerBooks = await api.getPrayerBooks();
+      failure = null;
+    } catch (error) {
+      failure = LoadFailure.from(error);
+      prayerBooks = const [];
+    }
+  }
+
+  /// Asks for the prayer books again, after the first attempt failed.
+  Future<void> retryPrayerBooks() async {
+    isInitializing = true;
+    notifyListeners();
+    await _loadPrayerBooks();
+    isInitializing = false;
+    notifyListeners();
+
+    final book = selectedPrayerBook;
+    if (book != null) {
+      await _loadBookPreferences(book);
+      await loadForDate(_lastRequestedDate);
+    }
+  }
+
+  /// Asks for the day on screen again, after it failed to arrive.
+  Future<void> retryDay() async {
+    _monthCache.clear();
+    await loadForDate(_lastRequestedDate);
   }
 
   /// Which weekday the calendar starts on: Sunday first, or Thursday first so
@@ -103,7 +133,7 @@ class AppController extends ChangeNotifier {
     if (book == null || book.appLanguage != language) {
       selectedPrayerBookCode = null;
       await localPreferences.clearPrayerBook();
-      lastError = null;
+      failure = null;
       isLoadingPreferences = false;
       notifyListeners();
       return;
@@ -118,7 +148,7 @@ class AppController extends ChangeNotifier {
     selectedPrayerBookCode = book.code;
     selectedDay = null;
     _monthCache.clear();
-    lastError = null;
+    failure = null;
     readingTypeOptions = book.readingTypes;
     bibleVersions = const [];
     selectedReadingType = null;
@@ -155,8 +185,10 @@ class AppController extends ChangeNotifier {
     final code = selectedPrayerBookCode;
     if (code == null) return;
 
+    _lastRequestedDate = date;
     isLoadingDay = true;
     isLoadingMonth = true;
+    failure = null;
     notifyListeners();
 
     final month = DateTime(date.year, date.month);
@@ -176,20 +208,22 @@ class AppController extends ChangeNotifier {
     await loadForDate(DateTime(date.year, date.month, date.day));
   }
 
-  Future<LectionaryDay?> fetchDayForDate(DateTime date) async {
+  Future<({LectionaryDay? day, LoadFailure? failure})> fetchDayForDate(
+    DateTime date,
+  ) async {
     final code = selectedPrayerBookCode;
-    if (code == null) return null;
+    if (code == null) return (day: null, failure: null);
 
     try {
-      return await api.getDay(
+      final day = await api.getDay(
         DateTime(date.year, date.month, date.day),
         code,
         readingType: selectedReadingType,
         bibleVersion: selectedBibleVersionCode,
       );
+      return (day: day, failure: null);
     } catch (error) {
-      lastError = '$error';
-      return null;
+      return (day: null, failure: LoadFailure.from(error));
     }
   }
 
@@ -218,6 +252,15 @@ class AppController extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// The failure when it left nothing at all to read, as opposed to one that
+  /// only cost part of what is on screen.
+  LoadFailure? get strandedBy {
+    if (failure == null || isLoadingDay) return null;
+    if (selectedDay != null) return null;
+    if (_monthCache.values.any((days) => days.isNotEmpty)) return null;
+    return failure;
+  }
+
   List<CalendarDay> monthDays(DateTime month) {
     final key = _monthKey(
       month,
@@ -240,15 +283,14 @@ class AppController extends ChangeNotifier {
         try {
           final options = await api.getReadingTypeOptions(book.code);
           if (options.isNotEmpty) readingTypeOptions = options;
-        } catch (error) {
-          lastError = '$error';
+        } catch (_) {
+          // A missing preference list does not stop the day from reading.
         }
       }(),
       () async {
         try {
           bibleVersions = await api.getBibleVersions(language: book.language);
-        } catch (error) {
-          lastError = '$error';
+        } catch (_) {
           bibleVersions = const [];
         }
       }(),
@@ -306,9 +348,8 @@ class AppController extends ChangeNotifier {
         readingType: readingType,
         bibleVersion: bibleVersion,
       );
-      lastError = null;
     } catch (error) {
-      lastError = '$error';
+      failure = LoadFailure.from(error);
       selectedDay = null;
     }
   }
@@ -330,7 +371,7 @@ class AppController extends ChangeNotifier {
         bibleVersion: bibleVersion,
       );
     } catch (error) {
-      lastError = '$error';
+      failure = LoadFailure.from(error);
       _monthCache[key] = const [];
     }
   }

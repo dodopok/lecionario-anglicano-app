@@ -7,6 +7,7 @@ import '../app_controller.dart';
 import '../app_copy.dart';
 import '../app_shell.dart';
 import '../widgets/design_primitives.dart';
+import '../widgets/failure_notice.dart';
 import '../widgets/sacred_mark.dart';
 
 class LocSelectionScreen extends StatefulWidget {
@@ -70,6 +71,7 @@ class _LocSelectionScreenState extends State<LocSelectionScreen> {
                                       onSelect: (book) =>
                                           setState(() => selected = book),
                                       copy: copy,
+                                      controller: widget.controller,
                                     ),
                                   ),
                                 ],
@@ -86,6 +88,7 @@ class _LocSelectionScreenState extends State<LocSelectionScreen> {
                                   onSelect: (book) =>
                                       setState(() => selected = book),
                                   copy: copy,
+                                  controller: widget.controller,
                                 ),
                               ],
                             );
@@ -225,15 +228,25 @@ class _BooksColumn extends StatelessWidget {
     required this.selected,
     required this.onSelect,
     required this.copy,
+    required this.controller,
   });
 
   final List<PrayerBook> books;
   final PrayerBook? selected;
   final ValueChanged<PrayerBook> onSelect;
   final AppCopy copy;
+  final AppController controller;
 
   @override
   Widget build(BuildContext context) {
+    // An empty list because the request failed is not an empty list of books.
+    if (books.isEmpty && controller.failure != null) {
+      return FailureNotice(
+        failure: controller.failure!,
+        copy: copy,
+        onRetry: controller.retryPrayerBooks,
+      );
+    }
     if (books.isEmpty) {
       return SurfaceCard(
         padding: const EdgeInsets.all(22),

@@ -8,13 +8,26 @@ import '../app_copy.dart';
 import '../app_shell.dart';
 import '../widgets/day_detail_sheet.dart';
 import '../widgets/design_primitives.dart';
+import '../widgets/failure_notice.dart';
 import '../widgets/home_sections.dart';
 import '../widgets/reading_sheet.dart';
 import '../widgets/sacred_mark.dart';
 import 'settings_screen.dart';
 
-/// Width from which the calendar and the day content sit side by side.
-const _wideBreakpoint = 880.0;
+/// From this width the calendar and the day content sit side by side — an
+/// iPad in portrait included, which is 834 wide.
+const _wideBreakpoint = 720.0;
+
+/// Two columns also need the height to be worth it: a phone on its side is
+/// wide enough and nowhere near tall enough.
+const _wideMinHeight = 620.0;
+
+/// Below this the single column scrolls instead of squeezing the month into
+/// rows too short to read.
+const _scrollingBelowHeight = 560.0;
+
+/// A sheet the width of a tablet reads badly; this keeps it to a column.
+const _sheetConstraints = BoxConstraints(maxWidth: 640);
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({required this.controller, super.key});
@@ -55,7 +68,8 @@ class _HomeScreenState extends State<HomeScreen> {
             child: SafeArea(
               child: LayoutBuilder(
                 builder: (context, constraints) {
-                  if (constraints.maxWidth >= _wideBreakpoint) {
+                  if (constraints.maxWidth >= _wideBreakpoint &&
+                      constraints.maxHeight >= _wideMinHeight) {
                     return _WideLayout(
                       copy: copy,
                       controller: widget.controller,
@@ -75,6 +89,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   return _NarrowLayout(
                     copy: copy,
                     controller: widget.controller,
+                    scrolls: constraints.maxHeight < _scrollingBelowHeight,
                     calendarDate: calendarDate,
                     month: month,
                     monthDays: monthDays,
@@ -111,6 +126,7 @@ class _HomeScreenState extends State<HomeScreen> {
       isScrollControlled: true,
       useSafeArea: true,
       showDragHandle: true,
+      constraints: _sheetConstraints,
       builder: (context) => DayDetailSheet(
         controller: widget.controller,
         date: selected,
@@ -153,6 +169,7 @@ class _HomeScreenState extends State<HomeScreen> {
       backgroundColor: AppColors.paper,
       isScrollControlled: true,
       showDragHandle: true,
+      constraints: _sheetConstraints,
       builder: (context) => _PrayerBookSheet(
         copy: copyFor(widget.controller),
         books: widget.controller.booksForCurrentLanguage,
@@ -181,6 +198,7 @@ class _HomeScreenState extends State<HomeScreen> {
       isScrollControlled: true,
       useSafeArea: true,
       showDragHandle: true,
+      constraints: _sheetConstraints,
       builder: (context) =>
           ReadingSheet(reading: reading, copy: copyFor(widget.controller)),
     );
@@ -192,6 +210,7 @@ class _NarrowLayout extends StatelessWidget {
   const _NarrowLayout({
     required this.copy,
     required this.controller,
+    required this.scrolls,
     required this.calendarDate,
     required this.month,
     required this.monthDays,
@@ -204,6 +223,10 @@ class _NarrowLayout extends StatelessWidget {
 
   final AppCopy copy;
   final AppController controller;
+
+  /// True where the screen is too short to hold the month at a usable size.
+  final bool scrolls;
+
   final DateTime calendarDate;
   final DateTime month;
   final List<CalendarDay> monthDays;
@@ -216,41 +239,101 @@ class _NarrowLayout extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final today = DateTime.now();
+    final header = _HomeHeader(
+      copy: copy,
+      book: controller.selectedPrayerBook,
+      onChooseBook: onChooseBook,
+      onOpenSettings: onOpenSettings,
+    );
+
+    if (controller.strandedBy case final failure?) {
+      return Padding(
+        padding: const EdgeInsets.fromLTRB(12, 8, 12, 10),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            header,
+            Expanded(
+              child: Center(
+                child: SingleChildScrollView(
+                  child: FailureNotice(
+                    failure: failure,
+                    copy: copy,
+                    onRetry: controller.retryDay,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    final hero = DailyHero(
+      day: controller.selectedDay,
+      activeDate: today,
+      copy: copy,
+      isLoading: controller.isLoadingDay,
+      onTap: () => onOpenDay(today),
+      actionLabel: copy.openTodayReadings,
+      compact: true,
+    );
+    final calendar = MonthCalendar(
+      month: month,
+      copy: copy,
+      monthDays: monthDays,
+      onSelect: onOpenDay,
+      onPrevious: onPreviousMonth,
+      onNext: onNextMonth,
+      firstWeekday: controller.calendarFirstWeekday,
+      isLoading: controller.isLoadingMonth,
+      fillHeight: !scrolls,
+    );
+    final partialFailure = controller.failure;
+
     return Padding(
       padding: const EdgeInsets.fromLTRB(12, 8, 12, 10),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          _HomeHeader(
-            copy: copy,
-            book: controller.selectedPrayerBook,
-            onChooseBook: onChooseBook,
-            onOpenSettings: onOpenSettings,
-          ),
+          header,
           const SizedBox(height: 10),
-          DailyHero(
-            day: controller.selectedDay,
-            activeDate: today,
-            copy: copy,
-            isLoading: controller.isLoadingDay,
-            onTap: () => onOpenDay(today),
-            actionLabel: copy.openTodayReadings,
-            compact: true,
-          ),
-          const SizedBox(height: 10),
-          Expanded(
-            child: MonthCalendar(
-              month: month,
-              copy: copy,
-              monthDays: monthDays,
-              onSelect: onOpenDay,
-              onPrevious: onPreviousMonth,
-              onNext: onNextMonth,
-              firstWeekday: controller.calendarFirstWeekday,
-              isLoading: controller.isLoadingMonth,
-              fillHeight: true,
-            ),
-          ),
+          if (scrolls)
+            Expanded(
+              child: SingleChildScrollView(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    hero,
+                    if (partialFailure != null) ...[
+                      const SizedBox(height: 10),
+                      FailureNotice(
+                        failure: partialFailure,
+                        copy: copy,
+                        onRetry: controller.retryDay,
+                        compact: true,
+                      ),
+                    ],
+                    const SizedBox(height: 10),
+                    calendar,
+                  ],
+                ),
+              ),
+            )
+          else ...[
+            hero,
+            if (partialFailure != null) ...[
+              const SizedBox(height: 10),
+              FailureNotice(
+                failure: partialFailure,
+                copy: copy,
+                onRetry: controller.retryDay,
+                compact: true,
+              ),
+            ],
+            const SizedBox(height: 10),
+            Expanded(child: calendar),
+          ],
         ],
       ),
     );
@@ -291,70 +374,105 @@ class _WideLayout extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.fromLTRB(28, 16, 28, 30),
+    final header = _HomeHeader(
+      copy: copy,
+      book: controller.selectedPrayerBook,
+      onChooseBook: onChooseBook,
+      onOpenSettings: onOpenSettings,
+    );
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(24, 14, 24, 20),
       child: Center(
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 1180),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              _HomeHeader(
-                copy: copy,
-                book: controller.selectedPrayerBook,
-                onChooseBook: onChooseBook,
-                onOpenSettings: onOpenSettings,
-              ),
-              const SizedBox(height: 20),
-              DailyHero(
-                day: controller.selectedDay,
-                activeDate: activeDate,
-                copy: copy,
-                isLoading: controller.isLoadingDay,
-                onToday: onToday,
-              ),
+              header,
               const SizedBox(height: 16),
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Expanded(
-                    flex: 7,
-                    child: MonthCalendar(
-                      month: month,
-                      copy: copy,
-                      monthDays: monthDays,
-                      onSelect: onSelectDate,
-                      onPrevious: onPreviousMonth,
-                      onNext: onNextMonth,
-                      firstWeekday: controller.calendarFirstWeekday,
-                      isLoading: controller.isLoadingMonth,
+              if (controller.strandedBy case final failure?)
+                Expanded(
+                  child: Center(
+                    child: SingleChildScrollView(
+                      child: ConstrainedBox(
+                        constraints: const BoxConstraints(maxWidth: 520),
+                        child: FailureNotice(
+                          failure: failure,
+                          copy: copy,
+                          onRetry: controller.retryDay,
+                        ),
+                      ),
                     ),
                   ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    flex: 4,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        ReadingsCard(
-                          day: controller.selectedDay,
+                )
+              else ...[
+                DailyHero(
+                  day: controller.selectedDay,
+                  activeDate: activeDate,
+                  copy: copy,
+                  isLoading: controller.isLoadingDay,
+                  onToday: onToday,
+                ),
+                const SizedBox(height: 14),
+                // The month takes the height it is given; the day beside it
+                // scrolls on its own when a long collect asks for more.
+                Expanded(
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Expanded(
+                        flex: 7,
+                        child: MonthCalendar(
+                          month: month,
                           copy: copy,
-                          onOpen: onOpenReading,
-                          isLoading: controller.isLoadingDay,
+                          monthDays: monthDays,
+                          onSelect: onSelectDate,
+                          onPrevious: onPreviousMonth,
+                          onNext: onNextMonth,
+                          firstWeekday: controller.calendarFirstWeekday,
+                          isLoading: controller.isLoadingMonth,
+                          fillHeight: true,
                         ),
-                        const SizedBox(height: 12),
-                        CollectCard(
-                          day: controller.selectedDay,
-                          copy: copy,
-                          isLoading: controller.isLoadingDay,
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        flex: 4,
+                        child: SingleChildScrollView(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              if (controller.failure case final failure?) ...[
+                                FailureNotice(
+                                  failure: failure,
+                                  copy: copy,
+                                  onRetry: controller.retryDay,
+                                  compact: true,
+                                ),
+                                const SizedBox(height: 12),
+                              ],
+                              ReadingsCard(
+                                day: controller.selectedDay,
+                                copy: copy,
+                                onOpen: onOpenReading,
+                                isLoading: controller.isLoadingDay,
+                              ),
+                              const SizedBox(height: 12),
+                              CollectCard(
+                                day: controller.selectedDay,
+                                copy: copy,
+                                isLoading: controller.isLoadingDay,
+                              ),
+                              if (!controller.isLoadingDay)
+                                DayDescription(day: controller.selectedDay),
+                            ],
+                          ),
                         ),
-                        if (!controller.isLoadingDay)
-                          DayDescription(day: controller.selectedDay),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
-                ],
-              ),
+                ),
+              ],
             ],
           ),
         ),
