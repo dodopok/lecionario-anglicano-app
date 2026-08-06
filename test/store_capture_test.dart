@@ -375,30 +375,37 @@ class _CapturedApi implements LectionaryDataSource {
   dynamic _read(String name) =>
       jsonDecode(File('${fixtures.path}/$name.json').readAsStringSync());
 
-  @override
-  Future<List<PrayerBook>> getPrayerBooks() async {
-    final payload = _read('prayer_books');
+  /// A list that came back empty is a fixture fetched with the wrong query,
+  /// not an empty lectionary. Left alone it renders a screenshot missing
+  /// whatever that list feeds, which is the kind of thing nobody spots until
+  /// it is on the store.
+  List<Map<String, dynamic>> _readList(String name) {
+    final payload = _read(name);
     final values = payload is Map ? payload['data'] : payload;
-    return (values as List)
+    final entries = (values as List)
         .whereType<Map>()
-        .map((value) => PrayerBook.fromJson(Map<String, dynamic>.from(value)))
+        .map((value) => Map<String, dynamic>.from(value))
         .toList();
+    if (entries.isEmpty) {
+      throw StateError('$name.json is empty — refetch the fixtures');
+    }
+    return entries;
   }
+
+  @override
+  Future<List<PrayerBook>> getPrayerBooks() async =>
+      _readList('prayer_books').map(PrayerBook.fromJson).toList();
 
   @override
   Future<List<ReadingTypeOption>> getReadingTypeOptions(String code) async =>
       const [];
 
   @override
-  Future<List<BibleVersion>> getBibleVersions({String? language}) async {
-    final payload = _read('bibles-${this.language.code}');
-    final values = payload is Map ? payload['data'] : payload;
-    return (values as List)
-        .whereType<Map>()
-        .map((value) => BibleVersion.fromJson(Map<String, dynamic>.from(value)))
-        .where((version) => version.code.isNotEmpty)
-        .toList();
-  }
+  Future<List<BibleVersion>> getBibleVersions({String? language}) async =>
+      _readList('bibles-${this.language.code}')
+          .map(BibleVersion.fromJson)
+          .where((version) => version.code.isNotEmpty)
+          .toList();
 
   @override
   Future<List<CalendarDay>> getCalendarMonth(
@@ -406,14 +413,8 @@ class _CapturedApi implements LectionaryDataSource {
     String code, {
     String? readingType,
     String? bibleVersion,
-  }) async {
-    final payload = _read('month-${language.code}');
-    final values = payload is Map ? payload['data'] : payload;
-    return (values as List)
-        .whereType<Map>()
-        .map((value) => CalendarDay.fromJson(Map<String, dynamic>.from(value)))
-        .toList();
-  }
+  }) async =>
+      _readList('month-${language.code}').map(CalendarDay.fromJson).toList();
 
   @override
   Future<LectionaryDay> getDay(
