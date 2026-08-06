@@ -66,6 +66,7 @@ void main() {
     expect(portuguese.selected, 'SELECIONADO');
     expect(portuguese.backToToday, 'Voltar para hoje');
     expect(portuguese.close, 'Fechar');
+    expect(portuguese.yearLabel, 'Ano');
     expect(portuguese.readingTrack, 'Sequência das leituras');
     expect(portuguese.bibleVersion, 'Versão da Bíblia');
     expect(portuguese.sundayInCenter, 'Domingo no centro');
@@ -103,6 +104,7 @@ void main() {
     expect(english.selected, 'SELECTED');
     expect(english.backToToday, 'Back to today');
     expect(english.close, 'Close');
+    expect(english.yearLabel, 'Year');
     expect(english.readingTrack, 'Reading track');
     expect(english.bibleVersion, 'Bible version');
     expect(english.sundayInCenter, 'Sunday in the middle');
@@ -139,6 +141,7 @@ void main() {
     expect(spanish.selected, 'SELECCIONADO');
     expect(spanish.backToToday, 'Volver a hoy');
     expect(spanish.close, 'Cerrar');
+    expect(spanish.yearLabel, 'Año');
     expect(spanish.readingTrack, 'Secuencia de lecturas');
     expect(spanish.bibleVersion, 'Versión de la Biblia');
     expect(spanish.sundayInCenter, 'Domingo en el centro');
