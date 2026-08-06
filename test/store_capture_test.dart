@@ -71,6 +71,7 @@ void main() {
         var shot = 0;
         Future<void> capture(String name) async {
           await tester.pumpAndSettle();
+          await _settleImages(tester);
           await expectLater(
             find.byType(MaterialApp),
             matchesGoldenFile(
@@ -154,10 +155,22 @@ typedef _Device = ({
   Map<AppLanguage, String> book,
 });
 
-/// The slots the store asks for: iPhone 6.9" and iPad 13".
+/// One entry per slot App Store Connect offers. Which iPhone slot a listing
+/// shows depends on the listing, and a 6.9" image is rejected outright by a
+/// 6.5" slot, so both are rendered.
 const _devices = <_Device>[
   (
-    name: 'iphone',
+    // 6.5": iPhone 11/XS Max through 14 Plus.
+    name: 'iphone65',
+    pixels: Size(1284, 2778),
+    pixelRatio: 3,
+    insets: EdgeInsets.only(top: 47, bottom: 34),
+    opensDaySheet: true,
+    book: _books,
+  ),
+  (
+    // 6.9": iPhone 16 Pro Max and kin, where the island takes the top.
+    name: 'iphone69',
     pixels: Size(1290, 2796),
     pixelRatio: 3,
     insets: EdgeInsets.only(top: 59, bottom: 34),
@@ -165,7 +178,8 @@ const _devices = <_Device>[
     book: _books,
   ),
   (
-    name: 'ipad',
+    // 13": iPad Pro.
+    name: 'ipad13',
     pixels: Size(2064, 2752),
     pixelRatio: 2,
     insets: EdgeInsets.only(top: 24, bottom: 20),
@@ -183,7 +197,7 @@ const _books = {
 String _env(String name) {
   final value = Platform.environment[name];
   if (value == null || value.isEmpty) {
-    throw StateError('$name is not set — run tool/capture_store_screenshots.sh');
+    throw StateError('$name is not set — run tool/render_store_screenshots.sh');
   }
   return value;
 }
@@ -263,6 +277,28 @@ class _FontManifest implements AssetManifest {
 
   @override
   List<AssetMetadata> getAssetVariants(String key) => const [];
+}
+
+/// Image.network resolves off the frame loop, so pumpAndSettle returns
+/// perfectly happy with a tree whose pictures have not arrived — and the
+/// golden catches the covers missing, differently on each run. Waiting for
+/// each one, and refusing any that failed, is what makes the capture
+/// repeatable.
+Future<void> _settleImages(WidgetTester tester) async {
+  final failures = <Object>[];
+  await tester.runAsync(() async {
+    for (final element in find.byType(Image).evaluate()) {
+      await precacheImage(
+        (element.widget as Image).image,
+        element,
+        onError: (error, _) => failures.add(error),
+      );
+    }
+  });
+  if (failures.isNotEmpty) {
+    throw StateError('an image never loaded: ${failures.first}');
+  }
+  await tester.pumpAndSettle();
 }
 
 Map<String, Uint8List> _covers(Directory fixtures) {
