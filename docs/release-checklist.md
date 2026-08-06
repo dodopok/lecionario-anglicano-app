@@ -18,6 +18,8 @@
 - [ ] `flutter build ios --release --no-codesign`
 - [ ] Revisar Bundle ID, Team ID, deployment target e orientação de tela.
 - [ ] Conferir o ícone de produção e a tela inicial em um dispositivo real.
+- [ ] Confirmar que nenhum ícone tem canal alpha — a validação do upload
+      rejeita, e `flutter test test/app_icon_test.dart` cobre isso.
 - [ ] Conferir o `PrivacyInfo.xcprivacy` no target Runner.
 - [ ] Conferir que não foram adicionadas permissões de sistema sem necessidade.
 - [ ] Abrir os links de privacidade e suporte em Configurações.
@@ -28,7 +30,10 @@
 - [ ] Testar a seleção inicial do LOC.
 - [ ] Testar a troca de idioma em Configurações e confirmar que a lista de LOCs acompanha o idioma.
 - [ ] Confirmar que as versões de Bíblia são consultadas para o idioma do LOC selecionado.
-- [ ] Testar hoje, semana e mês.
+- [ ] Testar hoje e o mês, no iPhone e no iPad.
+- [ ] Decidir o que fazer com os LOCs que a API marca como
+      `premium_required` / `is_accessible: false` (hoje o app os lista e o
+      backend serve o conteúdo).
 - [ ] Testar idioma, reading type e versão da Bíblia quando fornecidos pela API.
 - [ ] Confirmar que as capas são as URLs/imagens retornadas pela API.
 - [ ] Confirmar que estados vazios e erros não substituem a resposta por conteúdo fictício.
@@ -43,7 +48,11 @@
 - [ ] Página de suporte publicada com contato público real.
 - [ ] Questionário de App Privacy revisado com o responsável pela API.
 - [ ] Classificação etária, categoria e copyright preenchidos.
-- [ ] Screenshots reais adicionadas.
+- [ ] Screenshots atualizadas: `./tool/capture_store_screenshots.sh` (iPhone e
+      iPad, três idiomas) e `./tool/verify_app_store_assets.sh`.
+- [ ] Screenshots antigas removidas da raiz de `store-assets/app-store/<idioma>/`.
+- [ ] Screenshots de iPad enviadas: o app é universal (`TARGETED_DEVICE_FAMILY = "1,2"`)
+      e a loja exige o conjunto de iPad para publicar.
 - [ ] Build enviado e processado.
 
 ## TestFlight
