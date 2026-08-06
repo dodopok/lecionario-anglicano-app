@@ -264,16 +264,7 @@ class _BooksColumn extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Row(
-          children: [
-            Eyebrow(copy.chooseLoc),
-            const Spacer(),
-            Text(
-              '${books.length.toString().padLeft(2, '0')} opções',
-              style: AppTypography.ui(size: 12, color: AppColors.mutedLight),
-            ),
-          ],
-        ),
+        Eyebrow(copy.chooseLoc),
         const SizedBox(height: 12),
         ...books.map(
           (book) => Padding(
@@ -281,6 +272,7 @@ class _BooksColumn extends StatelessWidget {
             child: _BookOption(
               book: book,
               selected: book.code == selected?.code,
+              recommendedLabel: copy.recommended,
               onTap: () => onSelect(book),
             ),
           ),
@@ -294,11 +286,13 @@ class _BookOption extends StatelessWidget {
   const _BookOption({
     required this.book,
     required this.selected,
+    required this.recommendedLabel,
     required this.onTap,
   });
 
   final PrayerBook book;
   final bool selected;
+  final String recommendedLabel;
   final VoidCallback onTap;
 
   @override
@@ -344,7 +338,7 @@ class _BookOption extends StatelessWidget {
                       Padding(
                         padding: const EdgeInsets.only(bottom: 3),
                         child: Text(
-                          'RECOMENDADO',
+                          recommendedLabel,
                           style: AppTypography.eyebrow(
                             color: selected
                                 ? AppColors.copperWash
