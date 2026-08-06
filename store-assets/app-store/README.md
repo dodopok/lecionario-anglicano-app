@@ -1,33 +1,48 @@
 # Screenshots para a App Store
 
-As imagens foram capturadas no simulador do iPhone 17 Pro Max com dados reais retornados pela API e convertidas para `1284 × 2778 px`, um dos tamanhos aceitos pelo slot de iPhone de 6,5 polegadas.
+As imagens são capturadas do app real, rodando contra a API real, por
+`tool/capture_store_screenshots.sh`. O script dirige o app em dois simuladores
+— um iPhone e um iPad — nos três idiomas da interface, e organiza o resultado
+aqui.
 
-Cada localização tem três screenshots na ordem recomendada:
+```bash
+./tool/capture_store_screenshots.sh
+```
 
-1. seleção do LOC, com as capas retornadas pela API;
-2. visão semanal do dia atual;
-3. visão mensal.
+Precisa de macOS com Xcode. Se os simuladores padrão não estiverem instalados:
 
-## Arquivos
+```bash
+IPHONE="iPhone 16 Plus" IPAD="iPad Pro 13-inch (M4)" ./tool/capture_store_screenshots.sh
+```
 
-### Português (Brasil)
+`tool/verify_app_store_assets.sh` confere se está tudo no lugar e nos tamanhos
+que a loja aceita.
 
-- `pt-BR/00-escolha-loc-pt.png`
-- `pt-BR/01-home-pt.png`
-- `pt-BR/02-mes-pt.png`
+## Estrutura
 
-### English (U.S.)
+Cada idioma tem uma pasta por família de dispositivo, porque o app é universal
+e a App Store Connect pede um conjunto para cada uma:
 
-- `en-US/00-choose-prayer-book-en.png`
-- `en-US/01-home-en.png`
-- `en-US/02-month-en.png`
+```
+pt-BR/iphone/{00-choose,01-home,02-day,03-settings}.png
+pt-BR/ipad/{00-choose,01-home,02-day,03-settings}.png
+en-US/...
+es/...
+```
 
-### Español
+1. `00-choose` — escolha do LOC, com as capas retornadas pela API;
+2. `01-home` — o dia de hoje e o mês inteiro;
+3. `02-day` — as leituras e a coleta do dia;
+4. `03-settings` — preferências.
 
-- `es/00-elige-loc-es.png`
-- `es/01-home-es.png`
-- `es/02-month-es.png`
+## Antes de enviar
 
-Há também uma captura opcional da tela de preferências em `pt-BR/03-configuracoes-pt.png`. Ela pode ser usada como quarta screenshot, caso a página de produto queira destacar que tipo de leitura e versão da Bíblia ficam em Configurações.
+Revise as imagens: elas mostram o que a API serviu no momento da captura. Se
+um dia vier sem leituras, ou se um LOC não carregar, isso aparece na loja.
 
-O painel de **pré-visualizações** aceita vídeo e é separado das screenshots. Não é necessário adicionar uma prévia em vídeo para enviar estas imagens.
+As imagens soltas na raiz de cada idioma (`01-home-pt.png` e afins) são de uma
+interface anterior, com a visão por semana que não existe mais. Apague-as
+quando as pastas `iphone/` e `ipad/` estiverem preenchidas.
+
+O painel de **pré-visualizações** aceita vídeo e é separado das screenshots.
+Não é necessário adicionar uma prévia em vídeo para enviar estas imagens.
