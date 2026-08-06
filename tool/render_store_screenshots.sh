@@ -65,14 +65,27 @@ books_es='loc_2019_es'
 
 for language in pt en es; do
   book="books_$language"
+  code="${!book}"
   preferences="$(python3 -c '
 import json, sys, urllib.parse
-print(urllib.parse.quote(json.dumps({"prayer_book_code": sys.argv[1]})))' "${!book}")"
+print(urllib.parse.quote(json.dumps({"prayer_book_code": sys.argv[1]})))' "$code")"
   api_get "/calendar/$year/$month?preferences=$preferences" \
     "$fixtures/month-$language.json"
   api_get "/calendar/$year/$month/$day?preferences=$preferences" \
     "$fixtures/day-$language.json"
-  api_get "/bible_versions?language=$language" "$fixtures/bibles-$language.json"
+
+  # The Bible list is asked for by the book's own language tag, not by the
+  # interface language: `pt-BR`, not `pt`. Asking with the wrong one answers
+  # 200 with an empty list, and the preference silently disappears from the
+  # screenshot — so take the tag from the book itself, as the app does.
+  book_language="$(python3 -c '
+import json, sys
+payload = json.load(open(sys.argv[1]))
+books = payload["data"] if isinstance(payload, dict) else payload
+print(next(b["language"] for b in books if b["code"] == sys.argv[2]))' \
+    "$fixtures/prayer_books.json" "$code")"
+  api_get "/bible_versions?language=$book_language" \
+    "$fixtures/bibles-$language.json"
 done
 
 echo '==> Covers'
@@ -102,7 +115,8 @@ fi
 
 FIXTURE_DIR="$fixtures" FONT_DIR="$fonts" ICON_FONT="$icon_font" \
 CAPTURE_DIR="$captures" \
-  flutter test test/store_capture_test.dart --tags capture --update-goldens
+  flutter test test/store_capture_test.dart \
+    --tags capture --run-skipped --update-goldens
 
 python3 - "$captures" "$repo_root/store-assets/app-store" <<'PY'
 import pathlib, shutil, sys
