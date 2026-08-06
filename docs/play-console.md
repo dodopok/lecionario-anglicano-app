@@ -12,7 +12,7 @@ Para a lista de tudo que ainda falta, em ordem, veja
 ## Identidade atual do projeto
 
 - Nome no launcher: `Lecionário`
-- ID do aplicativo: `br.com.caminhoanglicano.lecionario_anglicano`
+- ID do aplicativo: `br.com.caminhoanglicano.lecionarioanglicano`
 - Versão no `pubspec.yaml`: `1.0.0+3` (`versionName 1.0.0`, `versionCode 3`)
 - `targetSdk`: o do Flutter, com piso na API 35 (veja
   [requisitos técnicos](#requisitos-técnicos-do-binário))
@@ -21,16 +21,20 @@ Para a lista de tudo que ainda falta, em ordem, veja
 - Endpoint padrão: `https://api.caminhoanglicano.com.br/api/v1`
 - Header de integração: `X-App-Internal-Id`
 
-> **Confirme o ID do aplicativo antes do primeiro upload.** O Play amarra a
-> ficha ao `applicationId` no primeiro envio e nunca mais o deixa mudar; para
-> trocá-lo depois é preciso criar outra listagem, sem os downloads e as
-> avaliações da primeira. O ID do Android tem um `_` que o Bundle ID do iOS não
-> tem — `lecionario_anglicano` contra `lecionarioanglicano`. Os dois são
-> válidos e nada obriga que sejam iguais, mas se a intenção era serem iguais,
-> este é o último momento para alinhar: mude
-> `android/app/build.gradle.kts` (`namespace` e `applicationId`), renomeie a
-> pasta de `android/app/src/main/kotlin/...` junto e rode
-> `./tool/verify_android_release.sh`.
+O ID do aplicativo é o mesmo do Bundle ID no iOS, de propósito: as duas lojas
+apontam para `br.com.caminhoanglicano.lecionarioanglicano`.
+
+> **O `applicationId` não muda depois do primeiro upload.** O Play amarra a
+> ficha a ele no primeiro envio e nunca mais o deixa mudar; para trocá-lo
+> depois é preciso criar outra listagem, sem os downloads e as avaliações da
+> primeira. Se um dia ele precisar mudar, tem que ser antes de qualquer envio,
+> em `android/app/build.gradle.kts` (`namespace` e `applicationId`) e na pasta
+> de `android/app/src/main/kotlin/...` junto — `tool/verify_android_release.sh`
+> e `test/android_release_test.dart` conferem os dois.
+
+Note que o **nome do pacote Dart** continua sendo `lecionario_anglicano`
+(o `name:` do `pubspec.yaml`, usado nos `import 'package:...'`), assim como o
+app id do Linux. Nenhum dos dois tem relação com o que a loja vê.
 
 ## O que já está no repositório
 

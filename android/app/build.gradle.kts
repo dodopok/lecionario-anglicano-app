@@ -21,7 +21,7 @@ val signing = Properties().apply {
 }
 
 android {
-    namespace = "br.com.caminhoanglicano.lecionario_anglicano"
+    namespace = "br.com.caminhoanglicano.lecionarioanglicano"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 
@@ -37,7 +37,7 @@ android {
     defaultConfig {
         // Fixed for the lifetime of the listing: Play identifies the app by
         // this and it can never be changed once a build has been uploaded.
-        applicationId = "br.com.caminhoanglicano.lecionario_anglicano"
+        applicationId = "br.com.caminhoanglicano.lecionarioanglicano"
         minSdk = flutter.minSdkVersion
         // Play refuses a release targeting an API level older than the one it
         // is currently enforcing, so the floor is stated here rather than left

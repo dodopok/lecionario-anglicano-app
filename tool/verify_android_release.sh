@@ -15,7 +15,7 @@ set -euo pipefail
 script_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 repo_root="$(cd -- "$script_dir/.." && pwd)"
 
-application_id="br.com.caminhoanglicano.lecionario_anglicano"
+application_id="br.com.caminhoanglicano.lecionarioanglicano"
 # The API level Play enforces for new releases. Google raises it every August;
 # raise it here and in android/app/build.gradle.kts together.
 minimum_target_sdk=35

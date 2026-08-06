@@ -42,7 +42,7 @@ void main() {
       expect(
         gradle,
         contains(
-          'applicationId = "br.com.caminhoanglicano.lecionario_anglicano"',
+          'applicationId = "br.com.caminhoanglicano.lecionarioanglicano"',
         ),
       );
     });
