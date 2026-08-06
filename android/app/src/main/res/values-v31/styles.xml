@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- From Android 12 the system draws the launch screen itself and ignores
+     windowBackground for it, so an app that only styles the older theme opens
+     on the platform's default colour before reaching its own. These two lines
+     put the app's paper and its own mark there instead.
+     values-night-v31 carries the same thing for a device in dark mode. -->
+<resources>
+    <style name="LaunchTheme" parent="@android:style/Theme.Light.NoTitleBar">
+        <item name="android:windowSplashScreenBackground">@color/paper</item>
+        <item name="android:windowSplashScreenAnimatedIcon">@mipmap/ic_launcher</item>
+        <!-- Still needed behind the Flutter UI once the splash is gone. -->
+        <item name="android:windowBackground">@drawable/launch_background</item>
+    </style>
+</resources>
