@@ -931,7 +931,7 @@ void main() {
     await tester.tap(find.byKey(const ValueKey('copy-readings')));
     await tester.pumpAndSettle();
     expect(copied.last, 'Evangelho: João 1:1–5');
-    expect(find.byIcon(Icons.check_rounded), findsOneWidget);
+    expect(find.byKey(const ValueKey('copied-confirmation')), findsOneWidget);
 
     await tester.tap(find.byKey(const ValueKey('copy-collect-0')));
     await tester.pumpAndSettle();

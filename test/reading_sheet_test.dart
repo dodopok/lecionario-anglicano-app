@@ -91,6 +91,31 @@ void main() {
     expect(find.byKey(const ValueKey('reading-sheet')), findsNothing);
   });
 
+  testWidgets('says the reading was copied, over the sheet itself', (
+    tester,
+  ) async {
+    await pumpSheet(tester, withVerses);
+
+    expect(find.byKey(const ValueKey('copied-confirmation')), findsNothing);
+
+    await tester.tap(find.byKey(const ValueKey('copy-reading')));
+    await tester.pumpAndSettle();
+
+    final confirmation = find.byKey(const ValueKey('copied-confirmation'));
+    expect(confirmation, findsOneWidget);
+    expect(
+      find.descendant(of: confirmation, matching: find.text('Copiado')),
+      findsOneWidget,
+    );
+    // Over the sheet, not behind it: the sheet is what fills the screen here.
+    final sheet = tester.getRect(find.byKey(const ValueKey('reading-sheet')));
+    expect(tester.getRect(confirmation).top, greaterThan(sheet.top));
+
+    await tester.pump(const Duration(seconds: 3));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const ValueKey('copied-confirmation')), findsNothing);
+  });
+
   testWidgets('confirms the copy on the button, where the finger is', (
     tester,
   ) async {
@@ -105,18 +130,23 @@ void main() {
         )
         .tooltip!;
 
+    final buttonIcon = find.descendant(
+      of: find.byKey(const ValueKey('copy-reading')),
+      matching: find.byIcon(Icons.check_rounded),
+    );
+
     expect(tooltip(), 'Copiar');
-    expect(find.byIcon(Icons.check_rounded), findsNothing);
+    expect(buttonIcon, findsNothing);
 
     await tester.tap(find.byKey(const ValueKey('copy-reading')));
     await tester.pumpAndSettle();
     expect(tooltip(), 'Copiado');
-    expect(find.byIcon(Icons.check_rounded), findsOneWidget);
+    expect(buttonIcon, findsOneWidget);
 
     await tester.pump(const Duration(seconds: 3));
-    await tester.pump();
+    await tester.pumpAndSettle();
     expect(tooltip(), 'Copiar');
-    expect(find.byIcon(Icons.check_rounded), findsNothing);
+    expect(buttonIcon, findsNothing);
   });
 
   testWidgets('keeps the copy action within reach at the top', (tester) async {
