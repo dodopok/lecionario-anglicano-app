@@ -55,7 +55,8 @@ void main() {
     expect(portuguese.today, 'Hoje');
     expect(portuguese.openTodayReadings, 'Abrir o dia de hoje');
     expect(portuguese.copyAction, 'Copiar');
-    expect(portuguese.copiedToClipboard, 'Texto copiado');
+    expect(portuguese.copied, 'Copiado');
+    expect(portuguese.collects, 'Coletas do dia');
     expect(portuguese.readings, 'Leituras de hoje');
     expect(portuguese.readingsForDay, 'Leituras do dia');
     expect(portuguese.collect, 'Coleta do dia');
@@ -68,6 +69,8 @@ void main() {
     expect(portuguese.yearLabel, 'Ano');
     expect(portuguese.readingTrack, 'Sequência das leituras');
     expect(portuguese.bibleVersion, 'Versão da Bíblia');
+    expect(portuguese.sundayInCenter, 'Domingo no centro');
+    expect(portuguese.sundayInCenterHint, contains('quinta-feira'));
     expect(portuguese.settings, 'Configurações');
     expect(portuguese.settingsSubtitle, 'Preferências do lecionário');
     expect(portuguese.information, 'Informações');
@@ -90,7 +93,8 @@ void main() {
     expect(english.today, 'Today');
     expect(english.openTodayReadings, 'Open today');
     expect(english.copyAction, 'Copy');
-    expect(english.copiedToClipboard, 'Text copied');
+    expect(english.copied, 'Copied');
+    expect(english.collects, 'Collects of the day');
     expect(english.readings, "Today's readings");
     expect(english.readingsForDay, "Day's readings");
     expect(english.collect, 'Collect of the day');
@@ -103,6 +107,8 @@ void main() {
     expect(english.yearLabel, 'Year');
     expect(english.readingTrack, 'Reading track');
     expect(english.bibleVersion, 'Bible version');
+    expect(english.sundayInCenter, 'Sunday in the middle');
+    expect(english.sundayInCenterHint, contains('Thursday'));
     expect(english.settings, 'Settings');
     expect(english.settingsSubtitle, 'Lectionary preferences');
     expect(english.information, 'Information');
@@ -124,7 +130,8 @@ void main() {
     expect(spanish.today, 'Hoy');
     expect(spanish.openTodayReadings, 'Abrir el día de hoy');
     expect(spanish.copyAction, 'Copiar');
-    expect(spanish.copiedToClipboard, 'Texto copiado');
+    expect(spanish.copied, 'Copiado');
+    expect(spanish.collects, 'Colectas del día');
     expect(spanish.readings, 'Lecturas de hoy');
     expect(spanish.readingsForDay, 'Lecturas del día');
     expect(spanish.collect, 'Colecta del día');
@@ -137,6 +144,8 @@ void main() {
     expect(spanish.yearLabel, 'Año');
     expect(spanish.readingTrack, 'Secuencia de lecturas');
     expect(spanish.bibleVersion, 'Versión de la Biblia');
+    expect(spanish.sundayInCenter, 'Domingo en el centro');
+    expect(spanish.sundayInCenterHint, contains('jueves'));
     expect(spanish.settings, 'Configuración');
     expect(spanish.settingsSubtitle, 'Preferencias del leccionario');
     expect(spanish.information, 'Información');

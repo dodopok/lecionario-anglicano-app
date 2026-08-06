@@ -60,6 +60,11 @@ class AppCopy {
     AppLanguage.en => 'Collect of the day',
     AppLanguage.es => 'Colecta del día',
   };
+  String get collects => switch (language) {
+    AppLanguage.pt => 'Coletas do dia',
+    AppLanguage.en => 'Collects of the day',
+    AppLanguage.es => 'Colectas del día',
+  };
   String get openTodayReadings => switch (language) {
     AppLanguage.pt => 'Abrir o dia de hoje',
     AppLanguage.en => 'Open today',
@@ -70,10 +75,10 @@ class AppCopy {
     AppLanguage.en => 'Copy',
     AppLanguage.es => 'Copiar',
   };
-  String get copiedToClipboard => switch (language) {
-    AppLanguage.pt => 'Texto copiado',
-    AppLanguage.en => 'Text copied',
-    AppLanguage.es => 'Texto copiado',
+  String get copied => switch (language) {
+    AppLanguage.pt => 'Copiado',
+    AppLanguage.en => 'Copied',
+    AppLanguage.es => 'Copiado',
   };
   String get chooseLoc => switch (language) {
     AppLanguage.pt => 'Escolher LOC',
@@ -114,6 +119,22 @@ class AppCopy {
     AppLanguage.pt => 'Sequência das leituras',
     AppLanguage.en => 'Reading track',
     AppLanguage.es => 'Secuencia de lecturas',
+  };
+  String get sundayInCenter => switch (language) {
+    AppLanguage.pt => 'Domingo no centro',
+    AppLanguage.en => 'Sunday in the middle',
+    AppLanguage.es => 'Domingo en el centro',
+  };
+  String get sundayInCenterHint => switch (language) {
+    AppLanguage.pt =>
+      'A semana começa na quinta-feira, com o domingo ao centro: à esquerda os '
+          'dias que preparam para ele, à direita os que o refletem.',
+    AppLanguage.en =>
+      'The week starts on Thursday with Sunday in the middle: the days that '
+          'prepare for it on the left, the days that reflect on it on the right.',
+    AppLanguage.es =>
+      'La semana empieza el jueves, con el domingo al centro: a la izquierda '
+          'los días que preparan para él, a la derecha los que lo reflejan.',
   };
   String get bibleVersion => switch (language) {
     AppLanguage.pt => 'Versão da Bíblia',

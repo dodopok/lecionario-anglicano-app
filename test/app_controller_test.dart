@@ -381,6 +381,44 @@ void main() {
     expect(controller.booksForCurrentLanguage, isEmpty);
   });
 
+  test('remembers where the calendar puts Sunday', () async {
+    final preferences = await createLocalPreferences();
+    final controller = AppController(
+      api: FakeLectionaryDataSource(),
+      localPreferences: preferences,
+    );
+    addTearDown(controller.dispose);
+    await controller.initialize();
+
+    expect(controller.sundayInCenter, isFalse);
+    expect(controller.calendarFirstWeekday, DateTime.sunday);
+
+    var notified = 0;
+    controller.addListener(() => notified++);
+    await controller.setSundayInCenter(true);
+
+    expect(controller.calendarFirstWeekday, DateTime.thursday);
+    expect(preferences.sundayInCenter, isTrue);
+    expect(notified, 1);
+
+    await controller.setSundayInCenter(true);
+    expect(notified, 1);
+  });
+
+  test('restores the calendar layout on the next launch', () async {
+    final controller = AppController(
+      api: FakeLectionaryDataSource(),
+      localPreferences: await createLocalPreferences({
+        'sunday_in_center': true,
+      }),
+    );
+    addTearDown(controller.dispose);
+    await controller.initialize();
+
+    expect(controller.sundayInCenter, isTrue);
+    expect(controller.calendarFirstWeekday, DateTime.thursday);
+  });
+
   test('disposes its data source', () async {
     final source = FakeLectionaryDataSource();
     final preferences = await createLocalPreferences();

@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- AppColors.paper: the surface the app itself opens on. -->
+    <color name="paper">#FFF4F0E7</color>
+</resources>
