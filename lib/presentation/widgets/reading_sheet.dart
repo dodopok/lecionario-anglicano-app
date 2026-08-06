@@ -21,15 +21,18 @@ class ReadingSheet extends StatelessWidget {
     final text = reading.text?.trim();
     final translation = reading.translation?.trim();
 
-    return SafeArea(
-      top: false,
-      child: ConstrainedBox(
-        key: const ValueKey('reading-sheet'),
-        constraints: BoxConstraints(
-          maxHeight: MediaQuery.sizeOf(context).height * .9,
-        ),
+    // Draggable, so the reading can be pushed away from wherever the thumb
+    // happens to be instead of only from the handle at the top.
+    return DraggableScrollableSheet(
+      key: const ValueKey('reading-sheet'),
+      expand: false,
+      initialChildSize: .78,
+      minChildSize: .4,
+      maxChildSize: .95,
+      shouldCloseOnMinExtent: true,
+      builder: (context, scrollController) => SafeArea(
+        top: false,
         child: Column(
-          mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Padding(
@@ -75,8 +78,9 @@ class ReadingSheet extends StatelessWidget {
                 ],
               ),
             ),
-            Flexible(
+            Expanded(
               child: SingleChildScrollView(
+                controller: scrollController,
                 padding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -165,7 +169,7 @@ class _TranslationTag extends StatelessWidget {
         borderRadius: BorderRadius.circular(6),
       ),
       child: Text(
-        translation,
+        translation.toUpperCase(),
         style: AppTypography.ui(
           size: 10,
           weight: FontWeight.w700,

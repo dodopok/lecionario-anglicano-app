@@ -75,7 +75,7 @@ void main() {
 
       expect(find.text('Osvaldo, Rei e Mártir'), findsOneWidget);
       expect(find.text('HOJE · Tempo Comum'), findsOneWidget);
-      expect(find.text('Ano C · Verde'), findsOneWidget);
+      expect(find.text('Verde'), findsOneWidget);
       expect(find.text(copy.dateLong(today)), findsOneWidget);
     });
 
@@ -116,14 +116,26 @@ void main() {
       );
 
       expect(find.text('8º Domingo depois de Pentecostes'), findsOneWidget);
-      expect(find.text('Transfiguração · Ano C · Branco'), findsOneWidget);
+      expect(find.text('Transfiguração · Branco'), findsOneWidget);
     });
 
     testWidgets('leaves the feast out of the meta line when it is the title', (
       tester,
     ) async {
       await pumpHero(tester, value: day(celebration: 'Osvaldo'));
-      expect(find.text('Ano C · Verde'), findsOneWidget);
+      expect(find.text('Verde'), findsOneWidget);
+    });
+
+    testWidgets('never claims a lectionary year', (tester) async {
+      // The API reports one for every prayer book, one-year ones included,
+      // so the meta line carries the colour and nothing about the cycle.
+      await pumpHero(
+        tester,
+        value: day(celebration: 'Festa', liturgicalYear: 'C'),
+      );
+
+      expect(find.text('Verde'), findsOneWidget);
+      expect(find.textContaining('Ano '), findsNothing);
     });
 
     testWidgets('omits metadata the API did not send', (tester) async {
@@ -132,7 +144,7 @@ void main() {
         value: day(celebration: 'Festa', color: null, liturgicalYear: null),
       );
 
-      expect(find.text('Ano C · Verde'), findsNothing);
+      expect(find.text('Verde'), findsNothing);
       expect(find.text('HOJE · Tempo Comum'), findsOneWidget);
     });
 
