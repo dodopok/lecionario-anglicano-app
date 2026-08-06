@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'core/orientation.dart';
 import 'core/theme/app_theme.dart';
 import 'data/models/lectionary_models.dart';
 import 'data/services/lectionary_api.dart';
@@ -11,7 +13,11 @@ import 'presentation/app_controller.dart';
 import 'presentation/app_shell.dart';
 
 Future<void> main() async {
-  WidgetsFlutterBinding.ensureInitialized();
+  final binding = WidgetsFlutterBinding.ensureInitialized();
+  final view = binding.platformDispatcher.views.first;
+  await SystemChrome.setPreferredOrientations(
+    allowedOrientations(view.physicalSize / view.devicePixelRatio),
+  );
   await initializeDateFormatting();
 
   final preferences = await SharedPreferences.getInstance();

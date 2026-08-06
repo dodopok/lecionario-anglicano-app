@@ -98,9 +98,7 @@ void main() {
     testWidgets('lets a Sunday keep its name and demotes the feast', (
       tester,
     ) async {
-      final sunday = today.subtract(
-        Duration(days: today.weekday % 7),
-      );
+      final sunday = today.subtract(Duration(days: today.weekday % 7));
       await pumpHero(
         tester,
         date: sunday,
@@ -299,7 +297,10 @@ void main() {
       await pumpCalendar(tester);
 
       expect(find.text('8º Domingo depois de Pentecostes'), findsOneWidget);
-      expect(find.byKey(const ValueKey('celebration-2026-8-2')), findsOneWidget);
+      expect(
+        find.byKey(const ValueKey('celebration-2026-8-2')),
+        findsOneWidget,
+      );
     });
 
     testWidgets('marks a weekday feast with a dot instead of a name', (
@@ -307,7 +308,10 @@ void main() {
     ) async {
       await pumpCalendar(tester);
 
-      expect(find.byKey(const ValueKey('celebration-2026-8-5')), findsOneWidget);
+      expect(
+        find.byKey(const ValueKey('celebration-2026-8-5')),
+        findsOneWidget,
+      );
       expect(find.byKey(const ValueKey('celebration-2026-8-6')), findsNothing);
     });
 
@@ -349,7 +353,9 @@ void main() {
             find
                 .descendant(
                   of: find.byKey(
-                    ValueKey('month-day-${date.year}-${date.month}-${date.day}'),
+                    ValueKey(
+                      'month-day-${date.year}-${date.month}-${date.day}',
+                    ),
                   ),
                   matching: find.byType(Material),
                 )
@@ -479,15 +485,19 @@ void main() {
       expect(tester.takeException(), isNull);
     });
 
-    testWidgets('degrades to bare dates on a short screen without overflowing', (
-      tester,
-    ) async {
-      await pumpCalendar(tester, size: const Size(640, 340));
+    testWidgets(
+      'degrades to bare dates on a short screen without overflowing',
+      (tester) async {
+        await pumpCalendar(tester, size: const Size(640, 340));
 
-      expect(tester.takeException(), isNull);
-      expect(find.text('8º Domingo depois de Pentecostes'), findsNothing);
-      expect(find.byKey(const ValueKey('month-day-2026-8-31')), findsOneWidget);
-    });
+        expect(tester.takeException(), isNull);
+        expect(find.text('8º Domingo depois de Pentecostes'), findsNothing);
+        expect(
+          find.byKey(const ValueKey('month-day-2026-8-31')),
+          findsOneWidget,
+        );
+      },
+    );
   });
 
   group('day content', () {
@@ -633,7 +643,9 @@ void main() {
     testWidgets('says nothing when the API sent no collect', (tester) async {
       await tester.pumpWidget(
         testMaterialApp(
-          home: Scaffold(body: CollectCard(day: day(), copy: copy)),
+          home: Scaffold(
+            body: CollectCard(day: day(), copy: copy),
+          ),
         ),
       );
       await tester.pumpAndSettle();

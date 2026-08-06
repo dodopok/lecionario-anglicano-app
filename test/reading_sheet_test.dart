@@ -220,10 +220,7 @@ Evangelho — João 1:1–2
 
   test('keeps the copied text to what the API published', () {
     expect(
-      readingAsText(
-        const Reading(kind: 'psalm', reference: 'Salmo 99'),
-        copy,
-      ),
+      readingAsText(const Reading(kind: 'psalm', reference: 'Salmo 99'), copy),
       'Salmo — Salmo 99',
     );
     expect(

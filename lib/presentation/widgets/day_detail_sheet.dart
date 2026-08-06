@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 
 import '../../core/theme/app_colors.dart';
 import '../../data/models/lectionary_models.dart';
+import '../../data/services/load_failure.dart';
 import '../app_controller.dart';
 import '../app_copy.dart';
+import 'failure_notice.dart';
 import 'home_sections.dart';
 
 class DayDetailSheet extends StatefulWidget {
@@ -26,6 +28,7 @@ class DayDetailSheet extends StatefulWidget {
 
 class _DayDetailSheetState extends State<DayDetailSheet> {
   LectionaryDay? day;
+  LoadFailure? failure;
   bool isLoading = true;
 
   @override
@@ -35,10 +38,12 @@ class _DayDetailSheetState extends State<DayDetailSheet> {
   }
 
   Future<void> _loadDay() async {
-    final loadedDay = await widget.controller.fetchDayForDate(widget.date);
+    if (!isLoading) setState(() => isLoading = true);
+    final result = await widget.controller.fetchDayForDate(widget.date);
     if (!mounted) return;
     setState(() {
-      day = loadedDay;
+      day = result.day;
+      failure = result.failure;
       isLoading = false;
     });
   }
@@ -88,25 +93,34 @@ class _DayDetailSheetState extends State<DayDetailSheet> {
                 copy: widget.copy,
                 isLoading: isLoading,
               ),
-              if (!isLoading) DayDescription(day: day),
-              const SizedBox(height: 14),
-              ReadingsCard(
-                key: const ValueKey('mobile-day-detail-readings'),
-                day: day,
-                copy: widget.copy,
-                title: isToday
-                    ? widget.copy.readings
-                    : widget.copy.readingsForDay,
-                onOpen: widget.onOpenReading,
-                isLoading: isLoading,
-              ),
-              const SizedBox(height: 12),
-              CollectCard(
-                key: const ValueKey('mobile-day-detail-collect'),
-                day: day,
-                copy: widget.copy,
-                isLoading: isLoading,
-              ),
+              if (failure case final failure? when !isLoading) ...[
+                const SizedBox(height: 14),
+                FailureNotice(
+                  failure: failure,
+                  copy: widget.copy,
+                  onRetry: _loadDay,
+                ),
+              ] else ...[
+                if (!isLoading) DayDescription(day: day),
+                const SizedBox(height: 14),
+                ReadingsCard(
+                  key: const ValueKey('mobile-day-detail-readings'),
+                  day: day,
+                  copy: widget.copy,
+                  title: isToday
+                      ? widget.copy.readings
+                      : widget.copy.readingsForDay,
+                  onOpen: widget.onOpenReading,
+                  isLoading: isLoading,
+                ),
+                const SizedBox(height: 12),
+                CollectCard(
+                  key: const ValueKey('mobile-day-detail-collect'),
+                  day: day,
+                  copy: widget.copy,
+                  isLoading: isLoading,
+                ),
+              ],
             ],
           ),
         ),
