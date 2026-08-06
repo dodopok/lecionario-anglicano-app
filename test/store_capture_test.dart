@@ -71,6 +71,7 @@ void main() {
         var shot = 0;
         Future<void> capture(String name) async {
           await tester.pumpAndSettle();
+          await _settleImages(tester);
           await expectLater(
             find.byType(MaterialApp),
             matchesGoldenFile(
@@ -276,6 +277,28 @@ class _FontManifest implements AssetManifest {
 
   @override
   List<AssetMetadata> getAssetVariants(String key) => const [];
+}
+
+/// Image.network resolves off the frame loop, so pumpAndSettle returns
+/// perfectly happy with a tree whose pictures have not arrived — and the
+/// golden catches the covers missing, differently on each run. Waiting for
+/// each one, and refusing any that failed, is what makes the capture
+/// repeatable.
+Future<void> _settleImages(WidgetTester tester) async {
+  final failures = <Object>[];
+  await tester.runAsync(() async {
+    for (final element in find.byType(Image).evaluate()) {
+      await precacheImage(
+        (element.widget as Image).image,
+        element,
+        onError: (error, _) => failures.add(error),
+      );
+    }
+  });
+  if (failures.isNotEmpty) {
+    throw StateError('an image never loaded: ${failures.first}');
+  }
+  await tester.pumpAndSettle();
 }
 
 Map<String, Uint8List> _covers(Directory fixtures) {
