@@ -730,14 +730,71 @@ void main() {
     },
   );
 
-  testWidgets('fits the phone home on a single screen, without scrolling', (
+  // Real phone geometry, insets included: without them the layout gets ~80pt
+  // it does not have on the device.
+  for (final (name, size, insets) in [
+    ('a tall phone', const Size(390, 844), const EdgeInsets.only(top: 47, bottom: 34)),
+    ('a small phone', const Size(375, 667), EdgeInsets.zero),
+  ]) {
+    testWidgets('fits $name on a single screen, without scrolling', (
+      tester,
+    ) async {
+      await tester.binding.setSurfaceSize(size);
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+
+      final controller = AppController(
+        api: FakeLectionaryDataSource(books: [testBook()], dayBuilder: testDay),
+        localPreferences: await createLocalPreferences({
+          'selected_prayer_book_code': 'loc_test',
+        }),
+      );
+      addTearDown(controller.dispose);
+      await controller.initialize();
+
+      await tester.pumpWidget(
+        testMaterialApp(
+          home: MediaQuery(
+            data: MediaQueryData(size: size, padding: insets),
+            child: HomeScreen(controller: controller),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.byType(Scrollable), findsNothing);
+      expect(
+        tester.getRect(find.byType(MonthCalendar)).bottom,
+        lessThanOrEqualTo(size.height - insets.bottom),
+      );
+      expect(tester.takeException(), isNull);
+    });
+  }
+
+  testWidgets('still names the Sundays on a tall phone, insets and all', (
     tester,
   ) async {
-    await tester.binding.setSurfaceSize(const Size(390, 844));
+    const size = Size(390, 844);
+    await tester.binding.setSurfaceSize(size);
     addTearDown(() => tester.binding.setSurfaceSize(null));
 
     final controller = AppController(
-      api: FakeLectionaryDataSource(books: [testBook()], dayBuilder: testDay),
+      api: FakeLectionaryDataSource(
+        books: [testBook()],
+        dayBuilder: testDay,
+        monthBuilder: (month) => List.generate(
+          DateUtils.getDaysInMonth(month.year, month.month),
+          (index) {
+            final date = DateTime(month.year, month.month, index + 1);
+            return CalendarDay(
+              date: date,
+              color: 'verde',
+              sundayName: date.weekday == DateTime.sunday
+                  ? 'Domingo ${index + 1}'
+                  : null,
+            );
+          },
+        ),
+      ),
       localPreferences: await createLocalPreferences({
         'selected_prayer_book_code': 'loc_test',
       }),
@@ -746,13 +803,22 @@ void main() {
     await controller.initialize();
 
     await tester.pumpWidget(
-      testMaterialApp(home: HomeScreen(controller: controller)),
+      testMaterialApp(
+        home: MediaQuery(
+          data: const MediaQueryData(
+            size: size,
+            padding: EdgeInsets.only(top: 47, bottom: 34),
+          ),
+          child: HomeScreen(controller: controller),
+        ),
+      ),
     );
     await tester.pumpAndSettle();
 
-    expect(find.byType(Scrollable), findsNothing);
-    expect(tester.getRect(find.byType(MonthCalendar)).bottom, lessThan(844));
-    expect(tester.takeException(), isNull);
+    final now = DateTime.now();
+    final firstSunday =
+        1 + (7 - DateTime(now.year, now.month, 1).weekday % 7) % 7;
+    expect(find.text('Domingo $firstSunday'), findsOneWidget);
   });
 
   testWidgets('opens today from the hero', (tester) async {

@@ -19,6 +19,7 @@ class DailyHero extends StatelessWidget {
     this.onToday,
     this.onTap,
     this.actionLabel,
+    this.compact = false,
     super.key,
   });
 
@@ -33,6 +34,9 @@ class DailyHero extends StatelessWidget {
   /// Makes the whole card tappable — used on phones to open today's readings.
   final VoidCallback? onTap;
   final String? actionLabel;
+
+  /// Tightens the card so the month below it keeps room to name its Sundays.
+  final bool compact;
 
   @override
   Widget build(BuildContext context) {
@@ -57,12 +61,14 @@ class DailyHero extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Padding(
-              padding: const EdgeInsets.fromLTRB(18, 16, 18, 14),
+              padding: compact
+                  ? const EdgeInsets.fromLTRB(18, 12, 18, 10)
+                  : const EdgeInsets.fromLTRB(18, 16, 18, 14),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   SizedBox(
-                    height: 24,
+                    height: compact ? 21 : 24,
                     child: Row(
                       children: [
                         Flexible(
@@ -72,7 +78,7 @@ class DailyHero extends StatelessWidget {
                             overflow: TextOverflow.ellipsis,
                             style: AppTypography.eyebrow(
                               color: AppColors.copperWash,
-                              size: 10,
+                              size: 11,
                             ),
                           ),
                         ),
@@ -88,14 +94,14 @@ class DailyHero extends StatelessWidget {
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: AppTypography.ui(
-                      size: 13,
+                      size: 14.5,
                       weight: FontWeight.w500,
                       color: AppColors.white.withValues(alpha: .72),
                     ),
                   ),
-                  const SizedBox(height: 10),
+                  SizedBox(height: compact ? 7 : 10),
                   SizedBox(
-                    height: 56,
+                    height: compact ? 48 : 58,
                     child: isLoading
                         ? const _HeroTitleSkeleton()
                         : Align(
@@ -105,7 +111,7 @@ class DailyHero extends StatelessWidget {
                               maxLines: 2,
                               overflow: TextOverflow.ellipsis,
                               style: AppTypography.display(
-                                size: 27,
+                                size: compact ? 25 : 28,
                                 weight: FontWeight.w600,
                                 color: AppColors.white,
                                 height: 1.04,
@@ -114,7 +120,7 @@ class DailyHero extends StatelessWidget {
                           ),
                   ),
                   SizedBox(
-                    height: 18,
+                    height: 19,
                     child: isLoading
                         ? Align(
                             alignment: Alignment.centerLeft,
@@ -130,7 +136,7 @@ class DailyHero extends StatelessWidget {
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: AppTypography.ui(
-                              size: 12,
+                              size: 13,
                               weight: FontWeight.w600,
                               color: AppColors.copperWash.withValues(alpha: .9),
                               letterSpacing: .2,
@@ -142,7 +148,9 @@ class DailyHero extends StatelessWidget {
             ),
             if (showAction)
               Container(
-                padding: const EdgeInsets.fromLTRB(18, 11, 14, 12),
+                padding: compact
+                    ? const EdgeInsets.fromLTRB(18, 8, 14, 9)
+                    : const EdgeInsets.fromLTRB(18, 11, 14, 12),
                 decoration: BoxDecoration(
                   color: AppColors.white.withValues(alpha: .07),
                   border: Border(
@@ -159,7 +167,7 @@ class DailyHero extends StatelessWidget {
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: AppTypography.ui(
-                          size: 13,
+                          size: 14,
                           weight: FontWeight.w700,
                           color: AppColors.copperWash,
                         ),
@@ -383,7 +391,7 @@ class MonthCalendar extends StatelessWidget {
                     copy.monthYear(month),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: AppTypography.display(size: 24, height: 1),
+                    style: AppTypography.display(size: 26, height: 1),
                   ),
                 ),
               ),
@@ -410,7 +418,7 @@ class MonthCalendar extends StatelessWidget {
                     textAlign: TextAlign.center,
                     maxLines: 1,
                     style: AppTypography.ui(
-                      size: 9.5,
+                      size: 11,
                       weight: FontWeight.w700,
                       color: column == sundayColumn
                           ? AppColors.copperDark
@@ -477,12 +485,20 @@ class _DayCell extends StatelessWidget {
           child: ClipRect(
             child: LayoutBuilder(
               builder: (context, constraints) {
-                final number = Text(
-                  '${date.day}',
-                  style: AppTypography.ui(
-                    size: 12.5,
-                    weight: FontWeight.w700,
-                    color: numberColor,
+                // Never wraps: a two-line date would push the cell out of the
+                // row under a wide font or a large text setting.
+                final number = FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    '${date.day}',
+                    maxLines: 1,
+                    softWrap: false,
+                    style: AppTypography.ui(
+                      size: 14,
+                      weight: FontWeight.w700,
+                      color: numberColor,
+                    ),
                   ),
                 );
 
@@ -495,10 +511,18 @@ class _DayCell extends StatelessWidget {
                 }
 
                 final roomy = constraints.maxHeight >= 46;
+                // How many lines of a name the cell can actually hold, once
+                // the date, the colour bar and the padding have taken theirs.
+                final labelLines =
+                    ((constraints.maxHeight - _cellChrome) / _labelLineHeight)
+                        .floor()
+                        .clamp(0, 3);
+                // One clipped line reads worse than the date on its own, so a
+                // name waits until two fit.
                 final showLabel =
                     label != null &&
                     !isLoading &&
-                    roomy &&
+                    labelLines >= 2 &&
                     constraints.maxWidth >= 54;
                 // A named Sunday keeps its name and the feast it also carries
                 // gets a mark; a cell too narrow to name anything gets one too.
@@ -521,7 +545,7 @@ class _DayCell extends StatelessWidget {
                       );
                 return Padding(
                   padding: roomy
-                      ? const EdgeInsets.fromLTRB(6, 5, 6, 6)
+                      ? const EdgeInsets.fromLTRB(6, 4, 6, 5)
                       : const EdgeInsets.fromLTRB(5, 3, 5, 4),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -529,7 +553,7 @@ class _DayCell extends StatelessWidget {
                       if (showLabel && marker != null)
                         Row(
                           children: [
-                            number,
+                            Flexible(child: number),
                             const SizedBox(width: 5),
                             marker,
                           ],
@@ -542,12 +566,12 @@ class _DayCell extends StatelessWidget {
                             padding: const EdgeInsets.only(top: 2),
                             child: Text(
                               label,
-                              maxLines: 3,
+                              maxLines: labelLines,
                               overflow: TextOverflow.ellipsis,
                               style: AppTypography.ui(
-                                size: 9,
+                                size: _labelSize,
                                 weight: FontWeight.w600,
-                                height: 1.12,
+                                height: _labelLineHeight / _labelSize,
                                 color: isToday
                                     ? AppColors.copperWash
                                     : AppColors.muted,
@@ -566,7 +590,7 @@ class _DayCell extends StatelessWidget {
                                   child: marker,
                                 ),
                         ),
-                      SizedBox(height: roomy ? 4 : 2),
+                      SizedBox(height: roomy ? 3 : 2),
                       isLoading
                           ? SkeletonBox(height: roomy ? 3 : 2.5, radius: 3)
                           : Container(
@@ -754,7 +778,7 @@ class _ReadingRow extends StatelessWidget {
                       Text(
                         label,
                         style: AppTypography.ui(
-                          size: 11,
+                          size: 12,
                           weight: FontWeight.w700,
                           color: AppColors.muted,
                           letterSpacing: .4,
@@ -766,7 +790,7 @@ class _ReadingRow extends StatelessWidget {
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                         style: AppTypography.display(
-                          size: 20,
+                          size: 21,
                           weight: FontWeight.w600,
                           height: 1.05,
                         ),
@@ -930,6 +954,13 @@ class DayDescription extends StatelessWidget {
 extension _FirstOrNull<T> on Iterable<T> {
   T? get firstOrNull => isEmpty ? null : first;
 }
+
+const _labelSize = 10.0;
+const _labelLineHeight = 11.5;
+
+/// Everything in a roomy cell that is not the name: padding, the date and the
+/// liturgical colour bar.
+const _cellChrome = 32.0;
 
 /// Which column a weekday falls in, for a week starting on [firstWeekday].
 int _column(int weekday, int firstWeekday) => (weekday - firstWeekday + 7) % 7;
