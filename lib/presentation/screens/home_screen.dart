@@ -6,11 +6,15 @@ import '../../data/models/lectionary_models.dart';
 import '../app_controller.dart';
 import '../app_copy.dart';
 import '../app_shell.dart';
-import '../widgets/design_primitives.dart';
 import '../widgets/day_detail_sheet.dart';
+import '../widgets/design_primitives.dart';
 import '../widgets/home_sections.dart';
+import '../widgets/reading_sheet.dart';
 import '../widgets/sacred_mark.dart';
 import 'settings_screen.dart';
+
+/// Width from which the calendar and the day content sit side by side.
+const _wideBreakpoint = 880.0;
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({required this.controller, super.key});
@@ -22,9 +26,12 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
+  /// The day the hero describes. On phones this stays on today: other days
+  /// are read in a sheet instead of taking over the screen.
   late DateTime activeDate;
+
+  /// The day highlighted in the calendar, and the month it shows.
   late DateTime calendarDate;
-  CalendarView view = CalendarView.week;
 
   @override
   void initState() {
@@ -39,7 +46,6 @@ class _HomeScreenState extends State<HomeScreen> {
       animation: widget.controller,
       builder: (context, _) {
         final copy = copyFor(widget.controller);
-        final book = widget.controller.selectedPrayerBook;
         final month = DateTime(calendarDate.year, calendarDate.month);
         final monthDays = widget.controller.monthDays(month);
 
@@ -48,80 +54,34 @@ class _HomeScreenState extends State<HomeScreen> {
             child: SafeArea(
               child: LayoutBuilder(
                 builder: (context, constraints) {
-                  return SingleChildScrollView(
-                    padding: EdgeInsets.fromLTRB(
-                      constraints.maxWidth >= 900 ? 34 : 17,
-                      18,
-                      constraints.maxWidth >= 900 ? 34 : 17,
-                      34,
-                    ),
-                    child: Center(
-                      child: ConstrainedBox(
-                        constraints: const BoxConstraints(maxWidth: 1180),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: [
-                            _HomeHeader(
-                              copy: copy,
-                              book: book,
-                              onChooseBook: _openPrayerBookSheet,
-                              onOpenSettings: _openSettings,
-                            ),
-                            const SizedBox(height: 24),
-                            DailyHero(
-                              day: widget.controller.selectedDay,
-                              activeDate: activeDate,
-                              copy: copy,
-                              isLoading: widget.controller.isLoadingDay,
-                              onToday: _goToday,
-                            ),
-                            const SizedBox(height: 18),
-                            LayoutBuilder(
-                              builder: (context, contentConstraints) {
-                                final isWide =
-                                    contentConstraints.maxWidth >= 880;
-                                if (isWide) {
-                                  return _WideContent(
-                                    copy: copy,
-                                    controller: widget.controller,
-                                    isLoadingDay:
-                                        widget.controller.isLoadingDay,
-                                    isLoadingMonth:
-                                        widget.controller.isLoadingMonth,
-                                    calendarDate: calendarDate,
-                                    month: month,
-                                    monthDays: monthDays,
-                                    view: view,
-                                    onViewChanged: (value) =>
-                                        setState(() => view = value),
-                                    onSelectDate: _selectWideDate,
-                                    onPreviousMonth: _previousWideMonth,
-                                    onNextMonth: _nextWideMonth,
-                                    onOpenReading: _openReading,
-                                  );
-                                }
-                                return _NarrowContent(
-                                  copy: copy,
-                                  isLoadingMonth:
-                                      widget.controller.isLoadingMonth,
-                                  calendarDate: calendarDate,
-                                  month: month,
-                                  monthDays: monthDays,
-                                  view: view,
-                                  onViewChanged: (value) =>
-                                      setState(() => view = value),
-                                  onSelectDate: _openNarrowDay,
-                                  onPreviousMonth: _previousCalendarMonth,
-                                  onNextMonth: _nextCalendarMonth,
-                                );
-                              },
-                            ),
-                            const SizedBox(height: 34),
-                            const _HomeFooter(),
-                          ],
-                        ),
-                      ),
-                    ),
+                  if (constraints.maxWidth >= _wideBreakpoint) {
+                    return _WideLayout(
+                      copy: copy,
+                      controller: widget.controller,
+                      activeDate: activeDate,
+                      calendarDate: calendarDate,
+                      month: month,
+                      monthDays: monthDays,
+                      onChooseBook: _openPrayerBookSheet,
+                      onOpenSettings: _openSettings,
+                      onSelectDate: _selectDate,
+                      onPreviousMonth: () => _shiftMonth(-1, selectMonth: true),
+                      onNextMonth: () => _shiftMonth(1, selectMonth: true),
+                      onToday: _goToday,
+                      onOpenReading: _openReading,
+                    );
+                  }
+                  return _NarrowLayout(
+                    copy: copy,
+                    controller: widget.controller,
+                    calendarDate: calendarDate,
+                    month: month,
+                    monthDays: monthDays,
+                    onChooseBook: _openPrayerBookSheet,
+                    onOpenSettings: _openSettings,
+                    onOpenDay: _openDaySheet,
+                    onPreviousMonth: () => _shiftMonth(-1),
+                    onNextMonth: () => _shiftMonth(1),
                   );
                 },
               ),
@@ -132,7 +92,7 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Future<void> _selectWideDate(DateTime date) async {
+  Future<void> _selectDate(DateTime date) async {
     final selected = DateTime(date.year, date.month, date.day);
     setState(() {
       activeDate = selected;
@@ -141,7 +101,7 @@ class _HomeScreenState extends State<HomeScreen> {
     await widget.controller.selectDate(selected);
   }
 
-  Future<void> _openNarrowDay(DateTime date) async {
+  Future<void> _openDaySheet(DateTime date) async {
     final selected = DateTime(date.year, date.month, date.day);
     setState(() => calendarDate = selected);
     await showModalBottomSheet<void>(
@@ -160,7 +120,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _goToday() async {
-    await _selectWideDate(DateTime.now());
+    await _selectDate(DateTime.now());
   }
 
   Future<void> _openSettings() async {
@@ -171,28 +131,19 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Future<void> _previousWideMonth() async {
-    final previous = DateTime(calendarDate.year, calendarDate.month - 1, 1);
-    await _selectWideDate(previous);
-    setState(() => view = CalendarView.month);
-  }
-
-  Future<void> _nextWideMonth() async {
-    final next = DateTime(calendarDate.year, calendarDate.month + 1, 1);
-    await _selectWideDate(next);
-    setState(() => view = CalendarView.month);
-  }
-
-  Future<void> _previousCalendarMonth() async {
-    final previous = DateTime(calendarDate.year, calendarDate.month - 1, 1);
-    setState(() => calendarDate = previous);
-    await widget.controller.loadMonth(previous);
-  }
-
-  Future<void> _nextCalendarMonth() async {
-    final next = DateTime(calendarDate.year, calendarDate.month + 1, 1);
-    setState(() => calendarDate = next);
-    await widget.controller.loadMonth(next);
+  /// Moves the calendar by [offset] months.
+  ///
+  /// Where the day content is always on screen ([selectMonth]) the new month is
+  /// also loaded as the active day; on phones the day only changes when one is
+  /// opened, so the month is merely fetched for the grid.
+  Future<void> _shiftMonth(int offset, {bool selectMonth = false}) async {
+    final month = DateTime(calendarDate.year, calendarDate.month + offset, 1);
+    if (selectMonth) {
+      await _selectDate(month);
+      return;
+    }
+    setState(() => calendarDate = month);
+    await widget.controller.loadMonth(month);
   }
 
   Future<void> _openPrayerBookSheet() async {
@@ -223,61 +174,80 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _openReading(Reading reading) async {
-    final copy = copyFor(widget.controller);
-    final verses = reading.content?.verses ?? const <ReadingVerse>[];
-    await showDialog<void>(
+    await showModalBottomSheet<void>(
       context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: AppColors.cream,
-        surfaceTintColor: Colors.transparent,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
-        title: Text(
-          copy.readingLabel(reading.kind),
-          style: AppTypography.display(size: 28),
-        ),
-        content: SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                reading.reference,
-                style: AppTypography.ui(
-                  size: 16,
-                  weight: FontWeight.w700,
-                  color: AppColors.copperDark,
-                ),
-              ),
-              const SizedBox(height: 18),
-              if (reading.text case final text? when text.trim().isNotEmpty)
-                Text(
-                  text,
-                  style: AppTypography.display(
-                    size: 21,
-                    weight: FontWeight.w500,
-                    color: AppColors.inkSoft,
-                    height: 1.2,
-                  ),
-                ),
-              if (verses.isNotEmpty) ...[
-                if (reading.text?.trim().isNotEmpty == true)
-                  const SizedBox(height: 16),
-                ...verses.map((verse) => _ReadingVerseBlock(verse: verse)),
-              ],
-              if (reading.translation case final translation?
-                  when translation.trim().isNotEmpty) ...[
-                const SizedBox(height: 16),
-                Text(
-                  translation,
-                  style: AppTypography.ui(size: 12, color: AppColors.muted),
-                ),
-              ],
-            ],
+      backgroundColor: AppColors.paper,
+      isScrollControlled: true,
+      useSafeArea: true,
+      showDragHandle: true,
+      builder: (context) =>
+          ReadingSheet(reading: reading, copy: copyFor(widget.controller)),
+    );
+  }
+}
+
+/// Phone layout: header, today, and the whole month — no scrolling.
+class _NarrowLayout extends StatelessWidget {
+  const _NarrowLayout({
+    required this.copy,
+    required this.controller,
+    required this.calendarDate,
+    required this.month,
+    required this.monthDays,
+    required this.onChooseBook,
+    required this.onOpenSettings,
+    required this.onOpenDay,
+    required this.onPreviousMonth,
+    required this.onNextMonth,
+  });
+
+  final AppCopy copy;
+  final AppController controller;
+  final DateTime calendarDate;
+  final DateTime month;
+  final List<CalendarDay> monthDays;
+  final VoidCallback onChooseBook;
+  final VoidCallback onOpenSettings;
+  final ValueChanged<DateTime> onOpenDay;
+  final VoidCallback onPreviousMonth;
+  final VoidCallback onNextMonth;
+
+  @override
+  Widget build(BuildContext context) {
+    final today = DateTime.now();
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(12, 10, 12, 12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          _HomeHeader(
+            copy: copy,
+            book: controller.selectedPrayerBook,
+            onChooseBook: onChooseBook,
+            onOpenSettings: onOpenSettings,
           ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text(copy.close),
+          const SizedBox(height: 12),
+          DailyHero(
+            day: controller.selectedDay,
+            activeDate: today,
+            copy: copy,
+            isLoading: controller.isLoadingDay,
+            onTap: () => onOpenDay(today),
+            actionLabel: copy.openTodayReadings,
+          ),
+          const SizedBox(height: 12),
+          Expanded(
+            child: MonthCalendar(
+              month: month,
+              selectedDate: calendarDate,
+              copy: copy,
+              monthDays: monthDays,
+              onSelect: onOpenDay,
+              onPrevious: onPreviousMonth,
+              onNext: onNextMonth,
+              isLoading: controller.isLoadingMonth,
+              fillHeight: true,
+            ),
           ),
         ],
       ),
@@ -285,37 +255,106 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 }
 
-class _ReadingVerseBlock extends StatelessWidget {
-  const _ReadingVerseBlock({required this.verse});
+/// Tablet and desktop layout: the calendar and the selected day side by side.
+class _WideLayout extends StatelessWidget {
+  const _WideLayout({
+    required this.copy,
+    required this.controller,
+    required this.activeDate,
+    required this.calendarDate,
+    required this.month,
+    required this.monthDays,
+    required this.onChooseBook,
+    required this.onOpenSettings,
+    required this.onSelectDate,
+    required this.onPreviousMonth,
+    required this.onNextMonth,
+    required this.onToday,
+    required this.onOpenReading,
+  });
 
-  final ReadingVerse verse;
+  final AppCopy copy;
+  final AppController controller;
+  final DateTime activeDate;
+  final DateTime calendarDate;
+  final DateTime month;
+  final List<CalendarDay> monthDays;
+  final VoidCallback onChooseBook;
+  final VoidCallback onOpenSettings;
+  final ValueChanged<DateTime> onSelectDate;
+  final VoidCallback onPreviousMonth;
+  final VoidCallback onNextMonth;
+  final VoidCallback onToday;
+  final ValueChanged<Reading> onOpenReading;
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 13),
-      child: Text.rich(
-        TextSpan(
-          children: [
-            if (verse.number != null)
-              TextSpan(
-                text: '${verse.number} ',
-                style: AppTypography.ui(
-                  size: 12,
-                  weight: FontWeight.w700,
-                  color: AppColors.copperDark,
-                ),
+    return SingleChildScrollView(
+      padding: const EdgeInsets.fromLTRB(28, 16, 28, 30),
+      child: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 1180),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              _HomeHeader(
+                copy: copy,
+                book: controller.selectedPrayerBook,
+                onChooseBook: onChooseBook,
+                onOpenSettings: onOpenSettings,
               ),
-            TextSpan(
-              text: verse.text,
-              style: AppTypography.display(
-                size: 20,
-                weight: FontWeight.w500,
-                color: AppColors.inkSoft,
-                height: 1.25,
+              const SizedBox(height: 20),
+              DailyHero(
+                day: controller.selectedDay,
+                activeDate: activeDate,
+                copy: copy,
+                isLoading: controller.isLoadingDay,
+                onToday: onToday,
               ),
-            ),
-          ],
+              const SizedBox(height: 16),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    flex: 7,
+                    child: MonthCalendar(
+                      month: month,
+                      selectedDate: calendarDate,
+                      copy: copy,
+                      monthDays: monthDays,
+                      onSelect: onSelectDate,
+                      onPrevious: onPreviousMonth,
+                      onNext: onNextMonth,
+                      isLoading: controller.isLoadingMonth,
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    flex: 4,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        ReadingsCard(
+                          day: controller.selectedDay,
+                          copy: copy,
+                          onOpen: onOpenReading,
+                          isLoading: controller.isLoadingDay,
+                        ),
+                        const SizedBox(height: 12),
+                        CollectCard(
+                          day: controller.selectedDay,
+                          copy: copy,
+                          isLoading: controller.isLoadingDay,
+                        ),
+                        if (!controller.isLoadingDay)
+                          DayDescription(day: controller.selectedDay),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -337,316 +376,98 @@ class _HomeHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final compact = constraints.maxWidth < 550;
-        return Row(
-          children: [
-            const SacredMark(size: 37),
-            const SizedBox(width: 11),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    copy.brand,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: AppTypography.display(size: 26, height: .85),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    copy.brandSubline,
-                    style: AppTypography.ui(
-                      size: 9,
-                      weight: FontWeight.w700,
-                      color: AppColors.muted,
-                      letterSpacing: 2.1,
-                    ),
-                  ),
-                ],
+    return Row(
+      children: [
+        const SacredMark(size: 30),
+        const SizedBox(width: 10),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                copy.brand,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: AppTypography.display(size: 25, height: 1),
               ),
-            ),
-            const SizedBox(width: 8),
-            IconButton(
-              onPressed: onOpenSettings,
-              tooltip: copy.settings,
-              padding: EdgeInsets.zero,
-              visualDensity: VisualDensity.compact,
-              constraints: const BoxConstraints.tightFor(width: 36, height: 36),
-              icon: const Icon(Icons.tune_rounded, size: 20),
-            ),
-            _BookPill(
-              book: book,
-              compact: compact,
-              onTap: onChooseBook,
-              label: copy.chooseLoc,
-            ),
-          ],
-        );
-      },
+              _BookSelector(
+                book: book,
+                label: copy.chooseLoc,
+                onTap: onChooseBook,
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(width: 8),
+        IconButton(
+          onPressed: onOpenSettings,
+          tooltip: copy.settings,
+          icon: const Icon(Icons.tune_rounded, size: 21),
+          color: AppColors.inkSoft,
+          constraints: const BoxConstraints.tightFor(width: 44, height: 44),
+        ),
+      ],
     );
   }
 }
 
-class _BookPill extends StatelessWidget {
-  const _BookPill({
+/// The prayer book in use, and the way to change it.
+class _BookSelector extends StatelessWidget {
+  const _BookSelector({
     required this.book,
-    required this.compact,
-    required this.onTap,
     required this.label,
+    required this.onTap,
   });
 
   final PrayerBook? book;
-  final bool compact;
-  final VoidCallback onTap;
   final String label;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    final bookTitle = book == null
+    final title = book == null
         ? label
         : book!.name.isNotEmpty
         ? book!.name
         : book!.code;
+
     return Semantics(
       button: true,
       label: label,
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(15),
-        child: Container(
-          padding: EdgeInsets.symmetric(
-            horizontal: compact ? 8 : 10,
-            vertical: 7,
-          ),
-          decoration: BoxDecoration(
-            color: AppColors.cream.withValues(alpha: .76),
-            borderRadius: BorderRadius.circular(15),
-            border: Border.all(color: AppColors.line),
-          ),
+        borderRadius: BorderRadius.circular(10),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 2),
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              if (book != null && !compact)
-                BookCover(book: book!, width: 30, height: 38),
-              if (book != null && !compact) const SizedBox(width: 8),
-              if (!compact)
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      label.toUpperCase(),
-                      style: AppTypography.ui(
-                        size: 8,
-                        weight: FontWeight.w700,
-                        color: AppColors.muted,
-                        letterSpacing: 1,
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      bookTitle,
-                      style: AppTypography.ui(
-                        size: 13,
-                        weight: FontWeight.w700,
-                      ),
-                    ),
-                  ],
-                )
-              else
-                ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: 78),
-                  child: Text(
-                    bookTitle,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: AppTypography.ui(size: 12, weight: FontWeight.w700),
+              if (book != null) ...[
+                BookCover(book: book!, width: 15, height: 19),
+                const SizedBox(width: 7),
+              ],
+              Flexible(
+                child: Text(
+                  title,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: AppTypography.ui(
+                    size: 12.5,
+                    weight: FontWeight.w600,
+                    color: AppColors.muted,
                   ),
                 ),
-              const SizedBox(width: 5),
+              ),
               const Icon(
-                Icons.keyboard_arrow_down_rounded,
+                Icons.expand_more_rounded,
                 size: 17,
-                color: AppColors.muted,
+                color: AppColors.mutedLight,
               ),
             ],
           ),
         ),
       ),
-    );
-  }
-}
-
-class _WideContent extends StatelessWidget {
-  const _WideContent({
-    required this.copy,
-    required this.controller,
-    required this.isLoadingDay,
-    required this.isLoadingMonth,
-    required this.calendarDate,
-    required this.month,
-    required this.monthDays,
-    required this.view,
-    required this.onViewChanged,
-    required this.onSelectDate,
-    required this.onPreviousMonth,
-    required this.onNextMonth,
-    required this.onOpenReading,
-  });
-
-  final AppCopy copy;
-  final AppController controller;
-  final bool isLoadingDay;
-  final bool isLoadingMonth;
-  final DateTime calendarDate;
-  final DateTime month;
-  final List<CalendarDay> monthDays;
-  final CalendarView view;
-  final ValueChanged<CalendarView> onViewChanged;
-  final ValueChanged<DateTime> onSelectDate;
-  final VoidCallback onPreviousMonth;
-  final VoidCallback onNextMonth;
-  final ValueChanged<Reading> onOpenReading;
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Expanded(
-          flex: 7,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              ViewTabs(selected: view, copy: copy, onChanged: onViewChanged),
-              const SizedBox(height: 12),
-              if (view == CalendarView.week) ...[
-                WeekStrip(
-                  activeDate: calendarDate,
-                  copy: copy,
-                  monthDays: monthDays,
-                  onSelect: onSelectDate,
-                  isLoading: isLoadingMonth,
-                ),
-                const SizedBox(height: 12),
-                WeekSchedule(
-                  activeDate: calendarDate,
-                  copy: copy,
-                  monthDays: monthDays,
-                  onSelect: onSelectDate,
-                  isLoading: isLoadingMonth,
-                ),
-              ] else
-                MonthCalendar(
-                  activeDate: calendarDate,
-                  copy: copy,
-                  monthDays: monthDays,
-                  onSelect: onSelectDate,
-                  onPrevious: onPreviousMonth,
-                  onNext: onNextMonth,
-                  isLoading: isLoadingMonth,
-                ),
-            ],
-          ),
-        ),
-        const SizedBox(width: 17),
-        Expanded(
-          flex: 4,
-          child: Column(
-            children: [
-              ReadingsCard(
-                day: controller.selectedDay,
-                copy: copy,
-                onOpen: onOpenReading,
-                isLoading: isLoadingDay,
-              ),
-              const SizedBox(height: 12),
-              CollectCard(
-                day: controller.selectedDay,
-                copy: copy,
-                isLoading: isLoadingDay,
-              ),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _NarrowContent extends StatelessWidget {
-  const _NarrowContent({
-    required this.copy,
-    required this.isLoadingMonth,
-    required this.calendarDate,
-    required this.month,
-    required this.monthDays,
-    required this.view,
-    required this.onViewChanged,
-    required this.onSelectDate,
-    required this.onPreviousMonth,
-    required this.onNextMonth,
-  });
-
-  final AppCopy copy;
-  final bool isLoadingMonth;
-  final DateTime calendarDate;
-  final DateTime month;
-  final List<CalendarDay> monthDays;
-  final CalendarView view;
-  final ValueChanged<CalendarView> onViewChanged;
-  final ValueChanged<DateTime> onSelectDate;
-  final VoidCallback onPreviousMonth;
-  final VoidCallback onNextMonth;
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        ViewTabs(selected: view, copy: copy, onChanged: onViewChanged),
-        const SizedBox(height: 12),
-        if (view == CalendarView.week) ...[
-          WeekStrip(
-            activeDate: calendarDate,
-            copy: copy,
-            monthDays: monthDays,
-            onSelect: onSelectDate,
-            isLoading: isLoadingMonth,
-          ),
-        ] else
-          MonthCalendar(
-            activeDate: calendarDate,
-            copy: copy,
-            monthDays: monthDays,
-            onSelect: onSelectDate,
-            onPrevious: onPreviousMonth,
-            onNext: onNextMonth,
-            isLoading: isLoadingMonth,
-          ),
-      ],
-    );
-  }
-}
-
-class _HomeFooter extends StatelessWidget {
-  const _HomeFooter();
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Container(width: 26, height: 1, color: AppColors.copper),
-        const SizedBox(width: 10),
-        const Spacer(),
-        const Spacer(),
-        const Icon(
-          Icons.shield_outlined,
-          size: 14,
-          color: AppColors.mutedLight,
-        ),
-      ],
     );
   }
 }
@@ -671,7 +492,7 @@ class _PrayerBookSheet extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(copy.changeLoc, style: AppTypography.display(size: 31)),
+            Text(copy.changeLoc, style: AppTypography.display(size: 29)),
             const SizedBox(height: 5),
             Text(
               copy.chooseSubtitle,
@@ -685,7 +506,7 @@ class _PrayerBookSheet extends StatelessWidget {
                   onTap: () => Navigator.pop(context, book),
                   borderRadius: BorderRadius.circular(15),
                   child: Container(
-                    padding: const EdgeInsets.all(9),
+                    padding: const EdgeInsets.all(10),
                     decoration: BoxDecoration(
                       color: book.code == selectedCode
                           ? AppColors.pineWash

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/date_symbol_data_local.dart';
 
@@ -69,7 +70,7 @@ void main() {
 
     expect(controller.selectedPrayerBookCode, 'loc_test');
     expect(find.byType(HomeScreen), findsOneWidget);
-    expect(find.text('Tempo de teste'), findsOneWidget);
+    expect(find.textContaining('Tempo de teste'), findsOneWidget);
   });
 
   testWidgets('keeps the LOC entry action in a fixed footer', (tester) async {
@@ -159,7 +160,7 @@ void main() {
     expect(find.byType(HomeScreen), findsOneWidget);
   });
 
-  testWidgets('renders readings, changes to month view and opens a reading', (
+  testWidgets('renders the month, the readings and opens a reading', (
     tester,
   ) async {
     await tester.binding.setSurfaceSize(const Size(1200, 1000));
@@ -187,11 +188,8 @@ void main() {
     expect(find.text('LEITURAS DE HOJE'), findsOneWidget);
     expect(find.text('João 1:1–5'), findsOneWidget);
     expect(find.text('COLETA DO DIA'), findsOneWidget);
-    expect(find.text('Semana'), findsOneWidget);
-    expect(find.text('Mês'), findsOneWidget);
-
-    await tester.tap(find.text('Mês'));
-    await tester.pumpAndSettle();
+    expect(find.text('Semana'), findsNothing);
+    expect(find.text('Mês'), findsNothing);
     expect(
       find.text(AppCopy(AppLanguage.pt).monthYear(DateTime.now())),
       findsOneWidget,
@@ -292,9 +290,6 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    await tester.tap(find.text('Mês'));
-    await tester.pumpAndSettle();
-
     expect(
       find.text(AppCopy(AppLanguage.pt).monthYear(DateTime.now())),
       findsOneWidget,
@@ -309,9 +304,9 @@ void main() {
       addTearDown(() => tester.binding.setSurfaceSize(null));
 
       final today = DateUtils.dateOnly(DateTime.now());
-      final selectedDate = today.weekday == DateTime.sunday
-          ? today.add(const Duration(days: 1))
-          : today.subtract(const Duration(days: 1));
+      final selectedDate = today.day == 1
+          ? DateTime(today.year, today.month, 2)
+          : DateTime(today.year, today.month, 1);
       final source = FakeLectionaryDataSource(
         books: [testBook()],
         dayBuilder: (date) {
@@ -347,7 +342,7 @@ void main() {
 
       expect(find.text('Dia principal'), findsOneWidget);
       final dayKey = ValueKey(
-        'week-day-${selectedDate.year}-${selectedDate.month}-${selectedDate.day}',
+        'month-day-${selectedDate.year}-${selectedDate.month}-${selectedDate.day}',
       );
       await tester.tap(find.byKey(dayKey));
       await tester.pumpAndSettle();
@@ -492,7 +487,7 @@ void main() {
     await tester.tap(find.text('Enter the lectionary'));
     await tester.pumpAndSettle();
     expect(controller.selectedPrayerBookCode, 'bcp_test');
-    expect(find.text('Tempo de teste'), findsOneWidget);
+    expect(find.textContaining('Tempo de teste'), findsOneWidget);
   });
 
   testWidgets('opens the prayer book sheet from the home header', (
@@ -581,15 +576,13 @@ void main() {
     expect(controller.selectedPrayerBookCode, third.code);
     expect(preferences.selectedPrayerBookCode, third.code);
 
-    await tester.tap(find.text('Month'));
-    await tester.pumpAndSettle();
     expect(
       find.text(AppCopy(AppLanguage.en).monthYear(DateTime.now())),
       findsOneWidget,
     );
 
     final nextMonth = DateTime(DateTime.now().year, DateTime.now().month + 1);
-    await tester.tap(find.byIcon(Icons.chevron_right_rounded));
+    await tester.tap(find.byKey(const ValueKey('calendar-next-month')));
     await tester.pumpAndSettle();
     expect(
       find.text(AppCopy(AppLanguage.en).monthYear(nextMonth)),
@@ -600,7 +593,7 @@ void main() {
       contains(DateTime(nextMonth.year, nextMonth.month)),
     );
 
-    await tester.tap(find.byIcon(Icons.chevron_left_rounded));
+    await tester.tap(find.byKey(const ValueKey('calendar-previous-month')));
     await tester.pumpAndSettle();
     expect(
       find.text(AppCopy(AppLanguage.en).monthYear(DateTime.now())),
@@ -736,4 +729,226 @@ void main() {
       expect(find.text('NVI'), findsOneWidget);
     },
   );
+
+  testWidgets('fits the phone home on a single screen, without scrolling', (
+    tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(390, 844));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    final controller = AppController(
+      api: FakeLectionaryDataSource(books: [testBook()], dayBuilder: testDay),
+      localPreferences: await createLocalPreferences({
+        'selected_prayer_book_code': 'loc_test',
+      }),
+    );
+    addTearDown(controller.dispose);
+    await controller.initialize();
+
+    await tester.pumpWidget(
+      testMaterialApp(home: HomeScreen(controller: controller)),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.byType(Scrollable), findsNothing);
+    expect(tester.getRect(find.byType(MonthCalendar)).bottom, lessThan(844));
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('opens today from the hero', (tester) async {
+    await tester.binding.setSurfaceSize(const Size(390, 844));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    final controller = AppController(
+      api: FakeLectionaryDataSource(books: [testBook()], dayBuilder: testDay),
+      localPreferences: await createLocalPreferences({
+        'selected_prayer_book_code': 'loc_test',
+      }),
+    );
+    addTearDown(controller.dispose);
+    await controller.initialize();
+
+    await tester.pumpWidget(
+      testMaterialApp(home: HomeScreen(controller: controller)),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Abrir o dia de hoje'), findsOneWidget);
+    await tester.tap(find.byType(DailyHero));
+    await tester.pumpAndSettle();
+
+    expect(
+      find.byKey(const ValueKey('mobile-day-detail-sheet')),
+      findsOneWidget,
+    );
+    expect(find.text('LEITURAS DE HOJE'), findsOneWidget);
+    expect(find.text('João 1:1–5'), findsOneWidget);
+  });
+
+  testWidgets('names the Sundays in the month grid', (tester) async {
+    await tester.binding.setSurfaceSize(const Size(390, 844));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    final controller = AppController(
+      api: FakeLectionaryDataSource(
+        books: [testBook()],
+        dayBuilder: testDay,
+        monthBuilder: (month) => List.generate(
+          DateUtils.getDaysInMonth(month.year, month.month),
+          (index) {
+            final date = DateTime(month.year, month.month, index + 1);
+            return CalendarDay(
+              date: date,
+              color: 'verde',
+              sundayName: date.weekday == DateTime.sunday
+                  ? 'Domingo ${index + 1}'
+                  : null,
+            );
+          },
+        ),
+      ),
+      localPreferences: await createLocalPreferences({
+        'selected_prayer_book_code': 'loc_test',
+      }),
+    );
+    addTearDown(controller.dispose);
+    await controller.initialize();
+
+    await tester.pumpWidget(
+      testMaterialApp(home: HomeScreen(controller: controller)),
+    );
+    await tester.pumpAndSettle();
+
+    final now = DateTime.now();
+    final firstOfMonth = DateTime(now.year, now.month, 1);
+    final firstSunday = 1 + (7 - firstOfMonth.weekday % 7) % 7;
+    expect(find.text('Domingo $firstSunday'), findsOneWidget);
+  });
+
+  testWidgets('copies the readings, the collect and a full reading', (
+    tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(1200, 1000));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    final copied = <String>[];
+    tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+      SystemChannels.platform,
+      (call) async {
+        if (call.method == 'Clipboard.setData') {
+          copied.add((call.arguments as Map)['text'] as String);
+        }
+        return null;
+      },
+    );
+    addTearDown(
+      () => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+        SystemChannels.platform,
+        null,
+      ),
+    );
+
+    final controller = AppController(
+      api: FakeLectionaryDataSource(books: [testBook()], dayBuilder: testDay),
+      localPreferences: await createLocalPreferences({
+        'selected_prayer_book_code': 'loc_test',
+      }),
+    );
+    addTearDown(controller.dispose);
+    await controller.initialize();
+
+    await tester.pumpWidget(
+      testMaterialApp(home: HomeScreen(controller: controller)),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const ValueKey('copy-readings')));
+    await tester.pumpAndSettle();
+    expect(copied.last, 'Evangelho: João 1:1–5');
+    expect(find.text('Texto copiado'), findsOneWidget);
+
+    await tester.tap(find.byKey(const ValueKey('copy-collect')));
+    await tester.pumpAndSettle();
+    expect(copied.last, 'Coleta de teste.');
+
+    await tester.tap(find.text('João 1:1–5'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('copy-reading')));
+    await tester.pumpAndSettle();
+    expect(copied.last, 'Evangelho — João 1:1–5\n\nNo princípio.');
+  });
+
+  testWidgets('translates the recommended prayer book badge', (tester) async {
+    final controller = AppController(
+      api: FakeLectionaryDataSource(
+        books: [
+          testBook(recommended: true),
+          testBook(
+            code: 'bcp_test',
+            name: 'BCP Test',
+            language: AppLanguage.en,
+            recommended: true,
+          ),
+        ],
+      ),
+      localPreferences: await createLocalPreferences(),
+    );
+    addTearDown(controller.dispose);
+    await controller.initialize();
+
+    await tester.pumpWidget(testControllerApp(controller));
+    await tester.pumpAndSettle();
+    expect(find.text('RECOMENDADO'), findsOneWidget);
+
+    await tester.tap(find.text('EN'));
+    await tester.pumpAndSettle();
+    expect(find.text('RECOMMENDED'), findsOneWidget);
+    expect(find.text('RECOMENDADO'), findsNothing);
+  });
+
+  testWidgets('browsing months on a phone keeps the hero on today', (
+    tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(390, 844));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    final source = FakeLectionaryDataSource(
+      books: [testBook()],
+      dayBuilder: testDay,
+    );
+    final controller = AppController(
+      api: source,
+      localPreferences: await createLocalPreferences({
+        'selected_prayer_book_code': 'loc_test',
+      }),
+    );
+    addTearDown(controller.dispose);
+    await controller.initialize();
+
+    await tester.pumpWidget(
+      testMaterialApp(home: HomeScreen(controller: controller)),
+    );
+    await tester.pumpAndSettle();
+    final requestedDays = source.requestedDates.length;
+
+    final now = DateTime.now();
+    final nextMonth = DateTime(now.year, now.month + 1);
+    await tester.tap(find.byKey(const ValueKey('calendar-next-month')));
+    await tester.pumpAndSettle();
+
+    expect(
+      find.text(AppCopy(AppLanguage.pt).monthYear(nextMonth)),
+      findsOneWidget,
+    );
+    expect(source.requestedMonths, contains(nextMonth));
+    expect(source.requestedDates.length, requestedDays);
+    expect(find.text(AppCopy(AppLanguage.pt).dateLong(now)), findsOneWidget);
+
+    await tester.tap(find.byKey(const ValueKey('calendar-previous-month')));
+    await tester.pumpAndSettle();
+    expect(
+      find.text(AppCopy(AppLanguage.pt).monthYear(now)),
+      findsOneWidget,
+    );
+  });
 }

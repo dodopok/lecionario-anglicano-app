@@ -61,51 +61,7 @@ class AppBackground extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Stack(
-      fit: StackFit.expand,
-      children: [
-        const ColoredBox(color: AppColors.paper),
-        Positioned(
-          top: -190,
-          right: -120,
-          child: IgnorePointer(
-            child: Container(
-              width: 430,
-              height: 430,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                gradient: RadialGradient(
-                  colors: [
-                    AppColors.copper.withValues(alpha: .10),
-                    AppColors.copper.withValues(alpha: 0),
-                  ],
-                ),
-              ),
-            ),
-          ),
-        ),
-        Positioned(
-          bottom: -230,
-          left: -180,
-          child: IgnorePointer(
-            child: Container(
-              width: 520,
-              height: 520,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                gradient: RadialGradient(
-                  colors: [
-                    AppColors.pine.withValues(alpha: .07),
-                    AppColors.pine.withValues(alpha: 0),
-                  ],
-                ),
-              ),
-            ),
-          ),
-        ),
-        child,
-      ],
-    );
+    return ColoredBox(color: AppColors.paper, child: child);
   }
 }
 
