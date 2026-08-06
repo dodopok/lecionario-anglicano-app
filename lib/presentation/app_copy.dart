@@ -105,6 +105,43 @@ class AppCopy {
     AppLanguage.en => 'Back to today',
     AppLanguage.es => 'Volver a hoy',
   };
+  String get offlineTitle => switch (language) {
+    AppLanguage.pt => 'Sem conexão',
+    AppLanguage.en => 'No connection',
+    AppLanguage.es => 'Sin conexión',
+  };
+  String get offlineBody => switch (language) {
+    AppLanguage.pt =>
+      'O lecionário é carregado da internet e não foi possível alcançá-lo. '
+          'Verifique a sua conexão.',
+    AppLanguage.en =>
+      'The lectionary is loaded from the internet and could not be reached. '
+          'Check your connection.',
+    AppLanguage.es =>
+      'El leccionario se carga de internet y no fue posible alcanzarlo. '
+          'Revisa tu conexión.',
+  };
+  String get serverErrorTitle => switch (language) {
+    AppLanguage.pt => 'O lecionário não respondeu',
+    AppLanguage.en => 'The lectionary did not answer',
+    AppLanguage.es => 'El leccionario no respondió',
+  };
+  String get serverErrorBody => switch (language) {
+    AppLanguage.pt =>
+      'A consulta chegou, mas voltou sem os dados do dia. Tente de novo em '
+          'instantes.',
+    AppLanguage.en =>
+      'The request arrived but came back without the day. Try again in a '
+          'moment.',
+    AppLanguage.es =>
+      'La consulta llegó, pero volvió sin los datos del día. Inténtalo de '
+          'nuevo en un momento.',
+  };
+  String get retry => switch (language) {
+    AppLanguage.pt => 'Tentar de novo',
+    AppLanguage.en => 'Try again',
+    AppLanguage.es => 'Intentar de nuevo',
+  };
   String get close => switch (language) {
     AppLanguage.pt => 'Fechar',
     AppLanguage.en => 'Close',

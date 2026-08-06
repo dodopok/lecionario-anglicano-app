@@ -84,7 +84,10 @@ class DailyHero extends StatelessWidget {
                         ),
                         if (!isToday && onToday != null) ...[
                           const SizedBox(width: 10),
-                          _BackToToday(label: copy.backToToday, onTap: onToday!),
+                          _BackToToday(
+                            label: copy.backToToday,
+                            onTap: onToday!,
+                          ),
                         ],
                       ],
                     ),
@@ -200,24 +203,20 @@ String _eyebrow(bool isToday, LectionaryDay? day, AppCopy copy) {
 /// carry is secondary, and moves to the line below.
 String? _dayTitle(LectionaryDay? day, DateTime date) {
   final candidates = date.weekday == DateTime.sunday
-      ? [
-          day?.sundayName,
-          day?.weekName,
-          day?.celebration?.name,
-          day?.season,
-        ]
-      : [
-          day?.celebration?.name,
-          day?.sundayName,
-          day?.weekName,
-          day?.season,
-        ];
+      ? [day?.sundayName, day?.weekName, day?.celebration?.name, day?.season]
+      : [day?.celebration?.name, day?.sundayName, day?.weekName, day?.season];
   for (final value in candidates) {
     if (value != null && value.trim().isNotEmpty) return value.trim();
   }
   return null;
 }
 
+/// The line under the day's name: the feast it also carries, the lectionary
+/// year, and the colour.
+///
+/// The year is shown for whatever the API reports, which today is every prayer
+/// book — the one-year lectionaries included, where there is no A, B or C to
+/// report. Drop it from this list once the API says which books have a cycle.
 String _dayMeta(LectionaryDay? day, AppCopy copy, String? title) {
   final celebration = day?.celebration?.name.trim();
   final parts = <String>[
@@ -361,7 +360,9 @@ class MonthCalendar extends StatelessWidget {
         }),
       );
       if (week > 0) rows.add(const SizedBox(height: _cellGap));
-      rows.add(fillHeight ? Expanded(child: row) : SizedBox(height: 62, child: row));
+      rows.add(
+        fillHeight ? Expanded(child: row) : SizedBox(height: 62, child: row),
+      );
     }
 
     final grid = Column(
@@ -472,7 +473,11 @@ class _DayCell extends StatelessWidget {
     return Semantics(
       button: true,
       selected: isToday,
-      label: ['${date.day}', ?label, ?(label == feast ? null : feast)].join(', '),
+      label: [
+        '${date.day}',
+        ?label,
+        ?(label == feast ? null : feast),
+      ].join(', '),
       child: Material(
         color: background,
         clipBehavior: Clip.antiAlias,
@@ -693,7 +698,7 @@ class ReadingsCard extends StatelessWidget {
             ),
           ),
           if (isLoading)
-            ...List.generate(3, (index) => const _ReadingSkeletonRow())
+            ...List.generate(4, (index) => const _ReadingSkeletonRow())
           else if (readings.isEmpty)
             Padding(
               padding: const EdgeInsets.only(bottom: 14),
@@ -722,7 +727,9 @@ class ReadingsCard extends StatelessWidget {
 
 String readingsAsText(List<Reading> readings, AppCopy copy) {
   return readings
-      .map((reading) => '${copy.readingLabel(reading.kind)}: ${reading.reference}')
+      .map(
+        (reading) => '${copy.readingLabel(reading.kind)}: ${reading.reference}',
+      )
       .join('\n');
 }
 
@@ -835,11 +842,13 @@ class CollectCard extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             SizedBox(height: 34, child: Eyebrow(copy.collect)),
-            const SkeletonBox(width: 210, height: 14, radius: 7),
-            const SizedBox(height: 9),
-            const SkeletonBox(width: 180, height: 14, radius: 7),
-            const SizedBox(height: 9),
-            const SkeletonBox(width: 125, height: 14, radius: 7),
+            const SkeletonBox(width: 250, height: 15, radius: 7),
+            const SizedBox(height: 10),
+            const SkeletonBox(width: 220, height: 15, radius: 7),
+            const SizedBox(height: 10),
+            const SkeletonBox(width: 235, height: 15, radius: 7),
+            const SizedBox(height: 10),
+            const SkeletonBox(width: 140, height: 15, radius: 7),
           ],
         ),
       );
@@ -924,7 +933,6 @@ class CollectCard extends StatelessWidget {
     );
   }
 }
-
 
 /// The note the API publishes about the day, when there is one.
 class DayDescription extends StatelessWidget {

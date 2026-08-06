@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:lecionario_anglicano/data/models/lectionary_models.dart';
@@ -11,6 +12,7 @@ class FakeLectionaryDataSource implements LectionaryDataSource {
     List<BibleVersion>? bibleVersions,
     LectionaryDay Function(DateTime date)? dayBuilder,
     List<CalendarDay> Function(DateTime month)? monthBuilder,
+    this.dayDelay,
   }) : books = books ?? [testBook(code: 'loc_2015', name: 'LOC 2015')],
        monthBuilder = monthBuilder ?? testMonth,
        bibleVersions =
@@ -31,6 +33,10 @@ class FakeLectionaryDataSource implements LectionaryDataSource {
   List<BibleVersion> bibleVersions;
   LectionaryDay Function(DateTime date) dayBuilder;
   List<CalendarDay> Function(DateTime month) monthBuilder;
+
+  /// Holds getDay open, so a loading state can be looked at. Set it after the
+  /// controller has initialised: a delay awaited outside a pump never returns.
+  Duration? dayDelay;
   final List<DateTime> requestedDates = [];
   final List<DateTime> requestedMonths = [];
   final List<String?> requestedReadingTypes = [];
@@ -48,10 +54,32 @@ class FakeLectionaryDataSource implements LectionaryDataSource {
   bool failDay = false;
   bool disposed = false;
 
+  /// Fails as a lost connection rather than a bad response.
+  bool failAsOffline = false;
+
+  Object get _failure => failAsOffline
+      ? http.ClientException('Failed host lookup')
+      : StateError('unavailable');
+
+  /// Fails everything, the way a device with no connection does.
+  void goOffline() {
+    failAsOffline = true;
+    failPrayerBooks = true;
+    failCalendarMonth = true;
+    failDay = true;
+  }
+
+  void goOnline() {
+    failAsOffline = false;
+    failPrayerBooks = false;
+    failCalendarMonth = false;
+    failDay = false;
+  }
+
   @override
   Future<List<PrayerBook>> getPrayerBooks() async {
     getPrayerBooksCalls++;
-    if (failPrayerBooks) throw StateError('books unavailable');
+    if (failPrayerBooks) throw _failure;
     return books;
   }
 
@@ -88,7 +116,7 @@ class FakeLectionaryDataSource implements LectionaryDataSource {
     requestedMonths.add(month);
     requestedReadingTypes.add(readingType);
     requestedBibleVersions.add(bibleVersion);
-    if (failCalendarMonth) throw StateError('month unavailable');
+    if (failCalendarMonth) throw _failure;
     return monthBuilder(month);
   }
 
@@ -103,7 +131,8 @@ class FakeLectionaryDataSource implements LectionaryDataSource {
     requestedDates.add(date);
     requestedReadingTypes.add(readingType);
     requestedBibleVersions.add(bibleVersion);
-    if (failDay) throw StateError('day unavailable');
+    if (failDay) throw _failure;
+    if (dayDelay != null) await Future<void>.delayed(dayDelay!);
     return dayBuilder(date);
   }
 

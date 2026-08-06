@@ -66,6 +66,11 @@ void main() {
     expect(portuguese.selected, 'SELECIONADO');
     expect(portuguese.backToToday, 'Voltar para hoje');
     expect(portuguese.close, 'Fechar');
+    expect(portuguese.offlineTitle, 'Sem conexão');
+    expect(portuguese.offlineBody, contains('conexão'));
+    expect(portuguese.serverErrorTitle, 'O lecionário não respondeu');
+    expect(portuguese.serverErrorBody, contains('Tente de novo'));
+    expect(portuguese.retry, 'Tentar de novo');
     expect(portuguese.yearLabel, 'Ano');
     expect(portuguese.readingTrack, 'Sequência das leituras');
     expect(portuguese.bibleVersion, 'Versão da Bíblia');
@@ -104,6 +109,11 @@ void main() {
     expect(english.selected, 'SELECTED');
     expect(english.backToToday, 'Back to today');
     expect(english.close, 'Close');
+    expect(english.offlineTitle, 'No connection');
+    expect(english.offlineBody, contains('connection'));
+    expect(english.serverErrorTitle, 'The lectionary did not answer');
+    expect(english.serverErrorBody, contains('Try again'));
+    expect(english.retry, 'Try again');
     expect(english.yearLabel, 'Year');
     expect(english.readingTrack, 'Reading track');
     expect(english.bibleVersion, 'Bible version');
@@ -141,6 +151,11 @@ void main() {
     expect(spanish.selected, 'SELECCIONADO');
     expect(spanish.backToToday, 'Volver a hoy');
     expect(spanish.close, 'Cerrar');
+    expect(spanish.offlineTitle, 'Sin conexión');
+    expect(spanish.offlineBody, contains('conexión'));
+    expect(spanish.serverErrorTitle, 'El leccionario no respondió');
+    expect(spanish.serverErrorBody, contains('Inténtalo'));
+    expect(spanish.retry, 'Intentar de nuevo');
     expect(spanish.yearLabel, 'Año');
     expect(spanish.readingTrack, 'Secuencia de lecturas');
     expect(spanish.bibleVersion, 'Versión de la Biblia');
