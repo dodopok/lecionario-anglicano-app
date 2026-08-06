@@ -30,7 +30,8 @@ class _HomeScreenState extends State<HomeScreen> {
   /// are read in a sheet instead of taking over the screen.
   late DateTime activeDate;
 
-  /// The day highlighted in the calendar, and the month it shows.
+  /// The day the calendar is browsing around; only its month is shown, since
+  /// the grid highlights today and nothing else.
   late DateTime calendarDate;
 
   @override
@@ -216,7 +217,7 @@ class _NarrowLayout extends StatelessWidget {
   Widget build(BuildContext context) {
     final today = DateTime.now();
     return Padding(
-      padding: const EdgeInsets.fromLTRB(12, 10, 12, 12),
+      padding: const EdgeInsets.fromLTRB(12, 8, 12, 10),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -226,7 +227,7 @@ class _NarrowLayout extends StatelessWidget {
             onChooseBook: onChooseBook,
             onOpenSettings: onOpenSettings,
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 10),
           DailyHero(
             day: controller.selectedDay,
             activeDate: today,
@@ -234,17 +235,18 @@ class _NarrowLayout extends StatelessWidget {
             isLoading: controller.isLoadingDay,
             onTap: () => onOpenDay(today),
             actionLabel: copy.openTodayReadings,
+            compact: true,
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 10),
           Expanded(
             child: MonthCalendar(
               month: month,
-              selectedDate: calendarDate,
               copy: copy,
               monthDays: monthDays,
               onSelect: onOpenDay,
               onPrevious: onPreviousMonth,
               onNext: onNextMonth,
+              firstWeekday: controller.calendarFirstWeekday,
               isLoading: controller.isLoadingMonth,
               fillHeight: true,
             ),
@@ -319,12 +321,12 @@ class _WideLayout extends StatelessWidget {
                     flex: 7,
                     child: MonthCalendar(
                       month: month,
-                      selectedDate: calendarDate,
                       copy: copy,
                       monthDays: monthDays,
                       onSelect: onSelectDate,
                       onPrevious: onPreviousMonth,
                       onNext: onNextMonth,
+                      firstWeekday: controller.calendarFirstWeekday,
                       isLoading: controller.isLoadingMonth,
                     ),
                   ),
@@ -389,7 +391,7 @@ class _HomeHeader extends StatelessWidget {
                 copy.brand,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: AppTypography.display(size: 25, height: 1),
+                style: AppTypography.display(size: 27, height: 1),
               ),
               _BookSelector(
                 book: book,
@@ -444,7 +446,7 @@ class _BookSelector extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               if (book != null) ...[
-                BookCover(book: book!, width: 15, height: 19),
+                BookCover(book: book!, width: 16, height: 21),
                 const SizedBox(width: 7),
               ],
               Flexible(
@@ -453,7 +455,7 @@ class _BookSelector extends StatelessWidget {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: AppTypography.ui(
-                    size: 12.5,
+                    size: 13.5,
                     weight: FontWeight.w600,
                     color: AppColors.muted,
                   ),

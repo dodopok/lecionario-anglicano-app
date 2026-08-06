@@ -33,22 +33,44 @@ class ReadingSheet extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Padding(
-              padding: const EdgeInsets.fromLTRB(20, 4, 20, 14),
-              child: Column(
+              padding: const EdgeInsets.fromLTRB(20, 2, 12, 14),
+              child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    copy.readingLabel(reading.kind),
-                    style: AppTypography.display(size: 27, height: 1.05),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    reading.reference,
-                    style: AppTypography.ui(
-                      size: 15,
-                      weight: FontWeight.w700,
-                      color: AppColors.copperDark,
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          copy.readingLabel(reading.kind),
+                          style: AppTypography.display(size: 27, height: 1.05),
+                        ),
+                        const SizedBox(height: 5),
+                        Wrap(
+                          spacing: 8,
+                          runSpacing: 5,
+                          crossAxisAlignment: WrapCrossAlignment.center,
+                          children: [
+                            Text(
+                              reading.reference,
+                              style: AppTypography.ui(
+                                size: 15,
+                                weight: FontWeight.w700,
+                                color: AppColors.copperDark,
+                              ),
+                            ),
+                            if (translation != null && translation.isNotEmpty)
+                              _TranslationTag(translation),
+                          ],
+                        ),
+                      ],
                     ),
+                  ),
+                  const SizedBox(width: 8),
+                  CopyButton(
+                    key: const ValueKey('copy-reading'),
+                    copy: copy,
+                    text: readingAsText(reading, copy),
                   ),
                 ],
               ),
@@ -74,16 +96,6 @@ class ReadingSheet extends StatelessWidget {
                         const SizedBox(height: 16),
                       ...verses.map((verse) => _VerseBlock(verse: verse)),
                     ],
-                    if (translation != null && translation.isNotEmpty) ...[
-                      const SizedBox(height: 14),
-                      Text(
-                        translation,
-                        style: AppTypography.ui(
-                          size: 12,
-                          color: AppColors.muted,
-                        ),
-                      ),
-                    ],
                   ],
                 ),
               ),
@@ -97,11 +109,6 @@ class ReadingSheet extends StatelessWidget {
               ),
               child: Row(
                 children: [
-                  CopyTextButton(
-                    key: const ValueKey('copy-reading'),
-                    copy: copy,
-                    text: readingAsText(reading, copy),
-                  ),
                   const Spacer(),
                   TextButton(
                     onPressed: () => Navigator.of(context).pop(),
@@ -139,13 +146,35 @@ String readingAsText(Reading reading, AppCopy copy) {
       verse.number == null ? verse.text : '${verse.number} ${verse.text}',
     );
   }
-  final translation = reading.translation?.trim();
-  if (translation != null && translation.isNotEmpty) {
-    buffer
-      ..writeln()
-      ..writeln(translation);
-  }
   return buffer.toString().trimRight();
+}
+
+/// The Bible version the API served this reading in.
+class _TranslationTag extends StatelessWidget {
+  const _TranslationTag(this.translation);
+
+  final String translation;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      key: const ValueKey('reading-translation'),
+      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+      decoration: BoxDecoration(
+        color: AppColors.copperWash.withValues(alpha: .7),
+        borderRadius: BorderRadius.circular(6),
+      ),
+      child: Text(
+        translation,
+        style: AppTypography.ui(
+          size: 10,
+          weight: FontWeight.w700,
+          color: AppColors.copperDark,
+          letterSpacing: .8,
+        ),
+      ),
+    );
+  }
 }
 
 class _VerseBlock extends StatelessWidget {

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/date_symbol_data_local.dart';
 
@@ -94,6 +95,37 @@ void main() {
       expect(find.text('Advento'), findsOneWidget);
     });
 
+    testWidgets('lets a Sunday keep its name and demotes the feast', (
+      tester,
+    ) async {
+      final sunday = today.subtract(
+        Duration(days: today.weekday % 7),
+      );
+      await pumpHero(
+        tester,
+        date: sunday,
+        value: LectionaryDay(
+          date: sunday,
+          dayOfWeek: null,
+          season: 'Tempo Comum',
+          color: 'branco',
+          liturgicalYear: 'C',
+          sundayName: '8º Domingo depois de Pentecostes',
+          celebration: const Celebration(name: 'Transfiguração'),
+        ),
+      );
+
+      expect(find.text('8º Domingo depois de Pentecostes'), findsOneWidget);
+      expect(find.text('Transfiguração · Ano C · Branco'), findsOneWidget);
+    });
+
+    testWidgets('leaves the feast out of the meta line when it is the title', (
+      tester,
+    ) async {
+      await pumpHero(tester, value: day(celebration: 'Osvaldo'));
+      expect(find.text('Ano C · Verde'), findsOneWidget);
+    });
+
     testWidgets('omits metadata the API did not send', (tester) async {
       await pumpHero(
         tester,
@@ -176,12 +208,12 @@ void main() {
 
   group('MonthCalendar', () {
     final month = DateTime(2026, 8);
-    final selected = DateTime(2026, 8, 5);
 
     List<CalendarDay> monthDays() => [
       CalendarDay(
         date: DateTime(2026, 8, 2),
         color: 'verde',
+        celebrationName: 'Transfiguração',
         sundayName: '8º Domingo depois de Pentecostes',
         weekName: 'Semana da Proper 13',
       ),
@@ -204,6 +236,7 @@ void main() {
       ValueChanged<DateTime>? onSelect,
       VoidCallback? onPrevious,
       VoidCallback? onNext,
+      int firstWeekday = DateTime.sunday,
     }) async {
       await tester.binding.setSurfaceSize(size);
       addTearDown(() => tester.binding.setSurfaceSize(null));
@@ -212,12 +245,12 @@ void main() {
           home: Scaffold(
             body: MonthCalendar(
               month: month,
-              selectedDate: selected,
               copy: copy,
               monthDays: monthDays(),
               onSelect: onSelect ?? (_) {},
               onPrevious: onPrevious ?? () {},
               onNext: onNext ?? () {},
+              firstWeekday: firstWeekday,
               fillHeight: true,
             ),
           ),
@@ -225,6 +258,12 @@ void main() {
       );
       await tester.pumpAndSettle();
     }
+
+    /// Left edge of each cell, so the column order can be read off the layout.
+    List<double> columnLefts(WidgetTester tester, List<int> days) => [
+      for (final day in days)
+        tester.getRect(find.byKey(ValueKey('month-day-2026-8-$day'))).left,
+    ];
 
     testWidgets('names the Sundays and leaves the weekdays to their number', (
       tester,
@@ -235,6 +274,15 @@ void main() {
       expect(find.text('8º Domingo depois de Pentecostes'), findsOneWidget);
       expect(find.text('Semana da Proper 13'), findsNothing);
       expect(find.text('Osvaldo, Rei e Mártir'), findsNothing);
+      expect(find.text('Transfiguração'), findsNothing);
+    });
+
+    testWidgets('marks a Sunday that also carries a feast, without losing '
+        'its name', (tester) async {
+      await pumpCalendar(tester);
+
+      expect(find.text('8º Domingo depois de Pentecostes'), findsOneWidget);
+      expect(find.byKey(const ValueKey('celebration-2026-8-2')), findsOneWidget);
     });
 
     testWidgets('marks a weekday feast with a dot instead of a name', (
@@ -258,22 +306,45 @@ void main() {
       expect(find.byKey(const ValueKey('month-day-2026-9-1')), findsNothing);
     });
 
-    testWidgets('paints the selected day so its number stays legible', (
-      tester,
-    ) async {
-      await pumpCalendar(tester);
-
-      Material cellSurface(String key) => tester.widget<Material>(
-        find
-            .descendant(
-              of: find.byKey(ValueKey(key)),
-              matching: find.byType(Material),
-            )
-            .first,
+    testWidgets('paints today, and only today', (tester) async {
+      final now = DateTime.now();
+      await tester.binding.setSurfaceSize(const Size(390, 700));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+      await tester.pumpWidget(
+        testMaterialApp(
+          home: Scaffold(
+            body: MonthCalendar(
+              month: DateTime(now.year, now.month),
+              copy: copy,
+              monthDays: const [],
+              onSelect: (_) {},
+              onPrevious: () {},
+              onNext: () {},
+              fillHeight: true,
+            ),
+          ),
+        ),
       );
+      await tester.pumpAndSettle();
 
-      expect(cellSurface('month-day-2026-8-5').color, AppColors.pine);
-      expect(cellSurface('month-day-2026-8-12').color, isNot(AppColors.pine));
+      Color? cellColor(DateTime date) => tester
+          .widget<Material>(
+            find
+                .descendant(
+                  of: find.byKey(
+                    ValueKey('month-day-${date.year}-${date.month}-${date.day}'),
+                  ),
+                  matching: find.byType(Material),
+                )
+                .first,
+          )
+          .color;
+
+      expect(cellColor(now), AppColors.pine);
+      final otherDay = now.day == 1
+          ? DateTime(now.year, now.month, 2)
+          : DateTime(now.year, now.month, 1);
+      expect(cellColor(otherDay), isNot(AppColors.pine));
     });
 
     testWidgets('reports the tapped day and the month arrows', (tester) async {
@@ -293,6 +364,102 @@ void main() {
       await tester.tap(find.byKey(const ValueKey('calendar-previous-month')));
       await tester.tap(find.byKey(const ValueKey('calendar-next-month')));
       expect([previous, next], [1, 1]);
+    });
+
+    testWidgets('centres every weekday name over its column', (tester) async {
+      await pumpCalendar(tester);
+
+      for (var weekday = 1; weekday <= 7; weekday++) {
+        final label = copy.weekdayShort(DateTime(2024, 1, 7 + (weekday % 7)));
+        expect(
+          tester.widget<Text>(find.text(label)).textAlign,
+          TextAlign.center,
+          reason: label,
+        );
+      }
+    });
+
+    testWidgets('starts the week on Sunday by default', (tester) async {
+      await pumpCalendar(tester);
+
+      // Sunday the 2nd opens its row, and the 8th, a Saturday, closes it.
+      final lefts = columnLefts(tester, [2, 3, 4, 5, 6, 7, 8]);
+      for (var i = 1; i < lefts.length; i++) {
+        expect(lefts[i], greaterThan(lefts[i - 1]));
+      }
+      expect(lefts.first, lessThan(20));
+    });
+
+    testWidgets('puts Sunday in the middle column when asked', (tester) async {
+      await pumpCalendar(tester, firstWeekday: DateTime.thursday);
+
+      // Thursday, Friday, Saturday, SUNDAY, Monday, Tuesday, Wednesday.
+      final lefts = columnLefts(tester, [6, 7, 1, 2, 3, 4, 5]);
+      for (var i = 1; i < lefts.length; i++) {
+        expect(
+          lefts[i],
+          greaterThan(lefts[i - 1]),
+          reason: 'column $i should sit right of column ${i - 1}',
+        );
+      }
+
+      // The Sunday column keeps the extra width that carries its name.
+      final sunday = tester.getSize(
+        find.byKey(const ValueKey('month-day-2026-8-2')),
+      );
+      final monday = tester.getSize(
+        find.byKey(const ValueKey('month-day-2026-8-3')),
+      );
+      expect(sunday.width, greaterThan(monday.width));
+      expect(find.text('8º Domingo depois de Pentecostes'), findsOneWidget);
+    });
+
+    testWidgets('still renders every day when Sunday moves', (tester) async {
+      await pumpCalendar(tester, firstWeekday: DateTime.thursday);
+
+      for (final dayNumber in [1, 15, 31]) {
+        expect(
+          find.byKey(ValueKey('month-day-2026-8-$dayNumber')),
+          findsOneWidget,
+        );
+      }
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('fits the Sunday name to the room the row has', (tester) async {
+      await tester.binding.setSurfaceSize(const Size(390, 900));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+
+      Future<int?> linesAt(double height) async {
+        await tester.pumpWidget(
+          testMaterialApp(
+            home: Scaffold(
+              body: SizedBox(
+                height: height,
+                child: MonthCalendar(
+                  month: month,
+                  copy: copy,
+                  monthDays: monthDays(),
+                  onSelect: (_) {},
+                  onPrevious: () {},
+                  onNext: () {},
+                  fillHeight: true,
+                ),
+              ),
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+        final name = find.text('8º Domingo depois de Pentecostes');
+        if (name.evaluate().isEmpty) return null;
+        return tester.widget<Text>(name).maxLines;
+      }
+
+      expect(await linesAt(560), 3);
+      expect(await linesAt(480), 2);
+      // Too short to say anything: the date stands on its own.
+      expect(await linesAt(400), isNull);
+      expect(tester.takeException(), isNull);
     });
 
     testWidgets('degrades to bare dates on a short screen without overflowing', (
@@ -339,6 +506,111 @@ void main() {
 
       await tester.tap(find.text('Êxodo 34:29–35'));
       expect(opened.single.reference, 'Êxodo 34:29–35');
+    });
+
+    testWidgets('shows every collect the API sent, with its title', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        testMaterialApp(
+          home: Scaffold(
+            body: CollectCard(
+              day: LectionaryDay(
+                date: today,
+                dayOfWeek: null,
+                season: null,
+                color: null,
+                collects: const [
+                  Collect(text: 'Coleta do domingo.'),
+                  Collect(title: 'Da comemoração', text: 'Coleta do mártir.'),
+                  Collect(text: '   '),
+                ],
+              ),
+              copy: copy,
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('COLETAS DO DIA'), findsOneWidget);
+      expect(find.text('Coleta do domingo.'), findsOneWidget);
+      expect(find.text('Da comemoração'), findsOneWidget);
+      expect(find.text('Coleta do mártir.'), findsOneWidget);
+      expect(find.byKey(const ValueKey('copy-collect-0')), findsOneWidget);
+      expect(find.byKey(const ValueKey('copy-collect-1')), findsOneWidget);
+      expect(find.byKey(const ValueKey('copy-collect-2')), findsNothing);
+    });
+
+    testWidgets('copies one collect at a time', (tester) async {
+      final copied = <String>[];
+      tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+        SystemChannels.platform,
+        (call) async {
+          if (call.method == 'Clipboard.setData') {
+            copied.add((call.arguments as Map)['text'] as String);
+          }
+          return null;
+        },
+      );
+      addTearDown(
+        () => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+          SystemChannels.platform,
+          null,
+        ),
+      );
+
+      await tester.pumpWidget(
+        testMaterialApp(
+          home: Scaffold(
+            body: CollectCard(
+              day: LectionaryDay(
+                date: today,
+                dayOfWeek: null,
+                season: null,
+                color: null,
+                collects: const [
+                  Collect(text: 'Coleta do domingo.'),
+                  Collect(title: 'Da comemoração', text: 'Coleta do mártir.'),
+                ],
+              ),
+              copy: copy,
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byKey(const ValueKey('copy-collect-1')));
+      await tester.pumpAndSettle();
+      expect(copied, ['Coleta do mártir.']);
+
+      await tester.tap(find.byKey(const ValueKey('copy-collect-0')));
+      await tester.pumpAndSettle();
+      expect(copied, ['Coleta do mártir.', 'Coleta do domingo.']);
+    });
+
+    testWidgets('stays singular for a single collect', (tester) async {
+      await tester.pumpWidget(
+        testMaterialApp(
+          home: Scaffold(
+            body: CollectCard(
+              day: LectionaryDay(
+                date: today,
+                dayOfWeek: null,
+                season: null,
+                color: null,
+                collects: const [Collect(text: 'Coleta única.')],
+              ),
+              copy: copy,
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('COLETA DO DIA'), findsOneWidget);
+      expect(find.text('COLETAS DO DIA'), findsNothing);
     });
 
     testWidgets('says nothing when the API sent no collect', (tester) async {

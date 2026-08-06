@@ -19,6 +19,7 @@ class DailyHero extends StatelessWidget {
     this.onToday,
     this.onTap,
     this.actionLabel,
+    this.compact = false,
     super.key,
   });
 
@@ -34,6 +35,9 @@ class DailyHero extends StatelessWidget {
   final VoidCallback? onTap;
   final String? actionLabel;
 
+  /// Tightens the card so the month below it keeps room to name its Sundays.
+  final bool compact;
+
   @override
   Widget build(BuildContext context) {
     final accent = liturgicalColor(day?.color);
@@ -42,8 +46,8 @@ class DailyHero extends StatelessWidget {
         ? Color.lerp(accent, AppColors.pineDeep, .62)!
         : AppColors.pineDeep;
     final isToday = _sameDay(activeDate, DateTime.now());
-    final title = _dayTitle(day);
-    final meta = _dayMeta(day, copy);
+    final title = _dayTitle(day, activeDate);
+    final meta = _dayMeta(day, copy, title);
     final showAction = onTap != null && actionLabel != null;
 
     return Material(
@@ -57,12 +61,14 @@ class DailyHero extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Padding(
-              padding: const EdgeInsets.fromLTRB(18, 16, 18, 14),
+              padding: compact
+                  ? const EdgeInsets.fromLTRB(18, 12, 18, 10)
+                  : const EdgeInsets.fromLTRB(18, 16, 18, 14),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   SizedBox(
-                    height: 24,
+                    height: compact ? 21 : 24,
                     child: Row(
                       children: [
                         Flexible(
@@ -72,7 +78,7 @@ class DailyHero extends StatelessWidget {
                             overflow: TextOverflow.ellipsis,
                             style: AppTypography.eyebrow(
                               color: AppColors.copperWash,
-                              size: 10,
+                              size: 11,
                             ),
                           ),
                         ),
@@ -88,14 +94,14 @@ class DailyHero extends StatelessWidget {
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: AppTypography.ui(
-                      size: 13,
+                      size: 14.5,
                       weight: FontWeight.w500,
                       color: AppColors.white.withValues(alpha: .72),
                     ),
                   ),
-                  const SizedBox(height: 10),
+                  SizedBox(height: compact ? 7 : 10),
                   SizedBox(
-                    height: 56,
+                    height: compact ? 48 : 58,
                     child: isLoading
                         ? const _HeroTitleSkeleton()
                         : Align(
@@ -105,7 +111,7 @@ class DailyHero extends StatelessWidget {
                               maxLines: 2,
                               overflow: TextOverflow.ellipsis,
                               style: AppTypography.display(
-                                size: 27,
+                                size: compact ? 25 : 28,
                                 weight: FontWeight.w600,
                                 color: AppColors.white,
                                 height: 1.04,
@@ -114,7 +120,7 @@ class DailyHero extends StatelessWidget {
                           ),
                   ),
                   SizedBox(
-                    height: 18,
+                    height: 19,
                     child: isLoading
                         ? Align(
                             alignment: Alignment.centerLeft,
@@ -130,7 +136,7 @@ class DailyHero extends StatelessWidget {
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: AppTypography.ui(
-                              size: 12,
+                              size: 13,
                               weight: FontWeight.w600,
                               color: AppColors.copperWash.withValues(alpha: .9),
                               letterSpacing: .2,
@@ -142,7 +148,9 @@ class DailyHero extends StatelessWidget {
             ),
             if (showAction)
               Container(
-                padding: const EdgeInsets.fromLTRB(18, 11, 14, 12),
+                padding: compact
+                    ? const EdgeInsets.fromLTRB(18, 8, 14, 9)
+                    : const EdgeInsets.fromLTRB(18, 11, 14, 12),
                 decoration: BoxDecoration(
                   color: AppColors.white.withValues(alpha: .07),
                   border: Border(
@@ -159,7 +167,7 @@ class DailyHero extends StatelessWidget {
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: AppTypography.ui(
-                          size: 13,
+                          size: 14,
                           weight: FontWeight.w700,
                           color: AppColors.copperWash,
                         ),
@@ -188,20 +196,33 @@ String _eyebrow(bool isToday, LectionaryDay? day, AppCopy copy) {
   return '$label · $season';
 }
 
-String? _dayTitle(LectionaryDay? day) {
-  for (final value in [
-    day?.celebration?.name,
-    day?.sundayName,
-    day?.weekName,
-    day?.season,
-  ]) {
+/// A Sunday is named by its place in the year first: the feast it may also
+/// carry is secondary, and moves to the line below.
+String? _dayTitle(LectionaryDay? day, DateTime date) {
+  final candidates = date.weekday == DateTime.sunday
+      ? [
+          day?.sundayName,
+          day?.weekName,
+          day?.celebration?.name,
+          day?.season,
+        ]
+      : [
+          day?.celebration?.name,
+          day?.sundayName,
+          day?.weekName,
+          day?.season,
+        ];
+  for (final value in candidates) {
     if (value != null && value.trim().isNotEmpty) return value.trim();
   }
   return null;
 }
 
-String _dayMeta(LectionaryDay? day, AppCopy copy) {
+String _dayMeta(LectionaryDay? day, AppCopy copy, String? title) {
+  final celebration = day?.celebration?.name.trim();
   final parts = <String>[
+    if (celebration != null && celebration.isNotEmpty && celebration != title)
+      celebration,
     if (day?.liturgicalYear case final year? when year.trim().isNotEmpty)
       '${copy.yearLabel} $year',
     if (day?.color case final color? when color.trim().isNotEmpty)
@@ -269,24 +290,28 @@ class _BackToToday extends StatelessWidget {
 class MonthCalendar extends StatelessWidget {
   const MonthCalendar({
     required this.month,
-    required this.selectedDate,
     required this.copy,
     required this.monthDays,
     required this.onSelect,
     required this.onPrevious,
     required this.onNext,
+    this.firstWeekday = DateTime.sunday,
     this.isLoading = false,
     this.fillHeight = false,
     super.key,
   });
 
   final DateTime month;
-  final DateTime selectedDate;
   final AppCopy copy;
   final List<CalendarDay> monthDays;
   final ValueChanged<DateTime> onSelect;
   final VoidCallback onPrevious;
   final VoidCallback onNext;
+
+  /// The weekday the week starts on, as a [DateTime] weekday. Starting on
+  /// Thursday puts Sunday in the middle column.
+  final int firstWeekday;
+
   final bool isLoading;
 
   /// When true the grid stretches to the height it is given instead of
@@ -300,7 +325,8 @@ class MonthCalendar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final firstOfMonth = DateTime(month.year, month.month);
-    final leadingBlanks = firstOfMonth.weekday % 7;
+    final sundayColumn = _column(DateTime.sunday, firstWeekday);
+    final leadingBlanks = _column(firstOfMonth.weekday, firstWeekday);
     final totalDays = DateUtils.getDaysInMonth(month.year, month.month);
     final weeks = ((leadingBlanks + totalDays) / 7).ceil();
     final byDate = {for (final day in monthDays) _key(day.date): day};
@@ -316,7 +342,7 @@ class MonthCalendar extends StatelessWidget {
               ? null
               : DateTime(month.year, month.month, dayNumber);
           return Expanded(
-            flex: column == 0 ? _sundayFlex : _weekdayFlex,
+            flex: column == sundayColumn ? _sundayFlex : _weekdayFlex,
             child: Padding(
               padding: EdgeInsets.only(right: column == 6 ? 0 : _cellGap),
               child: date == null
@@ -325,8 +351,7 @@ class MonthCalendar extends StatelessWidget {
                       key: ValueKey('month-day-${_key(date)}'),
                       date: date,
                       data: byDate[_key(date)],
-                      isSunday: column == 0,
-                      isSelected: _sameDay(date, selectedDate),
+                      isSunday: column == sundayColumn,
                       isToday: _sameDay(date, today),
                       isLoading: isLoading,
                       onTap: () => onSelect(date),
@@ -366,7 +391,7 @@ class MonthCalendar extends StatelessWidget {
                     copy.monthYear(month),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: AppTypography.display(size: 24, height: 1),
+                    style: AppTypography.display(size: 26, height: 1),
                   ),
                 ),
               ),
@@ -383,20 +408,19 @@ class MonthCalendar extends StatelessWidget {
           const SizedBox(height: 6),
           Row(
             children: List.generate(7, (column) {
-              // Any week works here: only the weekday name is read from it.
-              final reference = DateTime(2024, 1, 7 + column);
+              final weekday = ((firstWeekday - 1 + column) % 7) + 1;
               return Expanded(
-                flex: column == 0 ? _sundayFlex : _weekdayFlex,
+                flex: column == sundayColumn ? _sundayFlex : _weekdayFlex,
                 child: Padding(
                   padding: EdgeInsets.only(right: column == 6 ? 0 : _cellGap),
                   child: Text(
-                    copy.weekdayShort(reference),
-                    textAlign: column == 0 ? TextAlign.left : TextAlign.center,
+                    copy.weekdayShort(_weekdayReference(weekday)),
+                    textAlign: TextAlign.center,
                     maxLines: 1,
                     style: AppTypography.ui(
-                      size: 9.5,
+                      size: 11,
                       weight: FontWeight.w700,
-                      color: column == 0
+                      color: column == sundayColumn
                           ? AppColors.copperDark
                           : AppColors.muted,
                       letterSpacing: .6,
@@ -419,7 +443,6 @@ class _DayCell extends StatelessWidget {
     required this.date,
     required this.data,
     required this.isSunday,
-    required this.isSelected,
     required this.isToday,
     required this.isLoading,
     required this.onTap,
@@ -429,7 +452,6 @@ class _DayCell extends StatelessWidget {
   final DateTime date;
   final CalendarDay? data;
   final bool isSunday;
-  final bool isSelected;
   final bool isToday;
   final bool isLoading;
   final VoidCallback onTap;
@@ -438,22 +460,19 @@ class _DayCell extends StatelessWidget {
   Widget build(BuildContext context) {
     final color = liturgicalColor(data?.color);
     final label = _cellLabel(data, isSunday);
-    final background = isSelected
+    final feast = data?.celebrationName?.trim();
+    final background = isToday
         ? AppColors.pine
-        : isToday
-        ? AppColors.copperWash
         : AppColors.paper.withValues(alpha: .5);
-    final border = isSelected
+    final border = isToday
         ? AppColors.pine
-        : isToday
-        ? AppColors.copper
         : AppColors.line.withValues(alpha: .6);
-    final numberColor = isSelected ? AppColors.white : AppColors.ink;
+    final numberColor = isToday ? AppColors.white : AppColors.ink;
 
     return Semantics(
       button: true,
-      selected: isSelected,
-      label: ['${date.day}', ?label].join(', '),
+      selected: isToday,
+      label: ['${date.day}', ?label, ?(label == feast ? null : feast)].join(', '),
       child: Material(
         color: background,
         clipBehavior: Clip.antiAlias,
@@ -466,12 +485,20 @@ class _DayCell extends StatelessWidget {
           child: ClipRect(
             child: LayoutBuilder(
               builder: (context, constraints) {
-                final number = Text(
-                  '${date.day}',
-                  style: AppTypography.ui(
-                    size: 12.5,
-                    weight: FontWeight.w700,
-                    color: numberColor,
+                // Never wraps: a two-line date would push the cell out of the
+                // row under a wide font or a large text setting.
+                final number = FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    '${date.day}',
+                    maxLines: 1,
+                    softWrap: false,
+                    style: AppTypography.ui(
+                      size: 14,
+                      weight: FontWeight.w700,
+                      color: numberColor,
+                    ),
                   ),
                 );
 
@@ -484,32 +511,68 @@ class _DayCell extends StatelessWidget {
                 }
 
                 final roomy = constraints.maxHeight >= 46;
+                // How many lines of a name the cell can actually hold, once
+                // the date, the colour bar and the padding have taken theirs.
+                final labelLines =
+                    ((constraints.maxHeight - _cellChrome) / _labelLineHeight)
+                        .floor()
+                        .clamp(0, 3);
+                // One clipped line reads worse than the date on its own, so a
+                // name waits until two fit.
                 final showLabel =
                     label != null &&
                     !isLoading &&
-                    roomy &&
+                    labelLines >= 2 &&
                     constraints.maxWidth >= 54;
+                // A named Sunday keeps its name and the feast it also carries
+                // gets a mark; a cell too narrow to name anything gets one too.
+                final showFeastMark =
+                    feast != null &&
+                    feast.isNotEmpty &&
+                    (!showLabel || label != feast);
+                final marker = isLoading || !showFeastMark
+                    ? null
+                    : Container(
+                        key: ValueKey('celebration-${_key(date)}'),
+                        width: 5,
+                        height: 5,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: isToday
+                              ? AppColors.copperWash
+                              : AppColors.copper,
+                        ),
+                      );
                 return Padding(
                   padding: roomy
-                      ? const EdgeInsets.fromLTRB(6, 5, 6, 6)
+                      ? const EdgeInsets.fromLTRB(6, 4, 6, 5)
                       : const EdgeInsets.fromLTRB(5, 3, 5, 4),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      number,
+                      if (showLabel && marker != null)
+                        Row(
+                          children: [
+                            Flexible(child: number),
+                            const SizedBox(width: 5),
+                            marker,
+                          ],
+                        )
+                      else
+                        number,
                       if (showLabel)
                         Expanded(
                           child: Padding(
                             padding: const EdgeInsets.only(top: 2),
                             child: Text(
                               label,
-                              maxLines: 3,
+                              maxLines: labelLines,
                               overflow: TextOverflow.ellipsis,
                               style: AppTypography.ui(
-                                size: 9,
+                                size: _labelSize,
                                 weight: FontWeight.w600,
-                                height: 1.12,
-                                color: isSelected
+                                height: _labelLineHeight / _labelSize,
+                                color: isToday
                                     ? AppColors.copperWash
                                     : AppColors.muted,
                               ),
@@ -520,30 +583,20 @@ class _DayCell extends StatelessWidget {
                         Expanded(
                           // Narrow cells cannot carry a name, so a feast is
                           // marked with a dot the tap reveals in full.
-                          child: data?.celebrationName == null
+                          child: marker == null
                               ? const SizedBox.shrink()
                               : Align(
                                   alignment: Alignment.centerLeft,
-                                  child: Container(
-                                    key: ValueKey('celebration-${_key(date)}'),
-                                    width: 5,
-                                    height: 5,
-                                    decoration: BoxDecoration(
-                                      shape: BoxShape.circle,
-                                      color: isSelected
-                                          ? AppColors.copperWash
-                                          : AppColors.copper,
-                                    ),
-                                  ),
+                                  child: marker,
                                 ),
                         ),
-                      SizedBox(height: roomy ? 4 : 2),
+                      SizedBox(height: roomy ? 3 : 2),
                       isLoading
                           ? SkeletonBox(height: roomy ? 3 : 2.5, radius: 3)
                           : Container(
                               height: roomy ? 3 : 2.5,
                               decoration: BoxDecoration(
-                                color: isSelected
+                                color: isToday
                                     ? AppColors.copperWash.withValues(alpha: .8)
                                     : color.withValues(alpha: .85),
                                 borderRadius: BorderRadius.circular(3),
@@ -562,11 +615,9 @@ class _DayCell extends StatelessWidget {
 }
 
 String? _cellLabel(CalendarDay? data, bool isSunday) {
-  final candidates = <String?>[
-    data?.celebrationName,
-    if (isSunday) data?.sundayName,
-    if (isSunday) data?.weekName,
-  ];
+  final candidates = isSunday
+      ? <String?>[data?.sundayName, data?.weekName, data?.celebrationName]
+      : <String?>[data?.celebrationName];
   for (final value in candidates) {
     if (value != null && value.trim().isNotEmpty) return value.trim();
   }
@@ -727,7 +778,7 @@ class _ReadingRow extends StatelessWidget {
                       Text(
                         label,
                         style: AppTypography.ui(
-                          size: 11,
+                          size: 12,
                           weight: FontWeight.w700,
                           color: AppColors.muted,
                           letterSpacing: .4,
@@ -739,7 +790,7 @@ class _ReadingRow extends StatelessWidget {
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                         style: AppTypography.display(
-                          size: 20,
+                          size: 21,
                           weight: FontWeight.w600,
                           height: 1.05,
                         ),
@@ -794,43 +845,86 @@ class CollectCard extends StatelessWidget {
       );
     }
 
-    final collect = day?.collects.firstOrNull;
-    if (collect == null || collect.text.trim().isEmpty) {
-      return const SizedBox.shrink();
-    }
+    final collects = (day?.collects ?? const <Collect>[])
+        .where((collect) => collect.text.trim().isNotEmpty)
+        .toList();
+    if (collects.isEmpty) return const SizedBox.shrink();
+
     return SurfaceCard(
       padding: const EdgeInsets.fromLTRB(18, 16, 18, 20),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          SizedBox(
-            height: 34,
-            child: Row(
-              children: [
-                Expanded(child: Eyebrow(copy.collect)),
-                CopyButton(
-                  key: const ValueKey('copy-collect'),
-                  copy: copy,
-                  text: collect.text,
+          for (final (index, collect) in collects.indexed) ...[
+            if (index > 0) ...[
+              const SizedBox(height: 14),
+              Divider(height: 1, color: AppColors.line.withValues(alpha: .7)),
+            ],
+            // Each collect carries its own copy action, on its heading line;
+            // the first one's heading is the card's.
+            SizedBox(
+              height: 34,
+              child: Row(
+                children: [
+                  Expanded(
+                    child: index == 0
+                        ? Eyebrow(
+                            collects.length > 1 ? copy.collects : copy.collect,
+                          )
+                        : Align(
+                            alignment: Alignment.centerLeft,
+                            child: Text(
+                              collect.title?.trim() ?? '',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: AppTypography.ui(
+                                size: 11,
+                                weight: FontWeight.w700,
+                                color: AppColors.muted,
+                                letterSpacing: .4,
+                              ),
+                            ),
+                          ),
+                  ),
+                  CopyButton(
+                    key: ValueKey('copy-collect-$index'),
+                    copy: copy,
+                    text: collect.text.trim(),
+                  ),
+                ],
+              ),
+            ),
+            if (index == 0)
+              if (collect.title case final title?
+                  when title.trim().isNotEmpty) ...[
+                Text(
+                  title.trim(),
+                  style: AppTypography.ui(
+                    size: 11,
+                    weight: FontWeight.w700,
+                    color: AppColors.muted,
+                    letterSpacing: .4,
+                  ),
                 ),
+                const SizedBox(height: 6),
               ],
+            Text(
+              collect.text,
+              style: AppTypography.display(
+                size: 20,
+                weight: FontWeight.w500,
+                color: AppColors.inkSoft,
+                height: 1.24,
+                style: FontStyle.italic,
+              ),
             ),
-          ),
-          Text(
-            collect.text,
-            style: AppTypography.display(
-              size: 20,
-              weight: FontWeight.w500,
-              color: AppColors.inkSoft,
-              height: 1.24,
-              style: FontStyle.italic,
-            ),
-          ),
+          ],
         ],
       ),
     );
   }
 }
+
 
 /// The note the API publishes about the day, when there is one.
 class DayDescription extends StatelessWidget {
@@ -860,6 +954,19 @@ class DayDescription extends StatelessWidget {
 extension _FirstOrNull<T> on Iterable<T> {
   T? get firstOrNull => isEmpty ? null : first;
 }
+
+const _labelSize = 10.0;
+const _labelLineHeight = 11.5;
+
+/// Everything in a roomy cell that is not the name: padding, the date and the
+/// liturgical colour bar.
+const _cellChrome = 32.0;
+
+/// Which column a weekday falls in, for a week starting on [firstWeekday].
+int _column(int weekday, int firstWeekday) => (weekday - firstWeekday + 7) % 7;
+
+/// Any week works to read a weekday name from: 2024-01-07 was a Sunday.
+DateTime _weekdayReference(int weekday) => DateTime(2024, 1, 7 + (weekday % 7));
 
 String _key(DateTime date) => '${date.year}-${date.month}-${date.day}';
 

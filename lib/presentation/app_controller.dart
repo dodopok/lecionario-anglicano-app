@@ -19,6 +19,7 @@ class AppController extends ChangeNotifier {
   String? selectedBibleVersionCode;
   LectionaryDay? selectedDay;
   final Map<String, List<CalendarDay>> _monthCache = {};
+  bool sundayInCenter = false;
   bool isInitializing = true;
   bool isLoadingDay = false;
   bool isLoadingMonth = false;
@@ -47,6 +48,7 @@ class AppController extends ChangeNotifier {
 
   Future<void> initialize() async {
     locale = localPreferences.language;
+    sundayInCenter = localPreferences.sundayInCenter;
     selectedPrayerBookCode = localPreferences.selectedPrayerBookCode;
 
     try {
@@ -71,6 +73,18 @@ class AppController extends ChangeNotifier {
       await _loadBookPreferences(book);
       await loadForDate(DateTime.now());
     }
+  }
+
+  /// Which weekday the calendar starts on: Sunday first, or Thursday first so
+  /// Sunday lands in the middle column.
+  int get calendarFirstWeekday =>
+      sundayInCenter ? DateTime.thursday : DateTime.sunday;
+
+  Future<void> setSundayInCenter(bool value) async {
+    if (sundayInCenter == value) return;
+    sundayInCenter = value;
+    await localPreferences.saveSundayInCenter(value);
+    notifyListeners();
   }
 
   Future<void> setLanguage(AppLanguage language) async {
