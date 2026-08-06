@@ -20,7 +20,7 @@ isso como motivo de recusa.
 
 ## Informações gerais
 
-- ID do aplicativo: `br.com.caminhoanglicano.lecionario_anglicano`
+- ID do aplicativo: `br.com.caminhoanglicano.lecionarioanglicano`
 - Versão no `pubspec.yaml`: `1.0.0+3` (`versionName 1.0.0`, `versionCode 3`)
 - Categoria sugerida: Estilo de vida (alternativa: Livros e referências)
 - Tags: lecionário, liturgia, calendário litúrgico
