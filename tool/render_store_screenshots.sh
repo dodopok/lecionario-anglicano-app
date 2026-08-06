@@ -122,12 +122,15 @@ python3 - "$captures" "$repo_root/store-assets/app-store" <<'PY'
 import pathlib, shutil, sys
 
 source, destination = (pathlib.Path(argument) for argument in sys.argv[1:3])
-folders = {'pt': 'pt-BR', 'en': 'en-US', 'es': 'es'}
+languages = {'pt': 'pt-BR', 'en': 'en-US', 'es': 'es'}
+# One folder per App Store Connect slot, named after the slot.
+devices = {'iphone65': 'iphone-6.5', 'iphone69': 'iphone-6.9',
+           'ipad13': 'ipad-13'}
 
 count = 0
 for image in sorted(source.glob('*.png')):
     device, language, screen = image.stem.split('-', 2)
-    folder = destination / folders[language] / device
+    folder = destination / languages[language] / devices[device]
     folder.mkdir(parents=True, exist_ok=True)
     shutil.copy2(image, folder / f'{screen}.png')
     count += 1
