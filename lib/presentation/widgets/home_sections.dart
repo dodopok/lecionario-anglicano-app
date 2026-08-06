@@ -407,9 +407,7 @@ class MonthCalendar extends StatelessWidget {
                   padding: EdgeInsets.only(right: column == 6 ? 0 : _cellGap),
                   child: Text(
                     copy.weekdayShort(_weekdayReference(weekday)),
-                    textAlign: column == sundayColumn
-                        ? TextAlign.left
-                        : TextAlign.center,
+                    textAlign: TextAlign.center,
                     maxLines: 1,
                     style: AppTypography.ui(
                       size: 9.5,
@@ -833,42 +831,59 @@ class CollectCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          SizedBox(
-            height: 34,
-            child: Row(
-              children: [
-                Expanded(
-                  child: Eyebrow(
-                    collects.length > 1 ? copy.collects : copy.collect,
+          for (final (index, collect) in collects.indexed) ...[
+            if (index > 0) ...[
+              const SizedBox(height: 14),
+              Divider(height: 1, color: AppColors.line.withValues(alpha: .7)),
+            ],
+            // Each collect carries its own copy action, on its heading line;
+            // the first one's heading is the card's.
+            SizedBox(
+              height: 34,
+              child: Row(
+                children: [
+                  Expanded(
+                    child: index == 0
+                        ? Eyebrow(
+                            collects.length > 1 ? copy.collects : copy.collect,
+                          )
+                        : Align(
+                            alignment: Alignment.centerLeft,
+                            child: Text(
+                              collect.title?.trim() ?? '',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: AppTypography.ui(
+                                size: 11,
+                                weight: FontWeight.w700,
+                                color: AppColors.muted,
+                                letterSpacing: .4,
+                              ),
+                            ),
+                          ),
+                  ),
+                  CopyButton(
+                    key: ValueKey('copy-collect-$index'),
+                    copy: copy,
+                    text: collect.text.trim(),
+                  ),
+                ],
+              ),
+            ),
+            if (index == 0)
+              if (collect.title case final title?
+                  when title.trim().isNotEmpty) ...[
+                Text(
+                  title.trim(),
+                  style: AppTypography.ui(
+                    size: 11,
+                    weight: FontWeight.w700,
+                    color: AppColors.muted,
+                    letterSpacing: .4,
                   ),
                 ),
-                CopyButton(
-                  key: const ValueKey('copy-collect'),
-                  copy: copy,
-                  text: collectsAsText(collects),
-                ),
+                const SizedBox(height: 6),
               ],
-            ),
-          ),
-          for (final collect in collects) ...[
-            if (collect != collects.first) ...[
-              const SizedBox(height: 16),
-              Divider(height: 1, color: AppColors.line.withValues(alpha: .7)),
-              const SizedBox(height: 14),
-            ],
-            if (collect.title case final title?
-                when title.trim().isNotEmpty) ...[
-              Text(
-                title.trim(),
-                style: AppTypography.ui(
-                  size: 11,
-                  weight: FontWeight.w700,
-                  color: AppColors.muted,
-                  letterSpacing: .4,
-                ),
-              ),
-              const SizedBox(height: 6),
-            ],
             Text(
               collect.text,
               style: AppTypography.display(
@@ -886,17 +901,6 @@ class CollectCard extends StatelessWidget {
   }
 }
 
-String collectsAsText(List<Collect> collects) {
-  return collects
-      .map(
-        (collect) => [
-          if (collect.title case final title? when title.trim().isNotEmpty)
-            title.trim(),
-          collect.text.trim(),
-        ].join('\n'),
-      )
-      .join('\n\n');
-}
 
 /// The note the API publishes about the day, when there is one.
 class DayDescription extends StatelessWidget {

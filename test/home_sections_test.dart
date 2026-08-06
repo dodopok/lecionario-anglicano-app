@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/date_symbol_data_local.dart';
 
@@ -365,6 +366,19 @@ void main() {
       expect([previous, next], [1, 1]);
     });
 
+    testWidgets('centres every weekday name over its column', (tester) async {
+      await pumpCalendar(tester);
+
+      for (var weekday = 1; weekday <= 7; weekday++) {
+        final label = copy.weekdayShort(DateTime(2024, 1, 7 + (weekday % 7)));
+        expect(
+          tester.widget<Text>(find.text(label)).textAlign,
+          TextAlign.center,
+          reason: label,
+        );
+      }
+    });
+
     testWidgets('starts the week on Sunday by default', (tester) async {
       await pumpCalendar(tester);
 
@@ -487,6 +501,57 @@ void main() {
       expect(find.text('Coleta do domingo.'), findsOneWidget);
       expect(find.text('Da comemoração'), findsOneWidget);
       expect(find.text('Coleta do mártir.'), findsOneWidget);
+      expect(find.byKey(const ValueKey('copy-collect-0')), findsOneWidget);
+      expect(find.byKey(const ValueKey('copy-collect-1')), findsOneWidget);
+      expect(find.byKey(const ValueKey('copy-collect-2')), findsNothing);
+    });
+
+    testWidgets('copies one collect at a time', (tester) async {
+      final copied = <String>[];
+      tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+        SystemChannels.platform,
+        (call) async {
+          if (call.method == 'Clipboard.setData') {
+            copied.add((call.arguments as Map)['text'] as String);
+          }
+          return null;
+        },
+      );
+      addTearDown(
+        () => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+          SystemChannels.platform,
+          null,
+        ),
+      );
+
+      await tester.pumpWidget(
+        testMaterialApp(
+          home: Scaffold(
+            body: CollectCard(
+              day: LectionaryDay(
+                date: today,
+                dayOfWeek: null,
+                season: null,
+                color: null,
+                collects: const [
+                  Collect(text: 'Coleta do domingo.'),
+                  Collect(title: 'Da comemoração', text: 'Coleta do mártir.'),
+                ],
+              ),
+              copy: copy,
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byKey(const ValueKey('copy-collect-1')));
+      await tester.pumpAndSettle();
+      expect(copied, ['Coleta do mártir.']);
+
+      await tester.tap(find.byKey(const ValueKey('copy-collect-0')));
+      await tester.pumpAndSettle();
+      expect(copied, ['Coleta do mártir.', 'Coleta do domingo.']);
     });
 
     testWidgets('stays singular for a single collect', (tester) async {
@@ -542,16 +607,6 @@ void main() {
       expect(find.text('Rei mártir.'), findsOneWidget);
       expect(find.byType(Text), findsOneWidget);
     });
-  });
-
-  test('copies every collect, keeping the titles that separate them', () {
-    expect(
-      collectsAsText(const [
-        Collect(text: 'Coleta do domingo.'),
-        Collect(title: 'Da comemoração', text: 'Coleta do mártir.'),
-      ]),
-      'Coleta do domingo.\n\nDa comemoração\nColeta do mártir.',
-    );
   });
 
   test('copies the readings as their labels and references', () {
