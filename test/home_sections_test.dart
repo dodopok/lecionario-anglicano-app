@@ -235,6 +235,7 @@ void main() {
       ValueChanged<DateTime>? onSelect,
       VoidCallback? onPrevious,
       VoidCallback? onNext,
+      int firstWeekday = DateTime.sunday,
     }) async {
       await tester.binding.setSurfaceSize(size);
       addTearDown(() => tester.binding.setSurfaceSize(null));
@@ -248,6 +249,7 @@ void main() {
               onSelect: onSelect ?? (_) {},
               onPrevious: onPrevious ?? () {},
               onNext: onNext ?? () {},
+              firstWeekday: firstWeekday,
               fillHeight: true,
             ),
           ),
@@ -255,6 +257,12 @@ void main() {
       );
       await tester.pumpAndSettle();
     }
+
+    /// Left edge of each cell, so the column order can be read off the layout.
+    List<double> columnLefts(WidgetTester tester, List<int> days) => [
+      for (final day in days)
+        tester.getRect(find.byKey(ValueKey('month-day-2026-8-$day'))).left,
+    ];
 
     testWidgets('names the Sundays and leaves the weekdays to their number', (
       tester,
@@ -355,6 +363,53 @@ void main() {
       await tester.tap(find.byKey(const ValueKey('calendar-previous-month')));
       await tester.tap(find.byKey(const ValueKey('calendar-next-month')));
       expect([previous, next], [1, 1]);
+    });
+
+    testWidgets('starts the week on Sunday by default', (tester) async {
+      await pumpCalendar(tester);
+
+      // Sunday the 2nd opens its row, and the 8th, a Saturday, closes it.
+      final lefts = columnLefts(tester, [2, 3, 4, 5, 6, 7, 8]);
+      for (var i = 1; i < lefts.length; i++) {
+        expect(lefts[i], greaterThan(lefts[i - 1]));
+      }
+      expect(lefts.first, lessThan(20));
+    });
+
+    testWidgets('puts Sunday in the middle column when asked', (tester) async {
+      await pumpCalendar(tester, firstWeekday: DateTime.thursday);
+
+      // Thursday, Friday, Saturday, SUNDAY, Monday, Tuesday, Wednesday.
+      final lefts = columnLefts(tester, [6, 7, 1, 2, 3, 4, 5]);
+      for (var i = 1; i < lefts.length; i++) {
+        expect(
+          lefts[i],
+          greaterThan(lefts[i - 1]),
+          reason: 'column $i should sit right of column ${i - 1}',
+        );
+      }
+
+      // The Sunday column keeps the extra width that carries its name.
+      final sunday = tester.getSize(
+        find.byKey(const ValueKey('month-day-2026-8-2')),
+      );
+      final monday = tester.getSize(
+        find.byKey(const ValueKey('month-day-2026-8-3')),
+      );
+      expect(sunday.width, greaterThan(monday.width));
+      expect(find.text('8º Domingo depois de Pentecostes'), findsOneWidget);
+    });
+
+    testWidgets('still renders every day when Sunday moves', (tester) async {
+      await pumpCalendar(tester, firstWeekday: DateTime.thursday);
+
+      for (final dayNumber in [1, 15, 31]) {
+        expect(
+          find.byKey(ValueKey('month-day-2026-8-$dayNumber')),
+          findsOneWidget,
+        );
+      }
+      expect(tester.takeException(), isNull);
     });
 
     testWidgets('degrades to bare dates on a short screen without overflowing', (

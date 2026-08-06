@@ -17,18 +17,19 @@ Pacote preparado para a versão iOS 1.0 do Lecionário Anglicano. Os textos abai
 
 **Texto promocional:**
 
-> Consulte o lecionário anglicano por dia, semana ou mês, com diferentes LOCs, tipos de leitura e versões da Bíblia.
+> Consulte o lecionário anglicano por dia e por mês, com diferentes LOCs, tipos de leitura e versões da Bíblia.
 
 **Descrição:**
 
-> O Lecionário Anglicano reúne a visão do lecionário para o dia, a semana e o mês.
+> O Lecionário Anglicano reúne o dia de hoje e o mês inteiro em uma tela.
 >
 > Na primeira abertura, escolha o LOC que deseja consultar. A partir daí, navegue pelas datas e veja as leituras e demais informações que a fonte disponibilizar para aquele LOC.
 >
 > O app permite:
 >
 > • consultar o dia atual;
-> • navegar pela semana e pelo mês;
+> • navegar pelo mês e abrir qualquer dia;
+> • deixar o domingo ao centro do calendário, quando preferir;
 > • escolher entre os LOCs disponíveis;
 > • visualizar a capa retornada para cada LOC;
 > • salvar o tipo de leitura quando o LOC oferecer essa opção;
@@ -49,18 +50,19 @@ Pacote preparado para a versão iOS 1.0 do Lecionário Anglicano. Os textos abai
 
 **Promotional text:**
 
-> Explore the Anglican lectionary by day, week, or month, with different prayer books, reading tracks, and Bible versions.
+> Explore the Anglican lectionary by day and by month, with different prayer books, reading tracks, and Bible versions.
 
 **Description:**
 
-> Anglican Lectionary brings the lectionary view for today, the week, and the month.
+> Anglican Lectionary brings today and the whole month together on one screen.
 >
 > On first launch, choose the prayer book you want to consult. Then browse dates and read the readings and other information provided for that prayer book.
 >
 > The app lets you:
 >
 > • view today’s lectionary;
-> • browse by week and month;
+> • browse the month and open any day;
+> • keep Sunday in the middle of the calendar, if you prefer;
 > • choose from the available prayer books;
 > • view the cover returned for each prayer book;
 > • save a reading track when the prayer book provides one;
@@ -81,18 +83,19 @@ Pacote preparado para a versão iOS 1.0 do Lecionário Anglicano. Os textos abai
 
 **Texto promocional:**
 
-> Consulta el leccionario anglicano por día, semana o mes, con distintos LOC, tipos de lectura y versiones de la Biblia.
+> Consulta el leccionario anglicano por día y por mes, con distintos LOC, tipos de lectura y versiones de la Biblia.
 
 **Descripción:**
 
-> El Leccionario Anglicano reúne la vista del leccionario para hoy, la semana y el mes.
+> El Leccionario Anglicano reúne el día de hoy y el mes entero en una pantalla.
 >
 > Al abrir la aplicación por primera vez, elige el LOC que quieres consultar. Después, navega por las fechas y consulta las lecturas y la información que la fuente proporcione para ese LOC.
 >
 > La aplicación permite:
 >
 > • consultar el leccionario de hoy;
-> • navegar por semana y mes;
+> • navegar por el mes y abrir cualquier día;
+> • dejar el domingo al centro del calendario, si lo prefieres;
 > • elegir entre los LOC disponibles;
 > • ver la portada proporcionada para cada LOC;
 > • guardar el tipo de lectura cuando el LOC lo ofrezca;
@@ -123,7 +126,7 @@ Antes de preencher qualquer um dos campos, confirme que a URL abre em uma janela
 
 Use notas semelhantes às abaixo, atualizando o contato real antes de enviar:
 
-> O app não exige conta nem login. Na primeira abertura, selecione um LOC para entrar no lecionário. Depois, use a visão do dia e navegue pela semana ou pelo mês. As preferências de idioma, LOC, tipo de leitura e Bíblia ficam no ícone de configurações no cabeçalho.
+> O app não exige conta nem login. Na primeira abertura, selecione um LOC para entrar no lecionário. Depois, toque no cartão do dia para abrir as leituras de hoje e navegue pelo calendário do mês. As preferências de idioma, LOC, tipo de leitura e Bíblia ficam no ícone de configurações no cabeçalho.
 >
 > O conteúdo é carregado da API pela internet. Para validar o fluxo, mantenha o dispositivo conectado à internet e selecione um dos LOCs apresentados na primeira tela.
 

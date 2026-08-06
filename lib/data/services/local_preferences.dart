@@ -16,6 +16,10 @@ class LocalPreferences {
   String? get selectedBibleVersionCode =>
       _preferences.getString('selected_bible_version_code');
 
+  /// Whether the calendar puts Sunday in the middle of the week, so the days
+  /// that look back and forward to it sit on either side.
+  bool get sundayInCenter => _preferences.getBool('sunday_in_center') ?? false;
+
   AppLanguage get language {
     final code = _preferences.getString('app_language');
     return AppLanguage.values.firstWhere(
@@ -38,6 +42,10 @@ class LocalPreferences {
 
   Future<void> saveBibleVersion(String code) async {
     await _preferences.setString('selected_bible_version_code', code);
+  }
+
+  Future<void> saveSundayInCenter(bool value) async {
+    await _preferences.setBool('sunday_in_center', value);
   }
 
   Future<void> saveLanguage(AppLanguage language) async {

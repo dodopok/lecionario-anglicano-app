@@ -87,7 +87,7 @@ require_plist_value() {
   fi
 }
 
-require_plist_value "CFBundleDisplayName" "Lecionário Anglicano" "ios/Runner/Info.plist"
+require_plist_value "CFBundleDisplayName" "Lecionário" "ios/Runner/Info.plist"
 require_plist_value "MinimumOSVersion" "15.0" "ios/Flutter/AppFrameworkInfo.plist"
 require_match 'ITSAppUsesNonExemptEncryption</key>' "ios/Runner/Info.plist"
 require_match 'PRODUCT_BUNDLE_IDENTIFIER = br\.com\.caminhoanglicano\.lecionarioanglicano;' "ios/Runner.xcodeproj/project.pbxproj"

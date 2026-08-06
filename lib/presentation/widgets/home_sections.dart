@@ -287,6 +287,7 @@ class MonthCalendar extends StatelessWidget {
     required this.onSelect,
     required this.onPrevious,
     required this.onNext,
+    this.firstWeekday = DateTime.sunday,
     this.isLoading = false,
     this.fillHeight = false,
     super.key,
@@ -298,6 +299,11 @@ class MonthCalendar extends StatelessWidget {
   final ValueChanged<DateTime> onSelect;
   final VoidCallback onPrevious;
   final VoidCallback onNext;
+
+  /// The weekday the week starts on, as a [DateTime] weekday. Starting on
+  /// Thursday puts Sunday in the middle column.
+  final int firstWeekday;
+
   final bool isLoading;
 
   /// When true the grid stretches to the height it is given instead of
@@ -311,7 +317,8 @@ class MonthCalendar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final firstOfMonth = DateTime(month.year, month.month);
-    final leadingBlanks = firstOfMonth.weekday % 7;
+    final sundayColumn = _column(DateTime.sunday, firstWeekday);
+    final leadingBlanks = _column(firstOfMonth.weekday, firstWeekday);
     final totalDays = DateUtils.getDaysInMonth(month.year, month.month);
     final weeks = ((leadingBlanks + totalDays) / 7).ceil();
     final byDate = {for (final day in monthDays) _key(day.date): day};
@@ -327,7 +334,7 @@ class MonthCalendar extends StatelessWidget {
               ? null
               : DateTime(month.year, month.month, dayNumber);
           return Expanded(
-            flex: column == 0 ? _sundayFlex : _weekdayFlex,
+            flex: column == sundayColumn ? _sundayFlex : _weekdayFlex,
             child: Padding(
               padding: EdgeInsets.only(right: column == 6 ? 0 : _cellGap),
               child: date == null
@@ -336,7 +343,7 @@ class MonthCalendar extends StatelessWidget {
                       key: ValueKey('month-day-${_key(date)}'),
                       date: date,
                       data: byDate[_key(date)],
-                      isSunday: column == 0,
+                      isSunday: column == sundayColumn,
                       isToday: _sameDay(date, today),
                       isLoading: isLoading,
                       onTap: () => onSelect(date),
@@ -393,20 +400,21 @@ class MonthCalendar extends StatelessWidget {
           const SizedBox(height: 6),
           Row(
             children: List.generate(7, (column) {
-              // Any week works here: only the weekday name is read from it.
-              final reference = DateTime(2024, 1, 7 + column);
+              final weekday = ((firstWeekday - 1 + column) % 7) + 1;
               return Expanded(
-                flex: column == 0 ? _sundayFlex : _weekdayFlex,
+                flex: column == sundayColumn ? _sundayFlex : _weekdayFlex,
                 child: Padding(
                   padding: EdgeInsets.only(right: column == 6 ? 0 : _cellGap),
                   child: Text(
-                    copy.weekdayShort(reference),
-                    textAlign: column == 0 ? TextAlign.left : TextAlign.center,
+                    copy.weekdayShort(_weekdayReference(weekday)),
+                    textAlign: column == sundayColumn
+                        ? TextAlign.left
+                        : TextAlign.center,
                     maxLines: 1,
                     style: AppTypography.ui(
                       size: 9.5,
                       weight: FontWeight.w700,
-                      color: column == 0
+                      color: column == sundayColumn
                           ? AppColors.copperDark
                           : AppColors.muted,
                       letterSpacing: .6,
@@ -918,6 +926,12 @@ class DayDescription extends StatelessWidget {
 extension _FirstOrNull<T> on Iterable<T> {
   T? get firstOrNull => isEmpty ? null : first;
 }
+
+/// Which column a weekday falls in, for a week starting on [firstWeekday].
+int _column(int weekday, int firstWeekday) => (weekday - firstWeekday + 7) % 7;
+
+/// Any week works to read a weekday name from: 2024-01-07 was a Sunday.
+DateTime _weekdayReference(int weekday) => DateTime(2024, 1, 7 + (weekday % 7));
 
 String _key(DateTime date) => '${date.year}-${date.month}-${date.day}';
 

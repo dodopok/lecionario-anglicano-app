@@ -33,6 +33,16 @@ void main() {
     expect(restored.language, AppLanguage.en);
   });
 
+  test('keeps the calendar on a Sunday-first week until asked otherwise', ()
+      async {
+    final preferences = await createLocalPreferences();
+    expect(preferences.sundayInCenter, isFalse);
+
+    await preferences.saveSundayInCenter(true);
+    final restored = await createLocalPreferences({'sunday_in_center': true});
+    expect(restored.sundayInCenter, isTrue);
+  });
+
   test('falls back safely when the persisted language is unknown', () async {
     final preferences = await createLocalPreferences({'app_language': 'fr'});
 
