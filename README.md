@@ -1,6 +1,6 @@
 # Lecionário Anglicano
 
-Aplicativo Flutter para consultar o lecionário anglicano por dia, semana e mês.
+Aplicativo Flutter para consultar o lecionário anglicano: o dia de hoje e o mês inteiro em uma tela.
 
 ## Desenvolvimento
 

@@ -951,4 +951,57 @@ void main() {
       findsOneWidget,
     );
   });
+
+  testWidgets('moves Sunday to the middle of the calendar from settings', (
+    tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(390, 844));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    final preferences = await createLocalPreferences({
+      'selected_prayer_book_code': 'loc_test',
+    });
+    final controller = AppController(
+      api: FakeLectionaryDataSource(books: [testBook()], dayBuilder: testDay),
+      localPreferences: preferences,
+    );
+    addTearDown(controller.dispose);
+    await controller.initialize();
+
+    await tester.pumpWidget(testControllerApp(controller));
+    await tester.pumpAndSettle();
+
+    final month = DateTime.now();
+    final firstSunday = DateTime(
+      month.year,
+      month.month,
+      1 + (7 - DateTime(month.year, month.month, 1).weekday % 7) % 7,
+    );
+    Rect sundayCell() => tester.getRect(
+      find.byKey(
+        ValueKey(
+          'month-day-${firstSunday.year}-${firstSunday.month}-${firstSunday.day}',
+        ),
+      ),
+    );
+    final gridLeft = tester.getRect(find.byType(MonthCalendar)).left;
+    expect(sundayCell().left - gridLeft, lessThan(20));
+
+    await tester.tap(find.byIcon(Icons.tune_rounded));
+    await tester.pumpAndSettle();
+    expect(find.text('Domingo no centro'), findsOneWidget);
+
+    await tester.tap(find.byKey(const ValueKey('sunday-in-center-switch')));
+    await tester.pumpAndSettle();
+    expect(controller.sundayInCenter, isTrue);
+    expect(preferences.sundayInCenter, isTrue);
+
+    await tester.tap(find.byIcon(Icons.arrow_back_rounded).first);
+    await tester.pumpAndSettle();
+
+    final gridWidth = tester.getRect(find.byType(MonthCalendar)).width;
+    final offset = sundayCell().left - gridLeft;
+    expect(offset, greaterThan(gridWidth * .3));
+    expect(offset, lessThan(gridWidth * .55));
+  });
 }

@@ -105,6 +105,14 @@ class SettingsScreen extends StatelessWidget {
                                   controller.chooseBibleVersion(version, date);
                                 },
                               ),
+                              const SizedBox(height: 6),
+                              _SettingsSwitch(
+                                key: const ValueKey('sunday-in-center-switch'),
+                                label: copy.sundayInCenter,
+                                hint: copy.sundayInCenterHint,
+                                value: controller.sundayInCenter,
+                                onChanged: controller.setSundayInCenter,
+                              ),
                             ],
                           ),
                         ),
@@ -175,6 +183,68 @@ class SettingsScreen extends StatelessWidget {
     await controller.setLanguage(language);
     if (!context.mounted || !controller.needsPrayerBook) return;
     if (Navigator.of(context).canPop()) Navigator.of(context).pop();
+  }
+}
+
+class _SettingsSwitch extends StatelessWidget {
+  const _SettingsSwitch({
+    required this.label,
+    required this.hint,
+    required this.value,
+    required this.onChanged,
+    super.key,
+  });
+
+  final String label;
+  final String hint;
+  final bool value;
+  final ValueChanged<bool> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      toggled: value,
+      label: label,
+      child: InkWell(
+        onTap: () => onChanged(!value),
+        borderRadius: BorderRadius.circular(14),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 4),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      label,
+                      style: AppTypography.ui(
+                        size: 15,
+                        weight: FontWeight.w700,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      hint,
+                      style: AppTypography.ui(
+                        size: 12.5,
+                        color: AppColors.muted,
+                        height: 1.35,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 14),
+              ExcludeSemantics(
+                child: Switch(value: value, onChanged: onChanged),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 }
 

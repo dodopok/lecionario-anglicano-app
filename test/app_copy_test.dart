@@ -69,6 +69,8 @@ void main() {
     expect(portuguese.yearLabel, 'Ano');
     expect(portuguese.readingTrack, 'Sequência das leituras');
     expect(portuguese.bibleVersion, 'Versão da Bíblia');
+    expect(portuguese.sundayInCenter, 'Domingo no centro');
+    expect(portuguese.sundayInCenterHint, contains('quinta-feira'));
     expect(portuguese.settings, 'Configurações');
     expect(portuguese.settingsSubtitle, 'Preferências do lecionário');
     expect(portuguese.information, 'Informações');
@@ -105,6 +107,8 @@ void main() {
     expect(english.yearLabel, 'Year');
     expect(english.readingTrack, 'Reading track');
     expect(english.bibleVersion, 'Bible version');
+    expect(english.sundayInCenter, 'Sunday in the middle');
+    expect(english.sundayInCenterHint, contains('Thursday'));
     expect(english.settings, 'Settings');
     expect(english.settingsSubtitle, 'Lectionary preferences');
     expect(english.information, 'Information');
@@ -140,6 +144,8 @@ void main() {
     expect(spanish.yearLabel, 'Año');
     expect(spanish.readingTrack, 'Secuencia de lecturas');
     expect(spanish.bibleVersion, 'Versión de la Biblia');
+    expect(spanish.sundayInCenter, 'Domingo en el centro');
+    expect(spanish.sundayInCenterHint, contains('jueves'));
     expect(spanish.settings, 'Configuración');
     expect(spanish.settingsSubtitle, 'Preferencias del leccionario');
     expect(spanish.information, 'Información');

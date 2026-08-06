@@ -120,6 +120,22 @@ class AppCopy {
     AppLanguage.en => 'Reading track',
     AppLanguage.es => 'Secuencia de lecturas',
   };
+  String get sundayInCenter => switch (language) {
+    AppLanguage.pt => 'Domingo no centro',
+    AppLanguage.en => 'Sunday in the middle',
+    AppLanguage.es => 'Domingo en el centro',
+  };
+  String get sundayInCenterHint => switch (language) {
+    AppLanguage.pt =>
+      'A semana começa na quinta-feira, com o domingo ao centro: à esquerda os '
+          'dias que preparam para ele, à direita os que o refletem.',
+    AppLanguage.en =>
+      'The week starts on Thursday with Sunday in the middle: the days that '
+          'prepare for it on the left, the days that reflect on it on the right.',
+    AppLanguage.es =>
+      'La semana empieza el jueves, con el domingo al centro: a la izquierda '
+          'los días que preparan para él, a la derecha los que lo reflejan.',
+  };
   String get bibleVersion => switch (language) {
     AppLanguage.pt => 'Versão da Bíblia',
     AppLanguage.en => 'Bible version',
