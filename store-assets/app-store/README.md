@@ -1,14 +1,21 @@
 # Screenshots para a App Store
 
-Cada idioma tem uma pasta por família de dispositivo, porque o app é universal
-e a App Store Connect pede um conjunto para cada uma:
+Cada idioma tem uma pasta por *slot* da App Store Connect, com o nome do slot.
+O app é universal, então a loja pede um conjunto para cada família — e cada
+slot aceita só os tamanhos dele:
 
 ```
-pt-BR/iphone/{00-choose,01-home,02-day,03-settings}.png   1290x2796
-pt-BR/ipad/{00-choose,01-home,02-reading,03-settings}.png 2064x2752
+pt-BR/iphone-6.5/{00-choose,01-home,02-day,03-settings}.png   1284x2778
+pt-BR/iphone-6.9/{00-choose,01-home,02-day,03-settings}.png   1290x2796
+pt-BR/ipad-13/{00-choose,01-home,02-reading,03-settings}.png  2064x2752
 en-US/...
 es/...
 ```
+
+**O slot de iPhone que a sua listagem mostra é um só** — 6,5" ou 6,9" — e ele
+recusa a imagem do outro: mandar 1290x2796 para o slot de 6,5" dá "As
+dimensões de uma ou mais capturas de tela estão incorretas". Por isso os dois
+tamanhos ficam prontos aqui; suba o que a tela pedir.
 
 1. `00-choose` — escolha do LOC, com as capas que a API serve;
 2. `01-home` — o dia de hoje e o mês inteiro;
@@ -32,11 +39,13 @@ de macOS. O que ela não mostra é a barra de status do iOS — a loja não a ex
 
 ```bash
 ./tool/capture_store_screenshots.sh         # precisa de macOS com Xcode
-IPHONE="iPhone 16 Plus" IPAD="iPad Pro 13-inch (M4)" ./tool/capture_store_screenshots.sh
+IPHONE_69="iPhone 16 Plus" ./tool/capture_store_screenshots.sh
 ```
 
-Dirige o app em dois simuladores, um iPhone e um iPad, nos três idiomas. É o
-app rodando de verdade, pela pilha do iOS.
+Dirige o app em um simulador por slot, nos três idiomas. É o app rodando de
+verdade, pela pilha do iOS. Os simuladores padrão são `iPhone 11 Pro Max`
+(6,5"), `iPhone 16 Pro Max` (6,9") e `iPad Pro 13-inch (M4)`; sobrescreva com
+`IPHONE_65`, `IPHONE_69` e `IPAD_13`.
 
 `tool/verify_app_store_assets.sh` confere se está tudo no lugar e nos tamanhos
 que a loja aceita; `flutter test test/store_assets_test.dart` faz a mesma
