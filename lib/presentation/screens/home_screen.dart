@@ -30,7 +30,8 @@ class _HomeScreenState extends State<HomeScreen> {
   /// are read in a sheet instead of taking over the screen.
   late DateTime activeDate;
 
-  /// The day highlighted in the calendar, and the month it shows.
+  /// The day the calendar is browsing around; only its month is shown, since
+  /// the grid highlights today and nothing else.
   late DateTime calendarDate;
 
   @override
@@ -239,7 +240,6 @@ class _NarrowLayout extends StatelessWidget {
           Expanded(
             child: MonthCalendar(
               month: month,
-              selectedDate: calendarDate,
               copy: copy,
               monthDays: monthDays,
               onSelect: onOpenDay,
@@ -319,7 +319,6 @@ class _WideLayout extends StatelessWidget {
                     flex: 7,
                     child: MonthCalendar(
                       month: month,
-                      selectedDate: calendarDate,
                       copy: copy,
                       monthDays: monthDays,
                       onSelect: onSelectDate,

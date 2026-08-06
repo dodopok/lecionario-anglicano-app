@@ -139,12 +139,6 @@ String readingAsText(Reading reading, AppCopy copy) {
       verse.number == null ? verse.text : '${verse.number} ${verse.text}',
     );
   }
-  final translation = reading.translation?.trim();
-  if (translation != null && translation.isNotEmpty) {
-    buffer
-      ..writeln()
-      ..writeln(translation);
-  }
   return buffer.toString().trimRight();
 }
 

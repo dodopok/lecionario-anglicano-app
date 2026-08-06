@@ -42,8 +42,8 @@ class DailyHero extends StatelessWidget {
         ? Color.lerp(accent, AppColors.pineDeep, .62)!
         : AppColors.pineDeep;
     final isToday = _sameDay(activeDate, DateTime.now());
-    final title = _dayTitle(day);
-    final meta = _dayMeta(day, copy);
+    final title = _dayTitle(day, activeDate);
+    final meta = _dayMeta(day, copy, title);
     final showAction = onTap != null && actionLabel != null;
 
     return Material(
@@ -188,20 +188,33 @@ String _eyebrow(bool isToday, LectionaryDay? day, AppCopy copy) {
   return '$label · $season';
 }
 
-String? _dayTitle(LectionaryDay? day) {
-  for (final value in [
-    day?.celebration?.name,
-    day?.sundayName,
-    day?.weekName,
-    day?.season,
-  ]) {
+/// A Sunday is named by its place in the year first: the feast it may also
+/// carry is secondary, and moves to the line below.
+String? _dayTitle(LectionaryDay? day, DateTime date) {
+  final candidates = date.weekday == DateTime.sunday
+      ? [
+          day?.sundayName,
+          day?.weekName,
+          day?.celebration?.name,
+          day?.season,
+        ]
+      : [
+          day?.celebration?.name,
+          day?.sundayName,
+          day?.weekName,
+          day?.season,
+        ];
+  for (final value in candidates) {
     if (value != null && value.trim().isNotEmpty) return value.trim();
   }
   return null;
 }
 
-String _dayMeta(LectionaryDay? day, AppCopy copy) {
+String _dayMeta(LectionaryDay? day, AppCopy copy, String? title) {
+  final celebration = day?.celebration?.name.trim();
   final parts = <String>[
+    if (celebration != null && celebration.isNotEmpty && celebration != title)
+      celebration,
     if (day?.liturgicalYear case final year? when year.trim().isNotEmpty)
       '${copy.yearLabel} $year',
     if (day?.color case final color? when color.trim().isNotEmpty)
@@ -269,7 +282,6 @@ class _BackToToday extends StatelessWidget {
 class MonthCalendar extends StatelessWidget {
   const MonthCalendar({
     required this.month,
-    required this.selectedDate,
     required this.copy,
     required this.monthDays,
     required this.onSelect,
@@ -281,7 +293,6 @@ class MonthCalendar extends StatelessWidget {
   });
 
   final DateTime month;
-  final DateTime selectedDate;
   final AppCopy copy;
   final List<CalendarDay> monthDays;
   final ValueChanged<DateTime> onSelect;
@@ -326,7 +337,6 @@ class MonthCalendar extends StatelessWidget {
                       date: date,
                       data: byDate[_key(date)],
                       isSunday: column == 0,
-                      isSelected: _sameDay(date, selectedDate),
                       isToday: _sameDay(date, today),
                       isLoading: isLoading,
                       onTap: () => onSelect(date),
@@ -419,7 +429,6 @@ class _DayCell extends StatelessWidget {
     required this.date,
     required this.data,
     required this.isSunday,
-    required this.isSelected,
     required this.isToday,
     required this.isLoading,
     required this.onTap,
@@ -429,7 +438,6 @@ class _DayCell extends StatelessWidget {
   final DateTime date;
   final CalendarDay? data;
   final bool isSunday;
-  final bool isSelected;
   final bool isToday;
   final bool isLoading;
   final VoidCallback onTap;
@@ -438,22 +446,19 @@ class _DayCell extends StatelessWidget {
   Widget build(BuildContext context) {
     final color = liturgicalColor(data?.color);
     final label = _cellLabel(data, isSunday);
-    final background = isSelected
+    final feast = data?.celebrationName?.trim();
+    final background = isToday
         ? AppColors.pine
-        : isToday
-        ? AppColors.copperWash
         : AppColors.paper.withValues(alpha: .5);
-    final border = isSelected
+    final border = isToday
         ? AppColors.pine
-        : isToday
-        ? AppColors.copper
         : AppColors.line.withValues(alpha: .6);
-    final numberColor = isSelected ? AppColors.white : AppColors.ink;
+    final numberColor = isToday ? AppColors.white : AppColors.ink;
 
     return Semantics(
       button: true,
-      selected: isSelected,
-      label: ['${date.day}', ?label].join(', '),
+      selected: isToday,
+      label: ['${date.day}', ?label, ?(label == feast ? null : feast)].join(', '),
       child: Material(
         color: background,
         clipBehavior: Clip.antiAlias,
@@ -489,6 +494,25 @@ class _DayCell extends StatelessWidget {
                     !isLoading &&
                     roomy &&
                     constraints.maxWidth >= 54;
+                // A named Sunday keeps its name and the feast it also carries
+                // gets a mark; a cell too narrow to name anything gets one too.
+                final showFeastMark =
+                    feast != null &&
+                    feast.isNotEmpty &&
+                    (!showLabel || label != feast);
+                final marker = isLoading || !showFeastMark
+                    ? null
+                    : Container(
+                        key: ValueKey('celebration-${_key(date)}'),
+                        width: 5,
+                        height: 5,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: isToday
+                              ? AppColors.copperWash
+                              : AppColors.copper,
+                        ),
+                      );
                 return Padding(
                   padding: roomy
                       ? const EdgeInsets.fromLTRB(6, 5, 6, 6)
@@ -496,7 +520,16 @@ class _DayCell extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      number,
+                      if (showLabel && marker != null)
+                        Row(
+                          children: [
+                            number,
+                            const SizedBox(width: 5),
+                            marker,
+                          ],
+                        )
+                      else
+                        number,
                       if (showLabel)
                         Expanded(
                           child: Padding(
@@ -509,7 +542,7 @@ class _DayCell extends StatelessWidget {
                                 size: 9,
                                 weight: FontWeight.w600,
                                 height: 1.12,
-                                color: isSelected
+                                color: isToday
                                     ? AppColors.copperWash
                                     : AppColors.muted,
                               ),
@@ -520,21 +553,11 @@ class _DayCell extends StatelessWidget {
                         Expanded(
                           // Narrow cells cannot carry a name, so a feast is
                           // marked with a dot the tap reveals in full.
-                          child: data?.celebrationName == null
+                          child: marker == null
                               ? const SizedBox.shrink()
                               : Align(
                                   alignment: Alignment.centerLeft,
-                                  child: Container(
-                                    key: ValueKey('celebration-${_key(date)}'),
-                                    width: 5,
-                                    height: 5,
-                                    decoration: BoxDecoration(
-                                      shape: BoxShape.circle,
-                                      color: isSelected
-                                          ? AppColors.copperWash
-                                          : AppColors.copper,
-                                    ),
-                                  ),
+                                  child: marker,
                                 ),
                         ),
                       SizedBox(height: roomy ? 4 : 2),
@@ -543,7 +566,7 @@ class _DayCell extends StatelessWidget {
                           : Container(
                               height: roomy ? 3 : 2.5,
                               decoration: BoxDecoration(
-                                color: isSelected
+                                color: isToday
                                     ? AppColors.copperWash.withValues(alpha: .8)
                                     : color.withValues(alpha: .85),
                                 borderRadius: BorderRadius.circular(3),
@@ -562,11 +585,9 @@ class _DayCell extends StatelessWidget {
 }
 
 String? _cellLabel(CalendarDay? data, bool isSunday) {
-  final candidates = <String?>[
-    data?.celebrationName,
-    if (isSunday) data?.sundayName,
-    if (isSunday) data?.weekName,
-  ];
+  final candidates = isSunday
+      ? <String?>[data?.sundayName, data?.weekName, data?.celebrationName]
+      : <String?>[data?.celebrationName];
   for (final value in candidates) {
     if (value != null && value.trim().isNotEmpty) return value.trim();
   }
@@ -794,10 +815,11 @@ class CollectCard extends StatelessWidget {
       );
     }
 
-    final collect = day?.collects.firstOrNull;
-    if (collect == null || collect.text.trim().isEmpty) {
-      return const SizedBox.shrink();
-    }
+    final collects = (day?.collects ?? const <Collect>[])
+        .where((collect) => collect.text.trim().isNotEmpty)
+        .toList();
+    if (collects.isEmpty) return const SizedBox.shrink();
+
     return SurfaceCard(
       padding: const EdgeInsets.fromLTRB(18, 16, 18, 20),
       child: Column(
@@ -807,29 +829,65 @@ class CollectCard extends StatelessWidget {
             height: 34,
             child: Row(
               children: [
-                Expanded(child: Eyebrow(copy.collect)),
+                Expanded(
+                  child: Eyebrow(
+                    collects.length > 1 ? copy.collects : copy.collect,
+                  ),
+                ),
                 CopyButton(
                   key: const ValueKey('copy-collect'),
                   copy: copy,
-                  text: collect.text,
+                  text: collectsAsText(collects),
                 ),
               ],
             ),
           ),
-          Text(
-            collect.text,
-            style: AppTypography.display(
-              size: 20,
-              weight: FontWeight.w500,
-              color: AppColors.inkSoft,
-              height: 1.24,
-              style: FontStyle.italic,
+          for (final collect in collects) ...[
+            if (collect != collects.first) ...[
+              const SizedBox(height: 16),
+              Divider(height: 1, color: AppColors.line.withValues(alpha: .7)),
+              const SizedBox(height: 14),
+            ],
+            if (collect.title case final title?
+                when title.trim().isNotEmpty) ...[
+              Text(
+                title.trim(),
+                style: AppTypography.ui(
+                  size: 11,
+                  weight: FontWeight.w700,
+                  color: AppColors.muted,
+                  letterSpacing: .4,
+                ),
+              ),
+              const SizedBox(height: 6),
+            ],
+            Text(
+              collect.text,
+              style: AppTypography.display(
+                size: 20,
+                weight: FontWeight.w500,
+                color: AppColors.inkSoft,
+                height: 1.24,
+                style: FontStyle.italic,
+              ),
             ),
-          ),
+          ],
         ],
       ),
     );
   }
+}
+
+String collectsAsText(List<Collect> collects) {
+  return collects
+      .map(
+        (collect) => [
+          if (collect.title case final title? when title.trim().isNotEmpty)
+            title.trim(),
+          collect.text.trim(),
+        ].join('\n'),
+      )
+      .join('\n\n');
 }
 
 /// The note the API publishes about the day, when there is one.

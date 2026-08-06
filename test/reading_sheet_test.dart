@@ -75,6 +75,25 @@ void main() {
     expect(find.byKey(const ValueKey('reading-sheet')), findsNothing);
   });
 
+  testWidgets('confirms the copy on the button, where the finger is', (
+    tester,
+  ) async {
+    await pumpSheet(tester, withVerses);
+
+    expect(find.text('Copiar'), findsOneWidget);
+    expect(find.byIcon(Icons.check_rounded), findsNothing);
+
+    await tester.tap(find.byKey(const ValueKey('copy-reading')));
+    await tester.pumpAndSettle();
+    expect(find.text('Copiado'), findsOneWidget);
+    expect(find.byIcon(Icons.check_rounded), findsOneWidget);
+
+    await tester.pump(const Duration(seconds: 3));
+    await tester.pump();
+    expect(find.text('Copiar'), findsOneWidget);
+    expect(find.byIcon(Icons.check_rounded), findsNothing);
+  });
+
   testWidgets('copies the reading with its reference and verses', (
     tester,
   ) async {
@@ -103,10 +122,8 @@ void main() {
 Evangelho — João 1:1–2
 
 1 No princípio era o Verbo.
-2 Ele estava com Deus.
-
-NVI''');
-    expect(find.text('Texto copiado'), findsOneWidget);
+2 Ele estava com Deus.''');
+    expect(copied.single, isNot(contains('NVI')));
   });
 
   test('keeps the copied text to what the API published', () {
