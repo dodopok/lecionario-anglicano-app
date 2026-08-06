@@ -3,31 +3,25 @@ import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 
 /// The app is universal, so App Store Connect asks for a set of screenshots
-/// per device family, in every language the listing is published in. A missing
-/// or wrongly sized image is only found out at upload, which is late.
+/// per slot, in every language the listing is published in. A missing or
+/// wrongly sized image is only found out at upload, which is late — and each
+/// slot takes its own sizes: a 6.9" image is rejected by a 6.5" slot, which
+/// is a rejection worth catching here rather than there.
 ///
 /// tool/render_store_screenshots.sh produces them.
 void main() {
   const languages = ['pt-BR', 'en-US', 'es'];
 
-  // The slots this app fills: iPhone 6.9"/6.5" and iPad 13"/12.9", either way
-  // round.
   const accepted = {
-    'iphone': {
-      (1290, 2796),
-      (1320, 2868),
-      (1284, 2778),
-      (2796, 1290),
-      (2868, 1320),
-      (2778, 1284),
-    },
-    'ipad': {(2064, 2752), (2048, 2732), (2752, 2064), (2732, 2048)},
+    'iphone-6.5': {(1242, 2688), (1284, 2778), (2688, 1242), (2778, 1284)},
+    'iphone-6.9': {(1290, 2796), (1320, 2868), (2796, 1290), (2868, 1320)},
+    'ipad-13': {(2064, 2752), (2048, 2732), (2752, 2064), (2732, 2048)},
   };
 
   for (final language in languages) {
-    for (final device in accepted.keys) {
-      group('$language/$device', () {
-        final folder = Directory('store-assets/app-store/$language/$device');
+    for (final slot in accepted.keys) {
+      group('$language/$slot', () {
+        final folder = Directory('store-assets/app-store/$language/$slot');
         final images = folder.existsSync()
             ? folder.listSync().whereType<File>().where(
                 (file) => file.path.endsWith('.png'),
@@ -38,17 +32,17 @@ void main() {
           expect(
             images,
             isNotEmpty,
-            reason: 'no $device screenshots in $language — run '
+            reason: 'no $slot screenshots in $language — run '
                 'tool/render_store_screenshots.sh',
           );
         });
 
-        test('at a size the store accepts', () {
+        test('at a size the slot accepts', () {
           for (final image in images) {
             expect(
               _dimensions(image),
-              isIn(accepted[device]!),
-              reason: '${image.path} is not a size the $device slot accepts',
+              isIn(accepted[slot]!),
+              reason: '${image.path} is not a size the $slot slot accepts',
             );
           }
         });
@@ -56,17 +50,27 @@ void main() {
     }
   }
 
-  test('no screenshots are left over from an older interface', () {
+  test('every screenshot sits in a slot the store offers', () {
     for (final language in languages) {
-      final loose = Directory('store-assets/app-store/$language')
-          .listSync()
-          .whereType<File>()
-          .where((file) => file.path.endsWith('.png'));
+      final folder = Directory('store-assets/app-store/$language');
+
+      // Loose images are never uploaded and never size-checked, so they only
+      // rot; a folder that is not a slot is a leftover from an older layout.
       expect(
-        loose,
+        folder.listSync().whereType<File>().where(
+          (file) => file.path.endsWith('.png'),
+        ),
         isEmpty,
-        reason: 'screenshots sitting outside iphone/ and ipad/ in $language '
-            'are from a previous interface',
+        reason: 'screenshots sit outside a slot folder in $language',
+      );
+      expect(
+        folder
+            .listSync()
+            .whereType<Directory>()
+            .map((entry) => entry.uri.pathSegments.where((s) => s.isNotEmpty).last)
+            .where((name) => !accepted.containsKey(name)),
+        isEmpty,
+        reason: '$language holds a folder that is not a slot the store offers',
       );
     }
   });

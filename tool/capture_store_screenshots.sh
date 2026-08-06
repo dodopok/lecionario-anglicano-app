@@ -26,12 +26,14 @@ fi
 command -v xcrun >/dev/null || { echo "xcrun not found. Install Xcode." >&2; exit 1; }
 command -v flutter >/dev/null || { echo "flutter not found in PATH." >&2; exit 1; }
 
-# One iPhone and one iPad, since the app ships for both. Override either from
-# the environment if these simulators are not installed:
+# One simulator per App Store Connect slot. Which iPhone slot a listing shows
+# varies, and a 6.9" image is rejected outright by a 6.5" slot, so both sizes
+# are captured. Override any of them if the simulator is not installed:
 #
-#   IPHONE="iPhone 16 Plus" IPAD="iPad Pro 13-inch (M4)" ./tool/capture_store_screenshots.sh
-IPHONE="${IPHONE:-iPhone 16 Pro Max}"
-IPAD="${IPAD:-iPad Pro 13-inch (M4)}"
+#   IPHONE_69="iPhone 16 Plus" ./tool/capture_store_screenshots.sh
+IPHONE_65="${IPHONE_65:-iPhone 11 Pro Max}"
+IPHONE_69="${IPHONE_69:-iPhone 16 Pro Max}"
+IPAD_13="${IPAD_13:-iPad Pro 13-inch (M4)}"
 
 output_dir="$repo_root/build/screenshots"
 rm -rf "$output_dir"
@@ -77,20 +79,23 @@ capture() {
   xcrun simctl shutdown "$udid" >/dev/null 2>&1 || true
 }
 
-capture iphone "$IPHONE"
-capture ipad "$IPAD"
+capture iphone65 "$IPHONE_65"
+capture iphone69 "$IPHONE_69"
+capture ipad13 "$IPAD_13"
 
-# Sort what came out into the per-language folders the store metadata uses.
+# Sort what came out into the per-slot folders the store metadata uses.
 python3 - "$output_dir" "$repo_root/store-assets/app-store" <<'PY'
 import pathlib, shutil, sys
 
 source, destination = (pathlib.Path(argument) for argument in sys.argv[1:3])
-folders = {'pt': 'pt-BR', 'en': 'en-US', 'es': 'es'}
+languages = {'pt': 'pt-BR', 'en': 'en-US', 'es': 'es'}
+devices = {'iphone65': 'iphone-6.5', 'iphone69': 'iphone-6.9',
+           'ipad13': 'ipad-13'}
 
 count = 0
 for image in sorted(source.glob('*.png')):
     device, language, screen = image.stem.split('-', 2)
-    folder = destination / folders[language] / device
+    folder = destination / languages[language] / devices[device]
     folder.mkdir(parents=True, exist_ok=True)
     shutil.copy2(image, folder / f'{screen}.png')
     count += 1
@@ -107,10 +112,11 @@ for folder in sorted(destination.glob('*/*/')):
           f'{len(list(folder.glob("*.png")))} images, {", ".join(sorted(sizes))} px')
 PY
 
+"$script_dir/verify_app_store_assets.sh"
+
 cat <<'EOF'
 
-Next: open App Store Connect, and for each language upload the iphone/ folder
-to the iPhone slot and the ipad/ folder to the iPad slot. The old 1284x2778
-images under store-assets/app-store/<language>/ show the previous interface —
-delete them once these replace them.
+Next: in App Store Connect, upload each folder to the slot it is named after.
+The listing shows one iPhone slot — 6,5" or 6,9" — and it takes only its own
+size; the other folder is there for whichever one that turns out to be.
 EOF

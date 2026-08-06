@@ -19,12 +19,13 @@ root = pathlib.Path(sys.argv[1])
 store = root / 'store-assets' / 'app-store'
 languages = ['pt-BR', 'en-US', 'es']
 
-# Sizes the App Store accepts for the slots this app fills. iPhone 6.9" and
-# 6.5"; iPad 13" and 12.9".
+# One folder per App Store Connect slot, and the sizes that slot accepts.
+# Which iPhone slot a listing offers varies, and a 6.9" image is rejected by a
+# 6.5" slot, so both are kept.
 accepted = {
-    'iphone': {(1290, 2796), (1320, 2868), (1284, 2778), (2796, 1290),
-               (2868, 1320), (2778, 1284)},
-    'ipad': {(2064, 2752), (2048, 2732), (2752, 2064), (2732, 2048)},
+    'iphone-6.5': {(1242, 2688), (1284, 2778), (2688, 1242), (2778, 1284)},
+    'iphone-6.9': {(1290, 2796), (1320, 2868), (2796, 1290), (2868, 1320)},
+    'ipad-13': {(2064, 2752), (2048, 2732), (2752, 2064), (2732, 2048)},
 }
 
 
@@ -47,9 +48,8 @@ for language in languages:
         images = sorted((folder / device).glob('*.png'))
         if not images:
             problems.append(
-                f'{language}/{device}: missing. The app ships for iPhone and '
-                'iPad, so the store asks for both — run '
-                './tool/capture_store_screenshots.sh'
+                f'{language}/{device}: missing — run '
+                './tool/render_store_screenshots.sh'
             )
             continue
         for image in images:
@@ -60,12 +60,17 @@ for language in languages:
                     f'a size the {device} slot accepts'
                 )
 
-    stale = sorted(folder.glob('*.png'))
-    if stale:
+    loose = sorted(folder.glob('*.png'))
+    if loose:
         problems.append(
-            f'{language}: {len(stale)} screenshot(s) sit loose in the folder. '
-            'They predate the current interface — delete them once the '
-            'iphone/ and ipad/ folders are filled.'
+            f'{language}: {len(loose)} screenshot(s) sit outside a slot '
+            'folder, so nothing checks their size'
+        )
+
+    for extra in sorted(p for p in folder.iterdir()
+                        if p.is_dir() and p.name not in accepted):
+        problems.append(
+            f'{extra.relative_to(root)}: not a slot the store offers'
         )
 
 if problems:
@@ -74,6 +79,6 @@ if problems:
         print(f'  - {problem}', file=sys.stderr)
     raise SystemExit(1)
 
-print('App Store screenshots are present for iPhone and iPad in every '
-      'language, at accepted sizes.')
+print('App Store screenshots are present for every slot in every language, '
+      'at accepted sizes.')
 PY
