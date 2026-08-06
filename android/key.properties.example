@@ -1,0 +1,20 @@
+# Copy to android/key.properties and fill in with the real upload key.
+#
+# android/key.properties is gitignored, and so is every *.jks and *.keystore:
+# the key itself must never be committed. Losing it does not lock you out of
+# the listing — Play App Signing keeps the app signing key, and an upload key
+# can be reset through the Play Console — but it does stop every upload until
+# the reset goes through, so keep a backup somewhere safe.
+#
+# Create one with:
+#
+#   keytool -genkey -v -keystore ~/keys/lecionario-upload.jks \
+#     -keyalg RSA -keysize 2048 -validity 10000 -alias upload
+#
+# storeFile takes an absolute path so the key can stay outside the repository.
+# A relative path is resolved against android/app/.
+
+storePassword=
+keyPassword=
+keyAlias=upload
+storeFile=/absolute/path/to/lecionario-upload.jks

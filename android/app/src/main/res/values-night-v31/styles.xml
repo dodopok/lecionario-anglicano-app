@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The same launch screen as values-v31, for a device in dark mode.
+     It needs its own file: Android weighs the night qualifier above the
+     version one, so values-night alone would answer for Android 12 and hide
+     the splash colours set there — and the app opens on its paper either way.
+-->
+<resources>
+    <style name="LaunchTheme" parent="@android:style/Theme.Black.NoTitleBar">
+        <item name="android:windowSplashScreenBackground">@color/paper</item>
+        <item name="android:windowSplashScreenAnimatedIcon">@mipmap/ic_launcher</item>
+        <item name="android:windowBackground">@drawable/launch_background</item>
+    </style>
+</resources>
