@@ -66,6 +66,22 @@ void main() {
     expect(find.byKey(const ValueKey('copy-reading')), findsOneWidget);
   });
 
+  testWidgets('closes when the reading itself is dragged down', (tester) async {
+    await tester.binding.setSurfaceSize(const Size(390, 844));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    await pumpSheet(tester, withVerses);
+    expect(find.byKey(const ValueKey('reading-sheet')), findsOneWidget);
+
+    // From inside the scripture, not from the handle at the top.
+    await tester.drag(
+      find.textContaining('No princípio era o Verbo.'),
+      const Offset(0, 600),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const ValueKey('reading-sheet')), findsNothing);
+  });
+
   testWidgets('closes on the close action', (tester) async {
     await pumpSheet(tester, withVerses);
     expect(find.byKey(const ValueKey('reading-sheet')), findsOneWidget);
@@ -73,6 +89,31 @@ void main() {
     await tester.tap(find.text('Fechar'));
     await tester.pumpAndSettle();
     expect(find.byKey(const ValueKey('reading-sheet')), findsNothing);
+  });
+
+  testWidgets('says the reading was copied, over the sheet itself', (
+    tester,
+  ) async {
+    await pumpSheet(tester, withVerses);
+
+    expect(find.byKey(const ValueKey('copied-confirmation')), findsNothing);
+
+    await tester.tap(find.byKey(const ValueKey('copy-reading')));
+    await tester.pumpAndSettle();
+
+    final confirmation = find.byKey(const ValueKey('copied-confirmation'));
+    expect(confirmation, findsOneWidget);
+    expect(
+      find.descendant(of: confirmation, matching: find.text('Copiado')),
+      findsOneWidget,
+    );
+    // Over the sheet, not behind it: the sheet is what fills the screen here.
+    final sheet = tester.getRect(find.byKey(const ValueKey('reading-sheet')));
+    expect(tester.getRect(confirmation).top, greaterThan(sheet.top));
+
+    await tester.pump(const Duration(seconds: 3));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const ValueKey('copied-confirmation')), findsNothing);
   });
 
   testWidgets('confirms the copy on the button, where the finger is', (
@@ -89,18 +130,23 @@ void main() {
         )
         .tooltip!;
 
+    final buttonIcon = find.descendant(
+      of: find.byKey(const ValueKey('copy-reading')),
+      matching: find.byIcon(Icons.check_rounded),
+    );
+
     expect(tooltip(), 'Copiar');
-    expect(find.byIcon(Icons.check_rounded), findsNothing);
+    expect(buttonIcon, findsNothing);
 
     await tester.tap(find.byKey(const ValueKey('copy-reading')));
     await tester.pumpAndSettle();
     expect(tooltip(), 'Copiado');
-    expect(find.byIcon(Icons.check_rounded), findsOneWidget);
+    expect(buttonIcon, findsOneWidget);
 
     await tester.pump(const Duration(seconds: 3));
-    await tester.pump();
+    await tester.pumpAndSettle();
     expect(tooltip(), 'Copiar');
-    expect(find.byIcon(Icons.check_rounded), findsNothing);
+    expect(buttonIcon, findsNothing);
   });
 
   testWidgets('keeps the copy action within reach at the top', (tester) async {
@@ -174,10 +220,7 @@ Evangelho — João 1:1–2
 
   test('keeps the copied text to what the API published', () {
     expect(
-      readingAsText(
-        const Reading(kind: 'psalm', reference: 'Salmo 99'),
-        copy,
-      ),
+      readingAsText(const Reading(kind: 'psalm', reference: 'Salmo 99'), copy),
       'Salmo — Salmo 99',
     );
     expect(
