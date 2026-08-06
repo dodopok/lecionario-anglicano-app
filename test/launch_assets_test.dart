@@ -9,24 +9,33 @@ import 'package:flutter_test/flutter_test.dart';
 void main() {
   const paper = 0xFFF4F0E7;
 
-  test('the iOS launch screen and the app open on the same colour', () {
-    final storyboard = File(
-      'ios/Runner/Base.lproj/LaunchScreen.storyboard',
-    ).readAsStringSync();
+  /// Both iOS storyboards: the launch screen, and the view that hosts Flutter
+  /// until it draws its first frame. A white one there flashes on every launch.
+  for (final storyboard in ['LaunchScreen', 'Main']) {
+    test('the iOS $storyboard opens on the app colour', () {
+      final contents = File(
+        'ios/Runner/Base.lproj/$storyboard.storyboard',
+      ).readAsStringSync();
 
-    final background = RegExp(
-      r'<color key="backgroundColor" red="([\d.]+)" green="([\d.]+)" '
-      r'blue="([\d.]+)"',
-    ).firstMatch(storyboard);
-    expect(background, isNotNull, reason: 'launch screen has no background');
+      final background = RegExp(
+        r'<color key="backgroundColor" red="([\d.]+)" green="([\d.]+)" '
+        r'blue="([\d.]+)"',
+      ).firstMatch(contents);
+      expect(background, isNotNull, reason: '$storyboard has no background');
 
-    int channel(int group) =>
-        (double.parse(background!.group(group)!) * 255).round();
-    final colour =
-        0xFF000000 | (channel(1) << 16) | (channel(2) << 8) | channel(3);
+      int channel(int group) =>
+          (double.parse(background!.group(group)!) * 255).round();
+      final colour =
+          0xFF000000 | (channel(1) << 16) | (channel(2) << 8) | channel(3);
 
-    expect(colour, paper);
-  });
+      expect(colour, paper);
+      expect(
+        contents,
+        isNot(contains('white="1"')),
+        reason: '$storyboard still flashes white',
+      );
+    });
+  }
 
   test('the Android launch window opens on the same colour', () {
     final colours = File(
