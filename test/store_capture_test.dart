@@ -301,7 +301,10 @@ class _FeatureGraphic extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ColoredBox(
+    // Material, not a plain ColoredBox: text with no Material above it is
+    // drawn with the yellow underline Flutter marks unstyled text with, and
+    // it lands in the golden.
+    return Material(
       color: AppColors.paper,
       child: Center(
         child: Column(
