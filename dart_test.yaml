@@ -1,0 +1,6 @@
+# The screenshot render needs fonts and captured API responses handed to it
+# through the environment, which tool/render_store_screenshots.sh sets up.
+# An ordinary `flutter test` skips it; the script runs it with --tags capture.
+tags:
+  capture:
+    skip: "run tool/render_store_screenshots.sh"

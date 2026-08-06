@@ -89,7 +89,9 @@ require_plist_value() {
 
 require_plist_value "CFBundleDisplayName" "Lecionário" "ios/Runner/Info.plist"
 require_plist_value "MinimumOSVersion" "15.0" "ios/Flutter/AppFrameworkInfo.plist"
-require_match 'ITSAppUsesNonExemptEncryption</key>' "ios/Runner/Info.plist"
+# The value, not just the key: a <true/> here would ask App Store Connect for
+# an export compliance document on every upload.
+require_plist_value "ITSAppUsesNonExemptEncryption" "false" "ios/Runner/Info.plist"
 require_match 'PRODUCT_BUNDLE_IDENTIFIER = br\.com\.caminhoanglicano\.lecionarioanglicano;' "ios/Runner.xcodeproj/project.pbxproj"
 require_match 'IPHONEOS_DEPLOYMENT_TARGET = 15\.0;' "ios/Runner.xcodeproj/project.pbxproj"
 if grep -Eq 'IPHONEOS_DEPLOYMENT_TARGET = 1[0-4]\.' "$repo_root/ios/Runner.xcodeproj/project.pbxproj"; then
