@@ -34,7 +34,10 @@ func makeContext(width: Int, height: Int) throws -> CGContext {
     height: height,
     bitsPerComponent: 8,
     bytesPerRow: width * 4,
-    space: CGColorSpaceCreateDeviceRGB(),
+    // sRGB, not DeviceRGB: the PNG is written as sRGB, and a device space
+    // is converted on the way out — which shifted the launch image's paper
+    // away from the launch screen's, leaving a visible square behind the mark.
+    space: CGColorSpace(name: CGColorSpace.sRGB) ?? CGColorSpaceCreateDeviceRGB(),
     bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue
   ) else {
     throw AssetGenerationError.contextCreation
