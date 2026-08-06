@@ -80,18 +80,64 @@ void main() {
   ) async {
     await pumpSheet(tester, withVerses);
 
-    expect(find.text('Copiar'), findsOneWidget);
+    String tooltip() => tester
+        .widget<IconButton>(
+          find.descendant(
+            of: find.byKey(const ValueKey('copy-reading')),
+            matching: find.byType(IconButton),
+          ),
+        )
+        .tooltip!;
+
+    expect(tooltip(), 'Copiar');
     expect(find.byIcon(Icons.check_rounded), findsNothing);
 
     await tester.tap(find.byKey(const ValueKey('copy-reading')));
     await tester.pumpAndSettle();
-    expect(find.text('Copiado'), findsOneWidget);
+    expect(tooltip(), 'Copiado');
     expect(find.byIcon(Icons.check_rounded), findsOneWidget);
 
     await tester.pump(const Duration(seconds: 3));
     await tester.pump();
-    expect(find.text('Copiar'), findsOneWidget);
+    expect(tooltip(), 'Copiar');
     expect(find.byIcon(Icons.check_rounded), findsNothing);
+  });
+
+  testWidgets('keeps the copy action within reach at the top', (tester) async {
+    await pumpSheet(tester, withVerses);
+
+    final sheet = tester.getRect(find.byKey(const ValueKey('reading-sheet')));
+    final button = tester.getRect(find.byKey(const ValueKey('copy-reading')));
+
+    expect(button.top - sheet.top, lessThan(sheet.height / 3));
+    expect(button.right, closeTo(sheet.right, 20));
+  });
+
+  testWidgets('tags the reading with the Bible version, next to the '
+      'reference', (tester) async {
+    await pumpSheet(tester, withVerses);
+
+    final tag = find.byKey(const ValueKey('reading-translation'));
+    expect(tag, findsOneWidget);
+    expect(
+      find.descendant(of: tag, matching: find.text('NVI')),
+      findsOneWidget,
+    );
+
+    final reference = tester.getRect(find.text('João 1:1–2'));
+    expect(tester.getRect(tag).left, greaterThan(reference.left));
+    expect(tester.getRect(tag).center.dy, closeTo(reference.center.dy, 6));
+  });
+
+  testWidgets('leaves the tag out when the API sends no version', (
+    tester,
+  ) async {
+    await pumpSheet(
+      tester,
+      const Reading(kind: 'psalm', reference: 'Salmo 99'),
+    );
+
+    expect(find.byKey(const ValueKey('reading-translation')), findsNothing);
   });
 
   testWidgets('copies the reading with its reference and verses', (
