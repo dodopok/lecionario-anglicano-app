@@ -426,6 +426,42 @@ void main() {
       expect(tester.takeException(), isNull);
     });
 
+    testWidgets('fits the Sunday name to the room the row has', (tester) async {
+      await tester.binding.setSurfaceSize(const Size(390, 900));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+
+      Future<int?> linesAt(double height) async {
+        await tester.pumpWidget(
+          testMaterialApp(
+            home: Scaffold(
+              body: SizedBox(
+                height: height,
+                child: MonthCalendar(
+                  month: month,
+                  copy: copy,
+                  monthDays: monthDays(),
+                  onSelect: (_) {},
+                  onPrevious: () {},
+                  onNext: () {},
+                  fillHeight: true,
+                ),
+              ),
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+        final name = find.text('8º Domingo depois de Pentecostes');
+        if (name.evaluate().isEmpty) return null;
+        return tester.widget<Text>(name).maxLines;
+      }
+
+      expect(await linesAt(560), 3);
+      expect(await linesAt(480), 2);
+      // Too short to say anything: the date stands on its own.
+      expect(await linesAt(400), isNull);
+      expect(tester.takeException(), isNull);
+    });
+
     testWidgets('degrades to bare dates on a short screen without overflowing', (
       tester,
     ) async {
