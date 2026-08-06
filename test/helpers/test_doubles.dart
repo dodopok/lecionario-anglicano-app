@@ -11,6 +11,7 @@ class FakeLectionaryDataSource implements LectionaryDataSource {
     List<BibleVersion>? bibleVersions,
     LectionaryDay Function(DateTime date)? dayBuilder,
     List<CalendarDay> Function(DateTime month)? monthBuilder,
+    this.dayDelay,
   }) : books = books ?? [testBook(code: 'loc_2015', name: 'LOC 2015')],
        monthBuilder = monthBuilder ?? testMonth,
        bibleVersions =
@@ -31,6 +32,10 @@ class FakeLectionaryDataSource implements LectionaryDataSource {
   List<BibleVersion> bibleVersions;
   LectionaryDay Function(DateTime date) dayBuilder;
   List<CalendarDay> Function(DateTime month) monthBuilder;
+
+  /// Holds getDay open, so a loading state can be looked at. Set it after the
+  /// controller has initialised: a delay awaited outside a pump never returns.
+  Duration? dayDelay;
   final List<DateTime> requestedDates = [];
   final List<DateTime> requestedMonths = [];
   final List<String?> requestedReadingTypes = [];
@@ -104,6 +109,7 @@ class FakeLectionaryDataSource implements LectionaryDataSource {
     requestedReadingTypes.add(readingType);
     requestedBibleVersions.add(bibleVersion);
     if (failDay) throw StateError('day unavailable');
+    if (dayDelay != null) await Future<void>.delayed(dayDelay!);
     return dayBuilder(date);
   }
 

@@ -66,6 +66,22 @@ void main() {
     expect(find.byKey(const ValueKey('copy-reading')), findsOneWidget);
   });
 
+  testWidgets('closes when the reading itself is dragged down', (tester) async {
+    await tester.binding.setSurfaceSize(const Size(390, 844));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    await pumpSheet(tester, withVerses);
+    expect(find.byKey(const ValueKey('reading-sheet')), findsOneWidget);
+
+    // From inside the scripture, not from the handle at the top.
+    await tester.drag(
+      find.textContaining('No princípio era o Verbo.'),
+      const Offset(0, 600),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const ValueKey('reading-sheet')), findsNothing);
+  });
+
   testWidgets('closes on the close action', (tester) async {
     await pumpSheet(tester, withVerses);
     expect(find.byKey(const ValueKey('reading-sheet')), findsOneWidget);

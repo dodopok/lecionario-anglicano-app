@@ -218,13 +218,16 @@ String? _dayTitle(LectionaryDay? day, DateTime date) {
   return null;
 }
 
+/// The line under the day's name: the feast it also carries, and its colour.
+///
+/// Not the lectionary year: the API reports one for every prayer book, the
+/// one-year lectionaries included, so it cannot be shown without being wrong
+/// for them.
 String _dayMeta(LectionaryDay? day, AppCopy copy, String? title) {
   final celebration = day?.celebration?.name.trim();
   final parts = <String>[
     if (celebration != null && celebration.isNotEmpty && celebration != title)
       celebration,
-    if (day?.liturgicalYear case final year? when year.trim().isNotEmpty)
-      '${copy.yearLabel} $year',
     if (day?.color case final color? when color.trim().isNotEmpty)
       copy.colorLabel(color),
   ];
@@ -693,7 +696,7 @@ class ReadingsCard extends StatelessWidget {
             ),
           ),
           if (isLoading)
-            ...List.generate(3, (index) => const _ReadingSkeletonRow())
+            ...List.generate(4, (index) => const _ReadingSkeletonRow())
           else if (readings.isEmpty)
             Padding(
               padding: const EdgeInsets.only(bottom: 14),
@@ -835,11 +838,13 @@ class CollectCard extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             SizedBox(height: 34, child: Eyebrow(copy.collect)),
-            const SkeletonBox(width: 210, height: 14, radius: 7),
-            const SizedBox(height: 9),
-            const SkeletonBox(width: 180, height: 14, radius: 7),
-            const SizedBox(height: 9),
-            const SkeletonBox(width: 125, height: 14, radius: 7),
+            const SkeletonBox(width: 250, height: 15, radius: 7),
+            const SizedBox(height: 10),
+            const SkeletonBox(width: 220, height: 15, radius: 7),
+            const SizedBox(height: 10),
+            const SkeletonBox(width: 235, height: 15, radius: 7),
+            const SizedBox(height: 10),
+            const SkeletonBox(width: 140, height: 15, radius: 7),
           ],
         ),
       );

@@ -1070,4 +1070,78 @@ void main() {
     expect(offset, greaterThan(gridWidth * .3));
     expect(offset, lessThan(gridWidth * .55));
   });
+
+  testWidgets('the day sheet closes when its content is dragged down', (
+    tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(390, 844));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    final controller = AppController(
+      api: FakeLectionaryDataSource(books: [testBook()], dayBuilder: testDay),
+      localPreferences: await createLocalPreferences({
+        'selected_prayer_book_code': 'loc_test',
+      }),
+    );
+    addTearDown(controller.dispose);
+    await controller.initialize();
+
+    await tester.pumpWidget(
+      testMaterialApp(home: HomeScreen(controller: controller)),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.byType(DailyHero));
+    await tester.pumpAndSettle();
+    expect(
+      find.byKey(const ValueKey('mobile-day-detail-sheet')),
+      findsOneWidget,
+    );
+
+    // From the readings, not from the handle at the top.
+    await tester.drag(find.text('João 1:1–5'), const Offset(0, 700));
+    await tester.pumpAndSettle();
+
+    expect(
+      find.byKey(const ValueKey('mobile-day-detail-sheet')),
+      findsNothing,
+    );
+  });
+
+  testWidgets('the day sheet holds its height while the day loads', (
+    tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(390, 844));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    final source = FakeLectionaryDataSource(
+      books: [testBook()],
+      dayBuilder: testDay,
+    );
+    final controller = AppController(
+      api: source,
+      localPreferences: await createLocalPreferences({
+        'selected_prayer_book_code': 'loc_test',
+      }),
+    );
+    addTearDown(controller.dispose);
+    await controller.initialize();
+    source.dayDelay = const Duration(seconds: 5);
+
+    await tester.pumpWidget(
+      testMaterialApp(home: HomeScreen(controller: controller)),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.byType(DailyHero));
+    await tester.pumpAndSettle();
+
+    final sheet = find.byKey(const ValueKey('mobile-day-detail-sheet'));
+    expect(find.byType(SkeletonBox), findsWidgets);
+    final whileLoading = tester.getRect(sheet);
+
+    await tester.pump(const Duration(seconds: 5));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(SkeletonBox), findsNothing);
+    expect(tester.getRect(sheet), whileLoading);
+  });
 }

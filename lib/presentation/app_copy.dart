@@ -110,11 +110,6 @@ class AppCopy {
     AppLanguage.en => 'Close',
     AppLanguage.es => 'Cerrar',
   };
-  String get yearLabel => switch (language) {
-    AppLanguage.pt => 'Ano',
-    AppLanguage.en => 'Year',
-    AppLanguage.es => 'Año',
-  };
   String get readingTrack => switch (language) {
     AppLanguage.pt => 'Sequência das leituras',
     AppLanguage.en => 'Reading track',

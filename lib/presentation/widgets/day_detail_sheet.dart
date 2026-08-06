@@ -46,16 +46,22 @@ class _DayDetailSheetState extends State<DayDetailSheet> {
   @override
   Widget build(BuildContext context) {
     final bottomInset = MediaQuery.viewInsetsOf(context).bottom;
-    final maxHeight = MediaQuery.sizeOf(context).height * .92;
     final isToday = DateUtils.isSameDay(widget.date, DateTime.now());
 
-    return SafeArea(
-      top: false,
-      child: ConstrainedBox(
-        key: const ValueKey('mobile-day-detail-sheet'),
-        constraints: BoxConstraints(maxHeight: maxHeight),
+    // The sheet takes its height up front rather than growing around the day
+    // as it arrives, and drags away from anywhere in the content.
+    return DraggableScrollableSheet(
+      key: const ValueKey('mobile-day-detail-sheet'),
+      expand: false,
+      initialChildSize: .9,
+      minChildSize: .5,
+      maxChildSize: .95,
+      shouldCloseOnMinExtent: true,
+      builder: (context, scrollController) => SafeArea(
+        top: false,
         child: SingleChildScrollView(
-          padding: EdgeInsets.fromLTRB(16, 2, 16, 20 + bottomInset),
+          controller: scrollController,
+          padding: EdgeInsets.fromLTRB(16, 0, 16, 20 + bottomInset),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
