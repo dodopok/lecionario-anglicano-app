@@ -60,6 +60,11 @@ class AppCopy {
     AppLanguage.en => 'Collect of the day',
     AppLanguage.es => 'Colecta del día',
   };
+  String get collects => switch (language) {
+    AppLanguage.pt => 'Coletas do dia',
+    AppLanguage.en => 'Collects of the day',
+    AppLanguage.es => 'Colectas del día',
+  };
   String get openTodayReadings => switch (language) {
     AppLanguage.pt => 'Abrir o dia de hoje',
     AppLanguage.en => 'Open today',
@@ -70,10 +75,10 @@ class AppCopy {
     AppLanguage.en => 'Copy',
     AppLanguage.es => 'Copiar',
   };
-  String get copiedToClipboard => switch (language) {
-    AppLanguage.pt => 'Texto copiado',
-    AppLanguage.en => 'Text copied',
-    AppLanguage.es => 'Texto copiado',
+  String get copied => switch (language) {
+    AppLanguage.pt => 'Copiado',
+    AppLanguage.en => 'Copied',
+    AppLanguage.es => 'Copiado',
   };
   String get chooseLoc => switch (language) {
     AppLanguage.pt => 'Escolher LOC',

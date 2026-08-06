@@ -55,7 +55,8 @@ void main() {
     expect(portuguese.today, 'Hoje');
     expect(portuguese.openTodayReadings, 'Abrir o dia de hoje');
     expect(portuguese.copyAction, 'Copiar');
-    expect(portuguese.copiedToClipboard, 'Texto copiado');
+    expect(portuguese.copied, 'Copiado');
+    expect(portuguese.collects, 'Coletas do dia');
     expect(portuguese.readings, 'Leituras de hoje');
     expect(portuguese.readingsForDay, 'Leituras do dia');
     expect(portuguese.collect, 'Coleta do dia');
@@ -90,7 +91,8 @@ void main() {
     expect(english.today, 'Today');
     expect(english.openTodayReadings, 'Open today');
     expect(english.copyAction, 'Copy');
-    expect(english.copiedToClipboard, 'Text copied');
+    expect(english.copied, 'Copied');
+    expect(english.collects, 'Collects of the day');
     expect(english.readings, "Today's readings");
     expect(english.readingsForDay, "Day's readings");
     expect(english.collect, 'Collect of the day');
@@ -124,7 +126,8 @@ void main() {
     expect(spanish.today, 'Hoy');
     expect(spanish.openTodayReadings, 'Abrir el día de hoy');
     expect(spanish.copyAction, 'Copiar');
-    expect(spanish.copiedToClipboard, 'Texto copiado');
+    expect(spanish.copied, 'Copiado');
+    expect(spanish.collects, 'Colectas del día');
     expect(spanish.readings, 'Lecturas de hoy');
     expect(spanish.readingsForDay, 'Lecturas del día');
     expect(spanish.collect, 'Colecta del día');

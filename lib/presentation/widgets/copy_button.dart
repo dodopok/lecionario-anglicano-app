@@ -1,33 +1,11 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_typography.dart';
 import '../app_copy.dart';
-
-Future<void> copyToClipboard(
-  BuildContext context,
-  String text,
-  AppCopy copy,
-) async {
-  final messenger = ScaffoldMessenger.maybeOf(context);
-  await Clipboard.setData(ClipboardData(text: text));
-  messenger?.showSnackBar(
-    SnackBar(
-      content: Text(
-        copy.copiedToClipboard,
-        style: AppTypography.ui(
-          size: 14,
-          weight: FontWeight.w600,
-          color: AppColors.white,
-        ),
-      ),
-      backgroundColor: AppColors.pine,
-      behavior: SnackBarBehavior.floating,
-      duration: const Duration(seconds: 2),
-    ),
-  );
-}
 
 /// Icon-only copy action used in the card headers.
 class CopyButton extends StatelessWidget {
@@ -38,14 +16,7 @@ class CopyButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return IconButton(
-      onPressed: () => copyToClipboard(context, text, copy),
-      tooltip: copy.copyAction,
-      icon: const Icon(Icons.content_copy_outlined, size: 17),
-      color: AppColors.muted,
-      constraints: const BoxConstraints.tightFor(width: 40, height: 40),
-      padding: EdgeInsets.zero,
-    );
+    return _CopyAction(text: text, copy: copy, labelled: false);
   }
 }
 
@@ -58,12 +29,77 @@ class CopyTextButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    return _CopyAction(text: text, copy: copy, labelled: true);
+  }
+}
+
+/// Confirms the copy on the button itself.
+///
+/// A snackbar would be hidden behind the sheets these buttons live in, so the
+/// control answers where the finger already is.
+class _CopyAction extends StatefulWidget {
+  const _CopyAction({
+    required this.text,
+    required this.copy,
+    required this.labelled,
+  });
+
+  final String text;
+  final AppCopy copy;
+  final bool labelled;
+
+  @override
+  State<_CopyAction> createState() => _CopyActionState();
+}
+
+class _CopyActionState extends State<_CopyAction> {
+  static const _feedbackDuration = Duration(seconds: 2);
+
+  bool justCopied = false;
+  Timer? reset;
+
+  @override
+  void dispose() {
+    reset?.cancel();
+    super.dispose();
+  }
+
+  void _copy() {
+    // The confirmation is not made to wait on the platform round trip.
+    unawaited(Clipboard.setData(ClipboardData(text: widget.text)));
+    unawaited(HapticFeedback.selectionClick());
+    setState(() => justCopied = true);
+    reset?.cancel();
+    reset = Timer(_feedbackDuration, () {
+      if (mounted) setState(() => justCopied = false);
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final label = justCopied ? widget.copy.copied : widget.copy.copyAction;
+    final icon = Icon(
+      justCopied ? Icons.check_rounded : Icons.content_copy_outlined,
+      size: 17,
+    );
+
+    if (!widget.labelled) {
+      return IconButton(
+        onPressed: _copy,
+        tooltip: label,
+        icon: icon,
+        color: justCopied ? AppColors.pine : AppColors.muted,
+        constraints: const BoxConstraints.tightFor(width: 40, height: 40),
+        padding: EdgeInsets.zero,
+      );
+    }
+
     return TextButton.icon(
-      onPressed: () => copyToClipboard(context, text, copy),
-      icon: const Icon(Icons.content_copy_outlined, size: 17),
-      label: Text(copy.copyAction),
+      onPressed: _copy,
+      icon: icon,
+      label: Text(label),
       style: TextButton.styleFrom(
-        foregroundColor: AppColors.copperDark,
+        foregroundColor: justCopied ? AppColors.pine : AppColors.copperDark,
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
         textStyle: AppTypography.ui(size: 14, weight: FontWeight.w700),
       ),
