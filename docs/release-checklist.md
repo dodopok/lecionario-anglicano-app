@@ -128,4 +128,9 @@ FLUTTER_BUILD_NUMBER=3 ./tool/build_ios_release.sh
 ./tool/build_android_release.sh
 ANDROID_BUILD_APK=1 ./tool/build_android_release.sh
 ./tool/generate_android_assets.py
+
+# Android + iOS numa chamada só, mesmo build number pras duas lojas
+./tool/build_release.sh
+FLUTTER_BUILD_NUMBER=4 ./tool/build_release.sh
+IOS_SKIP=1 ./tool/build_release.sh   # sem Xcode disponível
 ```
