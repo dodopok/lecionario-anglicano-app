@@ -17,7 +17,9 @@ import 'package:google_fonts/src/google_fonts_base.dart' as google_fonts;
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'package:lecionario_anglicano/core/theme/app_colors.dart';
 import 'package:lecionario_anglicano/core/theme/app_theme.dart';
+import 'package:lecionario_anglicano/core/theme/app_typography.dart';
 import 'package:lecionario_anglicano/data/models/lectionary_models.dart';
 import 'package:lecionario_anglicano/data/services/lectionary_api.dart';
 import 'package:lecionario_anglicano/data/services/local_preferences.dart';
@@ -25,19 +27,23 @@ import 'package:lecionario_anglicano/presentation/app_controller.dart';
 import 'package:lecionario_anglicano/presentation/app_copy.dart';
 import 'package:lecionario_anglicano/presentation/app_shell.dart';
 import 'package:lecionario_anglicano/presentation/widgets/home_sections.dart';
+import 'package:lecionario_anglicano/presentation/widgets/sacred_mark.dart';
 
-/// Renders the App Store screenshots from the real interface, with the real
-/// fonts and icons, at the pixel sizes the store asks for.
+/// Renders the store screenshots from the real interface, with the real fonts
+/// and icons, at the pixel sizes each store asks for.
 ///
 /// The lectionary comes from responses captured from the production API, so
 /// the images show what the app really serves. Driven by
-/// tool/capture_store_screenshots.sh, which fetches those responses first.
+/// tool/render_store_screenshots.sh, which fetches those responses first.
 ///
 ///   FIXTURE_DIR=... FONT_DIR=... ICON_FONT=... CAPTURE_DIR=... \
 ///     flutter test test/store_capture_test.dart --tags capture
+///
+/// Both stores are rendered unless STORE names one of them, `app` or `play`.
 void main() {
   final fixtures = Directory(_env('FIXTURE_DIR'));
   final captures = Directory(_env('CAPTURE_DIR'))..createSync(recursive: true);
+  final only = Platform.environment['STORE'] ?? '';
 
   setUpAll(() async {
     await initializeDateFormatting();
@@ -46,7 +52,40 @@ void main() {
   });
   tearDownAll(() => HttpOverrides.global = null);
 
-  for (final device in _devices) {
+  // Only Play asks for one, and it is the one image on the listing that is not
+  // a screenshot: a 1024x500 banner above everything else.
+  if (only != 'app') {
+    for (final language in AppLanguage.values) {
+      testWidgets('feature graphic ${language.code}', (tester) async {
+        tester.view.physicalSize = const Size(1024, 500);
+        tester.view.devicePixelRatio = 1;
+        addTearDown(tester.view.reset);
+
+        await tester.pumpWidget(
+          MaterialApp(
+            debugShowCheckedModeBanner: false,
+            theme: AppTheme.light,
+            locale: language.locale,
+            localizationsDelegates: GlobalMaterialLocalizations.delegates,
+            supportedLocales: AppLanguage.values.map((l) => l.locale),
+            home: _FeatureGraphic(language: language),
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        await expectLater(
+          find.byType(MaterialApp),
+          matchesGoldenFile(
+            '${captures.path}/feature-${language.code}-00-graphic.png',
+          ),
+        );
+      });
+    }
+  }
+
+  for (final device in _devices.where(
+    (device) => only.isEmpty || device.store == only,
+  )) {
     for (final language in AppLanguage.values) {
       testWidgets('${device.name} ${language.code}', (tester) async {
         final source = _CapturedApi(fixtures, language);
@@ -147,6 +186,7 @@ void main() {
 }
 
 typedef _Device = ({
+  String store,
   String name,
   Size pixels,
   double pixelRatio,
@@ -155,12 +195,19 @@ typedef _Device = ({
   Map<AppLanguage, String> book,
 });
 
-/// One entry per slot App Store Connect offers. Which iPhone slot a listing
-/// shows depends on the listing, and a 6.9" image is rejected outright by a
-/// 6.5" slot, so both are rendered.
+/// One entry per slot a store offers.
+///
+/// On the App Store, which iPhone slot a listing shows depends on the listing,
+/// and a 6.9" image is rejected outright by a 6.5" slot, so both are rendered.
+///
+/// Play is looser about exact sizes but not about shape: a screenshot may not
+/// be more than twice as tall as it is wide, which rules out reusing the
+/// iPhone images — 1284x2778 is past that. The Play sizes below are the ones
+/// its own guidance names, and each is 9:16 or squarer.
 const _devices = <_Device>[
   (
     // 6.5": iPhone 11/XS Max through 14 Plus.
+    store: 'app',
     name: 'iphone65',
     pixels: Size(1284, 2778),
     pixelRatio: 3,
@@ -170,6 +217,7 @@ const _devices = <_Device>[
   ),
   (
     // 6.9": iPhone 16 Pro Max and kin, where the island takes the top.
+    store: 'app',
     name: 'iphone69',
     pixels: Size(1290, 2796),
     pixelRatio: 3,
@@ -179,10 +227,45 @@ const _devices = <_Device>[
   ),
   (
     // 13": iPad Pro.
+    store: 'app',
     name: 'ipad13',
     pixels: Size(2064, 2752),
     pixelRatio: 2,
     insets: EdgeInsets.only(top: 24, bottom: 20),
+    opensDaySheet: false,
+    book: _books,
+  ),
+  (
+    // Play's phone slot, at 1080x1920 — 9:16, and the size its own guidance
+    // asks for. 2.75x leaves the 393dp width a current phone really has.
+    store: 'play',
+    name: 'phone',
+    pixels: Size(1080, 1920),
+    pixelRatio: 2.75,
+    insets: EdgeInsets.only(top: 24, bottom: 24),
+    opensDaySheet: true,
+    book: _books,
+  ),
+  (
+    // Play's 7" tablet slot. 600dp across is below the width the two-column
+    // layout needs, so this shows the single column — which is what the app
+    // really does on a tablet that size.
+    store: 'play',
+    name: 'tablet7',
+    pixels: Size(1200, 1920),
+    pixelRatio: 2,
+    insets: EdgeInsets.only(top: 24, bottom: 24),
+    opensDaySheet: true,
+    book: _books,
+  ),
+  (
+    // Play's 10" tablet slot, wide enough for the calendar and the day to sit
+    // side by side.
+    store: 'play',
+    name: 'tablet10',
+    pixels: Size(1600, 2560),
+    pixelRatio: 2,
+    insets: EdgeInsets.only(top: 24, bottom: 24),
     opensDaySheet: false,
     book: _books,
   ),
@@ -193,6 +276,62 @@ const _books = {
   AppLanguage.en: 'ACNA - 2019',
   AppLanguage.es: 'ACNA - 2019',
 };
+
+/// The banner at the top of the Play listing: the app's own mark, name and
+/// subtitle, on the paper the app opens on.
+///
+/// Everything sits in the middle because Play crops this image differently
+/// depending on where it shows it, and only the centre is safe.
+class _FeatureGraphic extends StatelessWidget {
+  const _FeatureGraphic({required this.language});
+
+  final AppLanguage language;
+
+  static const _title = {
+    AppLanguage.pt: 'Lecionário Anglicano',
+    AppLanguage.en: 'Anglican Lectionary',
+    AppLanguage.es: 'Leccionario Anglicano',
+  };
+
+  static const _subtitle = {
+    AppLanguage.pt: 'LEITURAS PARA CADA DIA',
+    AppLanguage.en: 'DAILY LECTIONARY READINGS',
+    AppLanguage.es: 'LECTURAS PARA CADA DÍA',
+  };
+
+  @override
+  Widget build(BuildContext context) {
+    // Material, not a plain ColoredBox: text with no Material above it is
+    // drawn with the yellow underline Flutter marks unstyled text with, and
+    // it lands in the golden.
+    return Material(
+      color: AppColors.paper,
+      child: Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const SacredMark(
+              size: 132,
+              color: AppColors.copper,
+              strokeWidth: 4,
+            ),
+            const SizedBox(height: 30),
+            Text(
+              _title[language]!,
+              style: AppTypography.display(
+                size: 62,
+                color: AppColors.pineDeep,
+                height: 1.05,
+              ),
+            ),
+            const SizedBox(height: 16),
+            Text(_subtitle[language]!, style: AppTypography.eyebrow(size: 17)),
+          ],
+        ),
+      ),
+    );
+  }
+}
 
 String _env(String name) {
   final value = Platform.environment[name];

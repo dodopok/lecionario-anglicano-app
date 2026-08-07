@@ -1,15 +1,21 @@
 #!/usr/bin/env bash
 #
-# Renders the App Store screenshots without a simulator: the real interface,
-# the real fonts and icons, at the pixel sizes the store asks for, filled with
-# responses captured from the production API.
+# Renders the store screenshots without a simulator or an emulator: the real
+# interface, the real fonts and icons, at the pixel sizes each store asks for,
+# filled with responses captured from the production API. Play's feature
+# graphic is drawn here too.
 #
 #   ./tool/render_store_screenshots.sh
 #
-# Runs anywhere Flutter runs — no macOS, no Xcode. What it cannot show is the
-# iOS status bar, and anything the platform draws rather than the app. When
-# you have a Mac at hand, tool/capture_store_screenshots.sh drives the app on
-# real simulators instead; either one fills store-assets/app-store/.
+# Runs anywhere Flutter runs — no macOS, no Xcode, no Android SDK. What it
+# cannot show is the platform's own status bar, and anything drawn by the OS
+# rather than by the app. When you have a Mac at hand,
+# tool/capture_store_screenshots.sh drives the app on real iOS simulators
+# instead; either one fills store-assets/app-store/.
+#
+# Both stores are rendered unless one is named:
+#
+#   STORE=play ./tool/render_store_screenshots.sh
 #
 # The day it captures defaults to today. Pin it to a day worth showing:
 #
@@ -114,28 +120,58 @@ fi
 }
 
 FIXTURE_DIR="$fixtures" FONT_DIR="$fonts" ICON_FONT="$icon_font" \
-CAPTURE_DIR="$captures" \
+CAPTURE_DIR="$captures" STORE="${STORE:-}" \
   flutter test test/store_capture_test.dart \
     --tags capture --run-skipped --update-goldens
 
-python3 - "$captures" "$repo_root/store-assets/app-store" <<'PY'
+python3 - "$captures" "$repo_root" <<'PY'
 import pathlib, shutil, sys
 
-source, destination = (pathlib.Path(argument) for argument in sys.argv[1:3])
+captures, root = (pathlib.Path(argument) for argument in sys.argv[1:3])
+sys.path.insert(0, str(root / 'tool'))
+from png import Image
+
 languages = {'pt': 'pt-BR', 'en': 'en-US', 'es': 'es'}
-# One folder per App Store Connect slot, named after the slot.
-devices = {'iphone65': 'iphone-6.5', 'iphone69': 'iphone-6.9',
-           'ipad13': 'ipad-13'}
+# One folder per store slot, named after the slot the console offers.
+slots = {
+    'iphone65': ('app-store', 'iphone-6.5'),
+    'iphone69': ('app-store', 'iphone-6.9'),
+    'ipad13': ('app-store', 'ipad-13'),
+    'phone': ('play-store', 'phone'),
+    'tablet7': ('play-store', 'tablet-7'),
+    'tablet10': ('play-store', 'tablet-10'),
+}
 
 count = 0
-for image in sorted(source.glob('*.png')):
+for image in sorted(captures.glob('*.png')):
     device, language, screen = image.stem.split('-', 2)
-    folder = destination / languages[language] / devices[device]
-    folder.mkdir(parents=True, exist_ok=True)
-    shutil.copy2(image, folder / f'{screen}.png')
+
+    if device == 'feature':
+        # The one image on either listing that is not a screenshot, and the
+        # one Play wants without an alpha channel — which a golden always has,
+        # so it is rewritten rather than copied.
+        destination = (
+            root / 'store-assets/play-store' / languages[language]
+            / 'feature-graphic.png'
+        )
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        Image.load(image).save(destination, alpha=False)
+    else:
+        store, slot = slots[device]
+        folder = root / 'store-assets' / store / languages[language] / slot
+        folder.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(image, folder / f'{screen}.png')
+
     count += 1
 
-print(f'\n{count} screenshots in {destination}')
+print(f'\n{count} images in store-assets/')
 PY
 
-"$script_dir/verify_app_store_assets.sh"
+case "${STORE:-}" in
+  app) "$script_dir/verify_app_store_assets.sh" ;;
+  play) "$script_dir/verify_play_store_assets.sh" ;;
+  *)
+    "$script_dir/verify_app_store_assets.sh"
+    "$script_dir/verify_play_store_assets.sh"
+    ;;
+esac
