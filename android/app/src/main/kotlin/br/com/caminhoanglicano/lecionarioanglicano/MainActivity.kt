@@ -1,4 +1,4 @@
-package br.com.caminhoanglicano.lecionario_anglicano
+package br.com.caminhoanglicano.lecionarioanglicano
 
 import io.flutter.embedding.android.FlutterActivity
 

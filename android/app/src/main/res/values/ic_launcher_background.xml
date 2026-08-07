@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Written by tool/generate_android_assets.py, sampled from the app
+     icon so the adaptive icon's two layers stay the same colour. -->
+<resources>
+    <color name="ic_launcher_background">#C9A86A</color>
+</resources>

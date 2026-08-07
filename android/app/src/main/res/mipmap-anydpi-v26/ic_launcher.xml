@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- From Android 8 the launcher masks the icon into whatever shape it uses,
+     and it does that to the two layers below rather than to a finished image.
+     Both come from tool/generate_android_assets.py: the background is a flat
+     fill of the colour the mark already sits on, so no seam shows through the
+     mask, and the foreground carries the mark well inside the area every mask
+     keeps. -->
+<adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
+    <background android:drawable="@color/ic_launcher_background" />
+    <foreground android:drawable="@mipmap/ic_launcher_foreground" />
+</adaptive-icon>
