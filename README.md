@@ -23,6 +23,29 @@ O app não substitui dados da API por conteúdo local: quando uma resposta falha
 
 Os idiomas iniciais da interface são Português do Brasil (`pt-BR`), English (United States, `en-US`) e Español (`es`).
 
+### Beta: acesso a um LOC `external_only`
+
+Enquanto um livro de oração estiver marcado `external_only` no backend (ex.: LOC 2027, publicado só pra
+consumidores com API key até os ofícios diários existirem), ele fica invisível pelo fluxo normal de
+`X-App-Internal-Id`. Pra liberar mesmo assim durante o beta, builda passando a API key da Estêvão API:
+
+```bash
+flutter run \
+  --dart-define=API_BASE_URL=https://api.caminhoanglicano.com.br/api/v1 \
+  --dart-define=API_KEY=estevao_xxxxxxxxxxxxxxxx
+```
+
+ou, pros scripts de release:
+
+```bash
+API_KEY=estevao_xxxxxxxxxxxxxxxx ./tool/build_android_release.sh
+```
+
+A key nunca deve ser commitada — passe sempre por `--dart-define`/variável de ambiente na hora do build (local
+ou CI). Sem ela, o app volta sozinho ao comportamento normal (`X-App-Internal-Id`), então **pra desligar o
+beta depois que o livro virar `app_visible`, basta parar de passar `API_KEY` no build** — não precisa mexer em
+código.
+
 ## Versão
 
 Uma versão só, no `pubspec.yaml`, para as duas lojas — o Flutter a entrega
