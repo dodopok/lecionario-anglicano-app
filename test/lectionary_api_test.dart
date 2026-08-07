@@ -59,6 +59,44 @@ void main() {
     expect(capturedRequest?.headers['Content-Type'], 'application/json');
   });
 
+  test('does not send X-API-Key when no key is configured', () async {
+    http.BaseRequest? capturedRequest;
+    final client = MockClient((request) async {
+      capturedRequest = request;
+      return http.Response(jsonEncode({'data': []}), 200);
+    });
+    final api = LectionaryApi(
+      client: client,
+      baseUrl: 'https://api.test/api/v1',
+      internalIdentifier: 'test-internal-id',
+    );
+    addTearDown(api.dispose);
+
+    await api.getPrayerBooks();
+
+    expect(capturedRequest?.headers.containsKey('X-API-Key'), isFalse);
+  });
+
+  test('sends X-API-Key alongside the app header when configured', () async {
+    http.BaseRequest? capturedRequest;
+    final client = MockClient((request) async {
+      capturedRequest = request;
+      return http.Response(jsonEncode({'data': []}), 200);
+    });
+    final api = LectionaryApi(
+      client: client,
+      baseUrl: 'https://api.test/api/v1',
+      internalIdentifier: 'test-internal-id',
+      apiKey: 'estevao_beta_key',
+    );
+    addTearDown(api.dispose);
+
+    await api.getPrayerBooks();
+
+    expect(capturedRequest?.headers['X-API-Key'], 'estevao_beta_key');
+    expect(capturedRequest?.headers['X-App-Internal-Id'], 'test-internal-id');
+  });
+
   test(
     'reads reading type options and labels from the prayer book API',
     () async {
