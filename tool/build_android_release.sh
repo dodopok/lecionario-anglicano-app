@@ -35,6 +35,12 @@ if [[ -n "${APP_INTERNAL_IDENTIFIER:-}" ]]; then
   build_args+=(--dart-define="APP_INTERNAL_IDENTIFIER=${APP_INTERNAL_IDENTIFIER}")
 fi
 
+# Beta-only external API key — see lib/data/services/lectionary_api.dart.
+# Omit once the backend flips the beta prayer book to app-visible.
+if [[ -n "${API_KEY:-}" ]]; then
+  build_args+=(--dart-define="API_KEY=${API_KEY}")
+fi
+
 if [[ -n "${FLUTTER_BUILD_NAME:-}" ]]; then
   build_args+=(--build-name="$FLUTTER_BUILD_NAME")
 fi

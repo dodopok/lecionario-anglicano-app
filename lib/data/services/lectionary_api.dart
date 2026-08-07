@@ -16,6 +16,15 @@ class ApiConfig {
     'APP_INTERNAL_IDENTIFIER',
     defaultValue: 'WxmP9zc51ioDltt41ZRbPzC70fcr0bWa3rhVeIzcFxI=',
   );
+
+  /// Beta-only external API key (X-API-Key), used while a prayer book is
+  /// published as `external_only` on the backend and not yet visible through
+  /// the normal app-header path. Empty by default on purpose — never commit
+  /// a real key here, this repo is public. Pass it at build time:
+  ///   flutter build ... --dart-define=API_KEY=estevao_xxxxx
+  /// To go back to the normal app-header flow, just stop passing it; no code
+  /// change needed on this side.
+  static const apiKey = String.fromEnvironment('API_KEY', defaultValue: '');
 }
 
 abstract interface class LectionaryDataSource {
@@ -47,17 +56,21 @@ class LectionaryApi implements LectionaryDataSource {
     http.Client? client,
     String? baseUrl,
     String? internalIdentifier,
+    String? apiKey,
   }) : _client = client ?? http.Client(),
        _baseUrl = baseUrl ?? ApiConfig.baseUrl,
-       _internalIdentifier = internalIdentifier ?? ApiConfig.internalIdentifier;
+       _internalIdentifier = internalIdentifier ?? ApiConfig.internalIdentifier,
+       _apiKey = apiKey ?? ApiConfig.apiKey;
 
   final http.Client _client;
   final String _baseUrl;
   final String _internalIdentifier;
+  final String _apiKey;
 
   Map<String, String> get _headers => {
     'Content-Type': 'application/json',
     'X-App-Internal-Id': _internalIdentifier,
+    if (_apiKey.isNotEmpty) 'X-API-Key': _apiKey,
   };
 
   Uri _uri(
