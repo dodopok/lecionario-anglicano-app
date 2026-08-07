@@ -168,6 +168,7 @@ class _HomeScreenState extends State<HomeScreen> {
       context: context,
       backgroundColor: AppColors.paper,
       isScrollControlled: true,
+      useSafeArea: true,
       showDragHandle: true,
       constraints: _sheetConstraints,
       builder: (context) => _PrayerBookSheet(
@@ -606,7 +607,11 @@ class _PrayerBookSheet extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SafeArea(
-      child: Padding(
+      // Scrollable: without this, a book list taller than the sheet's
+      // allotted height overflows past the visible area — on Android the
+      // hidden entries end up sitting behind the modal barrier and the
+      // system navigation bar, unreachable and unselectable.
+      child: SingleChildScrollView(
         padding: const EdgeInsets.fromLTRB(20, 8, 20, 22),
         child: Column(
           mainAxisSize: MainAxisSize.min,
