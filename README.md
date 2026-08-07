@@ -35,10 +35,12 @@ flutter run \
   --dart-define=API_KEY=estevao_xxxxxxxxxxxxxxxx
 ```
 
-ou, pros scripts de release:
+ou, pros scripts de release — Android e iOS separados, ou os dois numa chamada só:
 
 ```bash
 API_KEY=estevao_xxxxxxxxxxxxxxxx ./tool/build_android_release.sh
+API_KEY=estevao_xxxxxxxxxxxxxxxx ./tool/build_ios_release.sh
+API_KEY=estevao_xxxxxxxxxxxxxxxx ./tool/build_release.sh
 ```
 
 A key nunca deve ser commitada — passe sempre por `--dart-define`/variável de ambiente na hora do build (local
