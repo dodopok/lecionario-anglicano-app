@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 
 import '../data/models/lectionary_models.dart';
+import '../data/models/liturgical_explanation.dart';
 import '../data/services/lectionary_api.dart';
 import '../data/services/load_failure.dart';
 import '../data/services/local_preferences.dart';
@@ -225,6 +226,22 @@ class AppController extends ChangeNotifier {
     } catch (error) {
       return (day: null, failure: LoadFailure.from(error));
     }
+  }
+
+  Future<LiturgicalExplanation> fetchLiturgicalExplanation(
+    DateTime date,
+  ) async {
+    final code = selectedPrayerBookCode;
+    if (code == null) {
+      throw StateError('Nenhum livro de oração foi selecionado.');
+    }
+
+    return api.getLiturgicalExplanation(
+      DateTime(date.year, date.month, date.day),
+      code,
+      readingType: selectedReadingType,
+      bibleVersion: selectedBibleVersionCode,
+    );
   }
 
   Future<void> loadMonth(DateTime month) async {

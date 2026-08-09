@@ -3,6 +3,7 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:lecionario_anglicano/data/models/lectionary_models.dart';
+import 'package:lecionario_anglicano/data/models/liturgical_explanation.dart';
 import 'package:lecionario_anglicano/data/services/lectionary_api.dart';
 import 'package:lecionario_anglicano/data/services/local_preferences.dart';
 
@@ -11,6 +12,7 @@ class FakeLectionaryDataSource implements LectionaryDataSource {
     List<PrayerBook>? books,
     List<BibleVersion>? bibleVersions,
     LectionaryDay Function(DateTime date)? dayBuilder,
+    this.explanationBuilder,
     List<CalendarDay> Function(DateTime month)? monthBuilder,
     this.dayDelay,
   }) : books = books ?? [testBook(code: 'loc_2015', name: 'LOC 2015')],
@@ -32,6 +34,7 @@ class FakeLectionaryDataSource implements LectionaryDataSource {
   List<PrayerBook> books;
   List<BibleVersion> bibleVersions;
   LectionaryDay Function(DateTime date) dayBuilder;
+  LiturgicalExplanation Function(DateTime date)? explanationBuilder;
   List<CalendarDay> Function(DateTime month) monthBuilder;
 
   /// Holds getDay open, so a loading state can be looked at. Set it after the
@@ -47,11 +50,13 @@ class FakeLectionaryDataSource implements LectionaryDataSource {
   int getBibleVersionsCalls = 0;
   int getCalendarMonthCalls = 0;
   int getDayCalls = 0;
+  int getLiturgicalExplanationCalls = 0;
   bool failPrayerBooks = false;
   bool failReadingTypeOptions = false;
   bool failBibleVersions = false;
   bool failCalendarMonth = false;
   bool failDay = false;
+  bool failLiturgicalExplanation = false;
   bool disposed = false;
 
   /// Fails as a lost connection rather than a bad response.
@@ -134,6 +139,22 @@ class FakeLectionaryDataSource implements LectionaryDataSource {
     if (failDay) throw _failure;
     if (dayDelay != null) await Future<void>.delayed(dayDelay!);
     return dayBuilder(date);
+  }
+
+  @override
+  Future<LiturgicalExplanation> getLiturgicalExplanation(
+    DateTime date,
+    String prayerBookCode, {
+    String? readingType,
+    String? bibleVersion,
+  }) async {
+    getLiturgicalExplanationCalls++;
+    if (failLiturgicalExplanation) throw _failure;
+    final builder = explanationBuilder;
+    if (builder == null) {
+      throw StateError('No liturgical explanation fixture configured.');
+    }
+    return builder(date);
   }
 
   @override

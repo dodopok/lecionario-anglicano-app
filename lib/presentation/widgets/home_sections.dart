@@ -203,7 +203,7 @@ String _eyebrow(bool isToday, LectionaryDay? day, AppCopy copy) {
 /// carry is secondary, and moves to the line below.
 String? _dayTitle(LectionaryDay? day, DateTime date) {
   final candidates = date.weekday == DateTime.sunday
-      ? [day?.sundayName, day?.weekName, day?.celebration?.name, day?.season]
+      ? [day?.sundayName, day?.celebration?.name, day?.weekName, day?.season]
       : [day?.celebration?.name, day?.sundayName, day?.weekName, day?.season];
   for (final value in candidates) {
     if (value != null && value.trim().isNotEmpty) return value.trim();
@@ -936,25 +936,28 @@ class CollectCard extends StatelessWidget {
 
 /// The note the API publishes about the day, when there is one.
 class DayDescription extends StatelessWidget {
-  const DayDescription({required this.day, super.key});
+  const DayDescription({required this.day, this.inset = true, super.key});
 
   final LectionaryDay? day;
+  final bool inset;
 
   @override
   Widget build(BuildContext context) {
     final text = day?.description?.firstOrNull ?? day?.celebration?.description;
     if (text == null || text.trim().isEmpty) return const SizedBox.shrink();
+    final child = Text(
+      text.trim(),
+      style: AppTypography.display(
+        size: 18,
+        weight: FontWeight.w400,
+        color: AppColors.inkSoft,
+        height: 1.3,
+      ),
+    );
+    if (!inset) return child;
     return Padding(
       padding: const EdgeInsets.fromLTRB(4, 14, 4, 0),
-      child: Text(
-        text.trim(),
-        style: AppTypography.display(
-          size: 18,
-          weight: FontWeight.w400,
-          color: AppColors.inkSoft,
-          height: 1.3,
-        ),
-      ),
+      child: child,
     );
   }
 }

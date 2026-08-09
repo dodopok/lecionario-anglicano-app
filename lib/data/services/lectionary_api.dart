@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 
 import '../models/lectionary_models.dart';
+import '../models/liturgical_explanation.dart';
 
 class ApiConfig {
   ApiConfig._();
@@ -41,6 +42,13 @@ abstract interface class LectionaryDataSource {
   });
 
   Future<LectionaryDay> getDay(
+    DateTime date,
+    String prayerBookCode, {
+    String? readingType,
+    String? bibleVersion,
+  });
+
+  Future<LiturgicalExplanation> getLiturgicalExplanation(
     DateTime date,
     String prayerBookCode, {
     String? readingType,
@@ -219,6 +227,34 @@ class LectionaryApi implements LectionaryDataSource {
       throw const FormatException('Resposta inválida para o dia.');
     }
     return LectionaryDay.fromJson(Map<String, dynamic>.from(json));
+  }
+
+  @override
+  Future<LiturgicalExplanation> getLiturgicalExplanation(
+    DateTime date,
+    String prayerBookCode, {
+    String? readingType,
+    String? bibleVersion,
+  }) async {
+    final response = await _client
+        .get(
+          _uri(
+            '/liturgical_explanation/${date.year}/${date.month}/${date.day}',
+            prayerBookCode: prayerBookCode,
+            readingType: readingType,
+            bibleVersion: bibleVersion,
+          ),
+          headers: _headers,
+        )
+        .timeout(const Duration(seconds: 12));
+    _ensureSuccess(response);
+    final json = _decodeJson(response);
+    if (json is! Map) {
+      throw const FormatException(
+        'Resposta inválida para a explicação litúrgica.',
+      );
+    }
+    return LiturgicalExplanation.fromApiJson(Map<String, dynamic>.from(json));
   }
 
   void _ensureSuccess(http.Response response) {

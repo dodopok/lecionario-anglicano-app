@@ -329,6 +329,91 @@ void main() {
   });
 
   test(
+    'fetches and decodes the liturgical explanation with preferences',
+    () async {
+      http.BaseRequest? capturedRequest;
+      final client = MockClient((request) async {
+        capturedRequest = request;
+        return http.Response.bytes(
+          utf8.encode(
+            jsonEncode({
+              'data': {
+                'date': '2026-05-24',
+                'prayer_book_code': 'loc_2015',
+                'locale': 'pt-BR',
+                'presentation': {'title': 'Pentecostes', 'summary': ''},
+                'calendar': {
+                  'season': 'Páscoa',
+                  'season_range': {
+                    'start_date': '2026-04-05',
+                    'end_date': '2026-05-24',
+                    'days_remaining': 0,
+                    'presentation': {'title': '', 'summary': ''},
+                  },
+                  'cycle': 'A',
+                  'week': 8,
+                },
+                'celebration': {
+                  'selected': null,
+                  'candidates': [],
+                  'reason': {'code': '', 'message': ''},
+                  'presentation': {'title': '', 'summary': ''},
+                },
+                'color': {
+                  'value': 'vermelho',
+                  'source': 'celebration',
+                  'source_label': 'Celebração',
+                  'reason': {'code': '', 'message': ''},
+                  'presentation': {'title': '', 'summary': ''},
+                },
+                'transfers': [],
+                'reading_guide': {
+                  'cycle': {
+                    'code': 'A',
+                    'presentation': {'title': '', 'summary': ''},
+                  },
+                  'method': {
+                    'code': 'celebration',
+                    'presentation': {'title': '', 'summary': ''},
+                  },
+                },
+                'readings': [],
+                'partial': {'partial': false, 'missing': []},
+              },
+              'meta': {'request_id': 'req-1', 'contract_version': 1},
+            }),
+          ),
+          200,
+        );
+      });
+      final api = LectionaryApi(
+        client: client,
+        baseUrl: 'https://api.test/api/v1',
+      );
+      addTearDown(api.dispose);
+
+      final explanation = await api.getLiturgicalExplanation(
+        DateTime(2026, 5, 24),
+        'loc_2015',
+        readingType: 'semicontinuous',
+        bibleVersion: 'nvi',
+      );
+      final preferences =
+          jsonDecode(capturedRequest!.url.queryParameters['preferences']!)
+              as Map<String, dynamic>;
+
+      expect(
+        capturedRequest!.url.path,
+        '/api/v1/liturgical_explanation/2026/5/24',
+      );
+      expect(preferences['prayer_book_code'], 'loc_2015');
+      expect(preferences['reading_type'], 'semicontinuous');
+      expect(preferences['bible_version'], 'nvi');
+      expect(explanation.presentation.title, 'Pentecostes');
+    },
+  );
+
+  test(
     'handles successful empty payloads and exposes API error text',
     () async {
       final client = MockClient((request) async {

@@ -55,6 +55,164 @@ class AppCopy {
     AppLanguage.en => "Day's readings",
     AppLanguage.es => 'Lecturas del día',
   };
+  String get liturgicalExplanationAction => switch (language) {
+    AppLanguage.pt => 'Entenda este dia',
+    AppLanguage.en => 'Understand this day',
+    AppLanguage.es => 'Comprende este día',
+  };
+  String get liturgicalExplanationTitle => switch (language) {
+    AppLanguage.pt => 'Entenda este dia',
+    AppLanguage.en => 'Understand this day',
+    AppLanguage.es => 'Comprende este día',
+  };
+  String get liturgicalExplanationError => switch (language) {
+    AppLanguage.pt => 'Não foi possível carregar a explicação deste dia.',
+    AppLanguage.en => "We couldn't load the explanation for this day.",
+    AppLanguage.es => 'No se pudo cargar la explicación de este día.',
+  };
+  String get liturgicalExplanationLoading => switch (language) {
+    AppLanguage.pt => 'Carregando explicação litúrgica',
+    AppLanguage.en => 'Loading liturgical explanation',
+    AppLanguage.es => 'Cargando explicación litúrgica',
+  };
+  String get liturgicalExplanationCalendarSection => switch (language) {
+    AppLanguage.pt => 'O tempo litúrgico',
+    AppLanguage.en => 'The liturgical season',
+    AppLanguage.es => 'El tiempo litúrgico',
+  };
+  String get liturgicalExplanationCelebrationSection => switch (language) {
+    AppLanguage.pt => 'A celebração do dia',
+    AppLanguage.en => 'The celebration of the day',
+    AppLanguage.es => 'La celebración del día',
+  };
+  String get liturgicalExplanationColorSection => switch (language) {
+    AppLanguage.pt => 'A cor litúrgica',
+    AppLanguage.en => 'The liturgical color',
+    AppLanguage.es => 'El color litúrgico',
+  };
+  String get liturgicalExplanationColorMeaning => switch (language) {
+    AppLanguage.pt => 'Significado da cor',
+    AppLanguage.en => 'Meaning of the color',
+    AppLanguage.es => 'Significado del color',
+  };
+  String get liturgicalExplanationTransfersSection => switch (language) {
+    AppLanguage.pt => 'Transferências',
+    AppLanguage.en => 'Transfers',
+    AppLanguage.es => 'Traslados',
+  };
+  String get liturgicalExplanationReadingsSection => switch (language) {
+    AppLanguage.pt => 'As leituras',
+    AppLanguage.en => 'The readings',
+    AppLanguage.es => 'Las lecturas',
+  };
+  String get liturgicalExplanationSeason => switch (language) {
+    AppLanguage.pt => 'Tempo',
+    AppLanguage.en => 'Season',
+    AppLanguage.es => 'Tiempo',
+  };
+  String get liturgicalExplanationCycle => switch (language) {
+    AppLanguage.pt => 'Ciclo',
+    AppLanguage.en => 'Cycle',
+    AppLanguage.es => 'Ciclo',
+  };
+  String get liturgicalExplanationWeek => switch (language) {
+    AppLanguage.pt => 'Semana',
+    AppLanguage.en => 'Week',
+    AppLanguage.es => 'Semana',
+  };
+  String get liturgicalExplanationProper => switch (language) {
+    AppLanguage.pt => 'Próprio',
+    AppLanguage.en => 'Proper',
+    AppLanguage.es => 'Propio',
+  };
+  String get liturgicalExplanationSeasonProgress => switch (language) {
+    AppLanguage.pt => 'Progresso do tempo litúrgico',
+    AppLanguage.en => 'Liturgical season progress',
+    AppLanguage.es => 'Progreso del tiempo litúrgico',
+  };
+  String liturgicalExplanationCandidates(int count) => switch (language) {
+    AppLanguage.pt => '$count possibilidades consideradas',
+    AppLanguage.en => '$count possibilities considered',
+    AppLanguage.es => '$count posibilidades consideradas',
+  };
+  String get liturgicalExplanationSelected => switch (language) {
+    AppLanguage.pt => 'Celebração escolhida para o dia',
+    AppLanguage.en => 'Celebration selected for the day',
+    AppLanguage.es => 'Celebración elegida para el día',
+  };
+  String get liturgicalExplanationSource => switch (language) {
+    AppLanguage.pt => 'Origem',
+    AppLanguage.en => 'Source',
+    AppLanguage.es => 'Origen',
+  };
+  String get liturgicalExplanationNoTransfers => switch (language) {
+    AppLanguage.pt => 'Nenhuma celebração foi transferida nesta data.',
+    AppLanguage.en => 'No celebration was transferred on this date.',
+    AppLanguage.es => 'Ninguna celebración fue trasladada en esta fecha.',
+  };
+  String get liturgicalExplanationFrom => switch (language) {
+    AppLanguage.pt => 'De',
+    AppLanguage.en => 'From',
+    AppLanguage.es => 'De',
+  };
+  String get liturgicalExplanationTo => switch (language) {
+    AppLanguage.pt => 'Para',
+    AppLanguage.en => 'To',
+    AppLanguage.es => 'A',
+  };
+  String get liturgicalExplanationHowReadingsChosen => switch (language) {
+    AppLanguage.pt => 'Como estas leituras foram escolhidas?',
+    AppLanguage.en => 'How were these readings chosen?',
+    AppLanguage.es => '¿Cómo se eligieron estas lecturas?',
+  };
+  String get liturgicalExplanationTrack => switch (language) {
+    AppLanguage.pt => 'Trilha',
+    AppLanguage.en => 'Track',
+    AppLanguage.es => 'Pista',
+  };
+  String get liturgicalExplanationFallback => switch (language) {
+    AppLanguage.pt => 'Alternativa',
+    AppLanguage.en => 'Fallback',
+    AppLanguage.es => 'Alternativa de respaldo',
+  };
+  String get liturgicalExplanationServiceType => switch (language) {
+    AppLanguage.pt => 'Serviço',
+    AppLanguage.en => 'Service',
+    AppLanguage.es => 'Servicio',
+  };
+  String get liturgicalExplanationAlternatives => switch (language) {
+    AppLanguage.pt => 'Leituras alternativas',
+    AppLanguage.en => 'Alternative readings',
+    AppLanguage.es => 'Lecturas alternativas',
+  };
+  String get liturgicalExplanationPartialTitle => switch (language) {
+    AppLanguage.pt => 'Explicação parcial',
+    AppLanguage.en => 'Partial explanation',
+    AppLanguage.es => 'Explicación parcial',
+  };
+  String get liturgicalExplanationPartialMessage => switch (language) {
+    AppLanguage.pt =>
+      'Alguns dados não estão disponíveis para este livro de oração. '
+          'As lacunas não foram preenchidas automaticamente.',
+    AppLanguage.en =>
+      'Some data is unavailable for this prayer book. Missing information '
+          'has not been filled in automatically.',
+    AppLanguage.es =>
+      'Algunos datos no están disponibles para este libro de oración. La '
+          'información ausente no se completó automáticamente.',
+  };
+  String get liturgicalExplanationMissing => switch (language) {
+    AppLanguage.pt => 'Indisponível',
+    AppLanguage.en => 'Unavailable',
+    AppLanguage.es => 'No disponible',
+  };
+  String get liturgicalExplanationNoReadings => switch (language) {
+    AppLanguage.pt => 'Não há leituras disponíveis para explicar nesta data.',
+    AppLanguage.en =>
+      'There are no readings available to explain on this date.',
+    AppLanguage.es =>
+      'No hay lecturas disponibles para explicar en esta fecha.',
+  };
   String get collect => switch (language) {
     AppLanguage.pt => 'Coleta do dia',
     AppLanguage.en => 'Collect of the day',

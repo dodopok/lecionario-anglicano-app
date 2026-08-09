@@ -21,6 +21,7 @@ import 'package:lecionario_anglicano/core/theme/app_colors.dart';
 import 'package:lecionario_anglicano/core/theme/app_theme.dart';
 import 'package:lecionario_anglicano/core/theme/app_typography.dart';
 import 'package:lecionario_anglicano/data/models/lectionary_models.dart';
+import 'package:lecionario_anglicano/data/models/liturgical_explanation.dart';
 import 'package:lecionario_anglicano/data/services/lectionary_api.dart';
 import 'package:lecionario_anglicano/data/services/local_preferences.dart';
 import 'package:lecionario_anglicano/presentation/app_controller.dart';
@@ -600,6 +601,16 @@ class _CapturedApi implements LectionaryDataSource {
   }) async {
     final payload = _read('day-${language.code}');
     return LectionaryDay.fromJson(Map<String, dynamic>.from(payload as Map));
+  }
+
+  @override
+  Future<LiturgicalExplanation> getLiturgicalExplanation(
+    DateTime date,
+    String code, {
+    String? readingType,
+    String? bibleVersion,
+  }) async {
+    throw UnsupportedError('No explanation fixture is captured yet.');
   }
 
   @override

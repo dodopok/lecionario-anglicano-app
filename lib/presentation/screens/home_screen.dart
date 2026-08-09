@@ -12,6 +12,7 @@ import '../widgets/failure_notice.dart';
 import '../widgets/home_sections.dart';
 import '../widgets/reading_sheet.dart';
 import '../widgets/sacred_mark.dart';
+import 'liturgical_explanation_screen.dart';
 import 'settings_screen.dart';
 
 /// From this width the calendar and the day content sit side by side — an
@@ -132,6 +133,7 @@ class _HomeScreenState extends State<HomeScreen> {
         date: selected,
         copy: copyFor(widget.controller),
         onOpenReading: _openReading,
+        onOpenExplanation: () => _openLiturgicalExplanation(selected),
       ),
     );
   }
@@ -202,6 +204,17 @@ class _HomeScreenState extends State<HomeScreen> {
       constraints: _sheetConstraints,
       builder: (context) =>
           ReadingSheet(reading: reading, copy: copyFor(widget.controller)),
+    );
+  }
+
+  Future<void> _openLiturgicalExplanation(DateTime date) async {
+    await Navigator.of(context).push<void>(
+      MaterialPageRoute<void>(
+        builder: (_) => LiturgicalExplanationScreen(
+          controller: widget.controller,
+          date: date,
+        ),
+      ),
     );
   }
 }
