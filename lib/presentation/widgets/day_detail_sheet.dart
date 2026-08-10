@@ -111,18 +111,18 @@ class _DayDetailSheetState extends State<DayDetailSheet> {
                     child: Row(
                       crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
-                        Expanded(child: DayDescription(day: day, inset: false)),
+                        Expanded(
+                          child: DayDescription(day: day, inset: false),
+                        ),
                         const SizedBox(width: 8),
-                        Flexible(
-                          child: _ExplanationButton(
-                            day: day,
-                            copy: widget.copy,
-                            onPressed: widget.onOpenExplanation,
-                          ),
+                        _ExplanationButton(
+                          day: day,
+                          copy: widget.copy,
+                          onPressed: widget.onOpenExplanation,
                         ),
                       ],
                     ),
-                  ),
+                  )
                 ],
                 const SizedBox(height: 14),
                 ReadingsCard(
