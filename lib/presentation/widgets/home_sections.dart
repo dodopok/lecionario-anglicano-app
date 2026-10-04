@@ -802,6 +802,18 @@ class _ReadingRow extends StatelessWidget {
                           height: 1.05,
                         ),
                       ),
+                      if (reading.title?.trim().isNotEmpty == true) ...[
+                        const SizedBox(height: 3),
+                        Text(
+                          reading.title!,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: AppTypography.ui(
+                            size: 12,
+                            color: AppColors.mutedLight,
+                          ),
+                        ),
+                      ],
                     ],
                   ),
                 ),

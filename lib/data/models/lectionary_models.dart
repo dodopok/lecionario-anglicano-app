@@ -301,6 +301,7 @@ class Reading {
   const Reading({
     required this.kind,
     required this.reference,
+    this.title,
     this.text,
     this.translation,
     this.content,
@@ -308,6 +309,7 @@ class Reading {
 
   final String kind;
   final String reference;
+  final String? title;
   final String? text;
   final String? translation;
   final ReadingContent? content;
@@ -322,6 +324,7 @@ class Reading {
       kind: kind ?? '${json['type'] ?? json['kind'] ?? ''}',
       reference:
           '${json['reference'] ?? json['referencia'] ?? content?.reference ?? ''}',
+      title: json['title'] as String?,
       text: rawText is String
           ? rawText
           : (rawContent is String ? rawContent : null),

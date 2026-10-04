@@ -125,6 +125,7 @@ void main() {
     final reading = Reading.fromJson({
       'kind': 'psalm',
       'referencia': 'Salmo 1',
+      'title': 'A felicidade de quem confia em Deus',
       'texto': 'Texto',
       'versao': 'NAA',
     });
@@ -136,6 +137,7 @@ void main() {
     expect(celebration.transferred, isTrue);
     expect(reading.kind, 'psalm');
     expect(reading.reference, 'Salmo 1');
+    expect(reading.title, 'A felicidade de quem confia em Deus');
     expect(reading.text, 'Texto');
     expect(reading.translation, 'NAA');
     expect(collect.text, 'Coleta');
