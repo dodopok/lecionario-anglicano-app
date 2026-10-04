@@ -514,7 +514,11 @@ void main() {
                 color: null,
                 readings: const [
                   Reading(kind: 'first_reading', reference: 'Êxodo 34:29–35'),
-                  Reading(kind: 'psalm', reference: 'Salmo 99'),
+                  Reading(
+                    kind: 'psalm',
+                    reference: 'Salmo 99',
+                    title: 'O Senhor reina sobre toda a terra',
+                  ),
                   Reading(kind: 'gospel', reference: ''),
                 ],
               ),
@@ -529,6 +533,7 @@ void main() {
       expect(find.text('LEITURAS DE HOJE'), findsOneWidget);
       expect(find.text('Primeira leitura'), findsOneWidget);
       expect(find.text('Salmo 99'), findsOneWidget);
+      expect(find.text('O Senhor reina sobre toda a terra'), findsOneWidget);
       expect(find.text('Evangelho'), findsNothing);
 
       await tester.tap(find.text('Êxodo 34:29–35'));
